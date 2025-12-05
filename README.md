@@ -1,3 +1,16 @@
+---
+title: Humata-rec
+emoji: 📎
+colorFrom: purple
+colorTo: pink
+sdk: docker
+pinned: false
+---
+
+# Humata-rec
+
+(اكتب تحت هنا أي شرح للمشروع لو حابب)
+
 # Multi-Tool Platform | منصة الأدوات المتعددة
 
 A comprehensive Flask-based web application with AI-powered audio/video processing tools, optimized for Arabic language processing.
