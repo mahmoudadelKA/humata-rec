@@ -371,23 +371,37 @@
                 width: 85%;
                 max-width: 320px;
                 height: 100vh;
+                height: 100dvh;
                 z-index: 9999;
                 transition: right 0.3s ease;
                 overflow-y: auto;
-                padding-top: 5rem;
-                pointer-events: none;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+                visibility: hidden;
             }
 
             .sidebar-nav.open {
                 right: 0;
+                visibility: visible;
+            }
+
+            .sidebar-nav * {
                 pointer-events: auto;
             }
 
             .sidebar-nav .nav-item {
                 position: relative;
                 z-index: 10000;
-                pointer-events: auto;
+                cursor: pointer;
                 touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .sidebar-nav .space-y-3 {
+                padding-bottom: 100px;
             }
 
             .sidebar-overlay {
@@ -396,18 +410,17 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
+                height: 100dvh;
                 background: rgba(0, 0, 0, 0.7);
                 z-index: 9998;
                 opacity: 0;
                 visibility: hidden;
                 transition: all 0.3s ease;
-                pointer-events: none;
             }
 
             .sidebar-overlay.open {
                 opacity: 1;
                 visibility: visible;
-                pointer-events: auto;
             }
 
             .main-content {
@@ -2736,9 +2749,20 @@
             const overlay = document.getElementById('sidebar-overlay');
             const menuBtn = document.getElementById('mobile-menu-btn');
 
+            const isOpening = !sidebar.classList.contains('open');
+            
             sidebar.classList.toggle('open');
             overlay.classList.toggle('open');
             menuBtn.classList.toggle('active');
+
+            // Lock/unlock body scroll
+            if (isOpening) {
+                document.body.style.overflow = 'hidden';
+                document.body.style.touchAction = 'none';
+            } else {
+                document.body.style.overflow = '';
+                document.body.style.touchAction = '';
+            }
 
             // Update icon
             const icon = menuBtn.querySelector('i');
@@ -2759,6 +2783,10 @@
             sidebar.classList.remove('open');
             overlay.classList.remove('open');
             menuBtn.classList.remove('active');
+
+            // Unlock body scroll
+            document.body.style.overflow = '';
+            document.body.style.touchAction = '';
 
             const icon = menuBtn.querySelector('i');
             icon.classList.remove('fa-times');
