@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> AI REC | HUMATA</title>
+    <title>ARKAN AI | أركان</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="apple-touch-icon" href="/static/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -521,21 +523,30 @@
             align-items: center;
             justify-content: center;
             background: #050510;
+            overflow: hidden;
         }
 
-        .auth-container::before {
-            content: '';
+        .auth-video-bg {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('/static/background.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            pointer-events: none;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
             z-index: 0;
+            pointer-events: none;
+        }
+
+        .auth-video-bg iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 180vw;
+            height: 180vh;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
         }
 
         .auth-container::after {
@@ -546,27 +557,76 @@
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(ellipse at 30% 20%, rgba(0, 191, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 70% 60%, rgba(138, 43, 226, 0.06) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, rgba(0, 100, 200, 0.05) 0%, transparent 60%);
+                linear-gradient(135deg, rgba(5, 5, 16, 0.7) 0%, rgba(15, 23, 42, 0.6) 50%, rgba(5, 5, 16, 0.8) 100%),
+                radial-gradient(ellipse at 30% 20%, rgba(0, 191, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 60%, rgba(138, 43, 226, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(0, 100, 200, 0.1) 0%, transparent 60%);
             pointer-events: none;
-            z-index: 0;
-            animation: pulseGlow 8s ease-in-out infinite alternate;
+            z-index: 1;
         }
 
         .auth-box {
             position: relative;
-            z-index: 1;
+            z-index: 10;
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
             margin: 1rem;
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            border-radius: 24px;
+            background: rgba(10, 15, 30, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 28px;
             padding: 2.5rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px rgba(99, 102, 241, 0.15);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.5),
+                0 0 100px rgba(99, 102, 241, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            animation: authBoxFloat 6s ease-in-out infinite;
+        }
+
+        @keyframes authBoxFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .auth-logo-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .auth-logo-glow {
+            position: absolute;
+            inset: -10px;
+            background: linear-gradient(135deg, rgba(0, 191, 255, 0.4), rgba(138, 43, 226, 0.4), rgba(99, 102, 241, 0.4));
+            border-radius: 24px;
+            filter: blur(20px);
+            animation: logoGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoGlow {
+            0% { opacity: 0.5; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1.05); }
+        }
+
+        .auth-logo-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 20px;
+            border: 2px solid rgba(99, 102, 241, 0.4);
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+            overflow: hidden;
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-logo-inner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .auth-input {
@@ -726,19 +786,33 @@
 
     <!-- Auth Container -->
     <div id="auth-container" class="auth-container">
+        <!-- YouTube Video Background -->
+        <div class="auth-video-bg">
+            <iframe 
+                src="https://www.youtube.com/embed/wJJ1irx9tOA?autoplay=1&mute=1&loop=1&playlist=wJJ1irx9tOA&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+
         <div class="auth-box">
             <!-- Logo and Title -->
             <div class="text-center mb-8">
-                <div class="relative mx-auto mb-4 w-24 h-24">
-                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/30 via-purple-500/20 to-blue-500/30 blur-xl"></div>
-                    <div class="absolute inset-0 rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-sm"></div>
-                    <img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover rounded-2xl p-1">
+                <div class="auth-logo-container">
+                    <div class="auth-logo-glow"></div>
+                    <div class="auth-logo-inner">
+                        <img src="/static/arkan-logo.png" alt="ARKAN AI Logo">
+                    </div>
                 </div>
-                <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                    AI REC | HUMATA
+                <h1 class="text-3xl font-bold mb-2">
+                    <span class="bg-gradient-to-r from-cyan-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">ARKAN</span>
+                    <span class="text-white/90"> AI</span>
                 </h1>
+                <h2 class="text-xl font-semibold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent mb-3">
+                    أركان
+                </h2>
                 <p class="text-slate-400 text-sm">منصة الأدوات الذكية للمحتوى العربي</p>
-                <p class="text-slate-500 text-xs mt-2">تطوير: محمود عادل</p>
             </div>
 
             <!-- Auth Tabs -->
@@ -842,17 +916,19 @@
         <nav id="sidebar" class="sidebar-nav lg:w-72 w-full glass-sidebar lg:min-h-screen p-4 lg:p-6">
             <div class="flex items-center justify-center mb-8">
                 <div class="text-center">
-                    <div class="relative mx-auto mb-4 w-32 h-32">
+                    <div class="relative mx-auto mb-4 w-28 h-28">
                         <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/30 via-purple-500/20 to-blue-500/30 blur-xl"></div>
-                        <div class="absolute inset-0 rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-sm"></div>
-                        <img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover rounded-2xl p-1">
+                        <div class="absolute inset-0 rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-sm overflow-hidden">
+                            <img src="/static/arkan-logo.png" alt="ARKAN AI Logo" class="w-full h-full object-cover">
+                        </div>
                         <div class="absolute -inset-1 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-blue-500/20 blur-sm -z-10"></div>
                     </div>
-                    <h1
-                        class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                        أدوات متعددة
+                    <h1 class="text-xl font-bold mb-1">
+                        <span class="bg-gradient-to-r from-cyan-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">ARKAN</span>
+                        <span class="text-white/80"> AI</span>
                     </h1>
-                    <p class="text-slate-400 text-sm mt-1">منصة الأدوات الذكية</p>
+                    <p class="text-lg font-semibold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">أركان</p>
+                    <p class="text-slate-400 text-xs mt-1">منصة الأدوات الذكية</p>
                 </div>
             </div>
 
