@@ -2820,6 +2820,14 @@
             // Setup mobile menu button touch handlers
             setupMobileMenuButton();
             
+            // Re-setup when menu closes to ensure button is always responsive
+            setInterval(function() {
+                const menuBtn = document.getElementById('mobile-menu-btn');
+                if (menuBtn && !menuBtn._buttonSetup) {
+                    setupMobileMenuButton();
+                }
+            }, 500);
+            
             // Check if already entered
             checkIfEntered();
         });
@@ -2829,8 +2837,18 @@
             const overlay = document.getElementById('sidebar-overlay');
             const closeBtn = document.getElementById('mobile-close-btn');
             
-            if (menuBtn) {
-                // Keep onclick as fallback - add event listeners on top
+            if (menuBtn && !menuBtn._buttonSetup) {
+                menuBtn._buttonSetup = true;
+                
+                // Direct click handler with highest priority
+                menuBtn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleMobileMenu();
+                    return false;
+                };
+                
+                // Backup event listener
                 menuBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -2844,7 +2862,9 @@
                 }, { passive: false, capture: true });
             }
             
-            if (overlay) {
+            if (overlay && !overlay._overlaySetup) {
+                overlay._overlaySetup = true;
+                
                 overlay.addEventListener('click', function(e) {
                     e.preventDefault();
                     closeMobileMenu();
@@ -2856,7 +2876,9 @@
                 }, { passive: false, capture: true });
             }
             
-            if (closeBtn) {
+            if (closeBtn && !closeBtn._closeSetup) {
+                closeBtn._closeSetup = true;
+                
                 closeBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -2875,12 +2897,15 @@
             const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
             
             navItems.forEach(function(item) {
-                // Add click handler without cloning (keep event in HTML)
+                if (item._navSetup) return; // Skip if already setup
+                item._navSetup = true;
+                
+                // Add click handler
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    // Get tool name from onclick attribute or id
+                    // Get tool name from onclick attribute
                     const onclickAttr = this.getAttribute('onclick');
                     if (onclickAttr) {
                         const match = onclickAttr.match(/showTool\('([^']+)'/);
@@ -2890,7 +2915,7 @@
                     }
                 }, true);
 
-                // Add touch handler for better mobile response
+                // Add touch handlers for visual feedback
                 item.addEventListener('touchstart', function(e) {
                     this.style.transform = 'scale(0.97)';
                     this.style.background = 'rgba(99, 102, 241, 0.3)';
@@ -2917,41 +2942,6 @@
                     this.style.background = '';
                 }, { passive: true });
             });
-
-            // Setup overlay click
-            const overlay = document.getElementById('sidebar-overlay');
-            if (overlay) {
-                overlay.addEventListener('click', closeMobileMenu, true);
-                overlay.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    closeMobileMenu();
-                }, { passive: false, capture: true });
-            }
-
-            // Setup close button
-            const closeBtn = document.getElementById('mobile-close-btn');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    closeMobileMenu();
-                }, true);
-                closeBtn.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    closeMobileMenu();
-                }, { passive: false, capture: true });
-            }
-
-            // Setup menu button
-            const menuBtn = document.getElementById('mobile-menu-btn');
-            if (menuBtn) {
-                menuBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleMobileMenu();
-                }, true);
-            }
         }
 
         function setAnimeMode(mode) {
