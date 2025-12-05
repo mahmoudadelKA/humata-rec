@@ -1139,15 +1139,14 @@
         </div>
     </div>
 
-    <!-- Mobile Menu Toggle Button -->
-    <button id="mobile-menu-btn" class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="القائمة">
-        <i class="fas fa-bars"></i>
-    </button>
-
-    <!-- Mobile Sidebar Overlay -->
-    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
-
     <div id="main-app" class="flex flex-col lg:flex-row min-h-screen" style="display: none;">
+        <!-- Mobile Menu Toggle Button -->
+        <button id="mobile-menu-btn" class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="القائمة">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
         <nav id="sidebar" class="sidebar-nav lg:w-72 w-full glass-sidebar lg:min-h-screen p-4 lg:p-6">
             <!-- Mobile Close Button -->
             <button id="mobile-close-btn" class="mobile-close-btn lg:hidden" onclick="closeMobileMenu()" aria-label="إغلاق">
