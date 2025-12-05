@@ -36,10 +36,17 @@ def separate_vocals_with_replicate(audio_file_path: str, max_wait_seconds: int =
     upload_url = upload_file_to_replicate(audio_file_path, api_token)
     
     payload = {
-        "version": "25a173108cff36ef9f80f854c162d01df9e6528be175794b81b7a0f3b7c4b4e6",
+        "version": "25a173108cff36ef9f80f854c162d01df9e6528be175794b81158fa03836d953",
         "input": {
             "audio": upload_url,
-            "stem": "vocals"
+            "stem": "vocals",
+            "model_name": "htdemucs",
+            "shifts": 1,
+            "overlap": 0.25,
+            "clip_mode": "rescale",
+            "mp3_bitrate": 192,
+            "output_format": "mp3",
+            "float32": False
         }
     }
     
@@ -78,6 +85,11 @@ def separate_vocals_with_replicate(audio_file_path: str, max_wait_seconds: int =
                     vocals_url = output
                 elif isinstance(output, dict):
                     vocals_url = output.get("vocals") or output.get("audio") or output.get("output")
+                    if not vocals_url:
+                        for key in output:
+                            if output[key] and isinstance(output[key], str) and output[key].startswith("http"):
+                                vocals_url = output[key]
+                                break
                 elif isinstance(output, list) and len(output) > 0:
                     vocals_url = output[0]
                 
