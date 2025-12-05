@@ -17,12 +17,19 @@
 
         * {
             font-family: 'Tajawal', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         body {
             background: transparent;
             min-height: 100vh;
             position: relative;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
+            overscroll-behavior: none;
         }
 
         body::before {
@@ -496,6 +503,8 @@
         @media (max-width: 640px) {
             .glass {
                 padding: 1rem;
+                backdrop-filter: blur(4px) !important;
+                -webkit-backdrop-filter: blur(4px) !important;
             }
 
             .tool-content h2 {
@@ -518,6 +527,28 @@
             .btn-primary {
                 padding: 0.75rem 1rem;
                 font-size: 0.875rem;
+                transform: translateZ(0);
+                backface-visibility: hidden;
+            }
+
+            /* Disable expensive animations on mobile */
+            .anime-card:hover, .podcast-card:hover {
+                transform: none !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+            }
+
+            .tab-btn {
+                transition: none;
+            }
+
+            .tab-btn:hover {
+                background: rgba(99, 102, 241, 0.2);
+            }
+
+            /* Performance: Reduce blur effects on mobile */
+            .sidebar-overlay {
+                backdrop-filter: blur(2px) !important;
+                -webkit-backdrop-filter: blur(2px) !important;
             }
         }
 
@@ -527,6 +558,26 @@
         .text-slate-300 { color: #94a3b8 !important; }
         .text-slate-400 { color: #64748b !important; }
         .text-slate-500 { color: #475569 !important; }
+
+        /* Mobile Touch Optimization */
+        button, a, [role="button"], input, textarea, select {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        textarea, input[type="text"], input[type="email"], input[type="password"], input[type="file"] {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        /* Disable animations on low-end devices */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
 
         /* Gradient text for headers */
         .gradient-text {
@@ -4929,6 +4980,45 @@
                 showToast(error.message, 'error');
                 submitBtn.disabled = false;
             }
+        }
+
+        // =====================================================
+        // Mobile Touch & Performance Optimization
+        // =====================================================
+        
+        // Prevent accidental text selection on touch
+        document.addEventListener('touchstart', function(e) {
+            if (!e.target.matches('textarea, input[type="text"], input[type="email"], input[type="password"], input[type="search"], [contenteditable]')) {
+                e.preventDefault();
+            }
+        }, { passive: false, capture: true });
+        
+        // Improve button responsiveness on mobile
+        document.addEventListener('touchend', function(e) {
+            const target = e.target.closest('button, a, [role="button"]');
+            if (target && !target.disabled) {
+                target.click?.();
+            }
+        }, { passive: true, capture: true });
+        
+        // Prevent double-tap zoom on interactive elements
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: true });
+        
+        // Performance: Lazy load animations
+        const mediaQuery = window.matchMedia('(max-width: 768px)');
+        if (mediaQuery.matches) {
+            document.documentElement.classList.add('mobile-mode');
+            // Disable some animations on mobile for better performance
+            document.querySelectorAll('[class*="hover:"]').forEach(el => {
+                el.classList.remove('hover:scale-102', 'hover:translateY-5');
+            });
         }
 
         // =====================================================
