@@ -1,0 +1,144 @@
+You are working inside my existing Flask web app in Replit.
+The project structure is roughly:
+
+main.py → main Flask application file
+
+templates/ → HTML templates folder for the main page
+
+requirements.txt → Python dependencies
+
+I want you to add a new feature: Word (DOCX) document formatter, as a new tool/section in the site.
+The feature should:
+
+accept an uploaded .docx file
+
+apply a basic academic formatting:
+
+margins: 2.5 cm on all sides
+
+font: Times New Roman (or keep similar), size 14 pt
+
+line spacing: 1.5
+
+paragraphs: justified alignment
+
+return a new formatted .docx file for download.
+
+Please do ALL of the following steps carefully:
+
+Update dependencies
+
+Open requirements.txt.
+
+Add the package python-docx on a new line (do NOT remove any existing lines).
+
+Backend: add DOCX formatter route in Flask
+
+Open main.py (this is the main Flask file).
+
+At the top of main.py, add these imports if they are not already present:
+
+import os
+import tempfile
+from flask import request, send_file
+from docx import Document
+from docx.shared import Pt, Cm
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+
+In main.py, define a helper function to apply the basic formatting:
+
+def apply_basic_format(doc: Document):
+    """
+    Basic formatting: margins 2.5 cm, font size 14, justified paragraphs, 1.5 line spacing.
+    """
+    # Set margins for all sections
+    for section in doc.sections:
+        section.top_margin = Cm(2.5)
+        section.bottom_margin = Cm(2.5)
+        section.left_margin = Cm(2.5)
+        section.right_margin = Cm(2.5)
+
+    # Set default "Normal" style if available
+    try:
+        normal_style = doc.styles["Normal"]
+        normal_style.font.name = "Times New Roman"
+        normal_style.font.size = Pt(14)
+    except Exception:
+        pass
+
+    # Format each paragraph
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if not text:
+            continue
+
+        pf = para.paragraph_format
+        pf.line_spacing = 1.5
+        pf.space_before = Pt(0)
+        pf.space_after = Pt(6)
+        pf.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+
+        for run in para.runs:
+            run.font.size = Pt(14)
+
+
+Still in main.py, add a new Flask route that handles file upload and returns the formatted .docx file. Put it near the other routes, before the if __name__ == "__main__": block if present:
+
+@app.route("/format-docx", methods=["POST"])
+def format_docx():
+    uploaded = request.files.get("file")
+
+    if not uploaded or uploaded.filename == "":
+        return "من فضلك ارفع ملف DOCX", 400
+
+    filename = uploaded.filename.lower()
+    if not filename.endswith(".docx"):
+        return "النسخة الحالية تدعم ملفات Word بصيغة .docx فقط", 400
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        in_path = os.path.join(tmpdir, "input.docx")
+        out_path = os.path.join(tmpdir, "formatted.docx")
+
+        # Save uploaded file
+        uploaded.save(in_path)
+
+        # Open, format, save
+        doc = Document(in_path)
+        apply_basic_format(doc)
+        doc.save(out_path)
+
+        download_name = f"formatted_{uploaded.filename}"
+        return send_file(out_path, as_attachment=True, download_name=download_name)
+
+
+Frontend: add a new section in the main HTML template
+
+Inside the templates/ folder, find the main template that renders the homepage (for example index.html or similar). Use the one that is rendered by the main route in main.py.
+
+In that template, add a new section/card for the DOCX formatter.
+You can adapt the CSS classes to match the existing design. Use this basic HTML structure:
+
+<section id="docx-formatter" class="tool-card">
+  <h2>تنسيق ملفات Word (DOCX)</h2>
+  <p>ارفع ملف Word وسيتم تطبيق تنسيق بحث جامعي (هوامش 2.5 سم، خط 14، ومحاذاة كاملة للنص).</p>
+
+  <form action="/format-docx" method="post" enctype="multipart/form-data">
+    <label for="docx_file">اختر ملف Word (DOCX):</label>
+    <input type="file" id="docx_file" name="file" accept=".docx" required>
+    <button type="submit">ابدأ التنسيق وتحميل الملف الجديد</button>
+  </form>
+</section>
+
+
+Make sure the form uses method="post" and enctype="multipart/form-data".
+
+Keep everything else working
+
+Do NOT remove or break any existing routes or logic in main.py.
+
+Avoid duplicate imports.
+
+After editing, run the Flask app in Replit to ensure there are no syntax errors.
+
+At the end, show me which files you modified and a short summary of changes.

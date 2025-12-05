@@ -15,6 +15,9 @@ import pytesseract
 from PIL import Image
 from fuzzywuzzy import fuzz
 import google.generativeai as genai
+from docx import Document
+from docx.shared import Pt, Cm
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 import os
 
