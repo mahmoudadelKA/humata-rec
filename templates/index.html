@@ -541,6 +541,27 @@
             box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), 0 0 40px rgba(139, 92, 246, 0.2);
         }
 
+        /* Neon text effect */
+        .neon-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, #00bfff, #8b5cf6, #ec4899, #00bfff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(139, 92, 246, 0.3), 0 0 30px rgba(236, 72, 153, 0.3);
+            animation: neon-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes neon-pulse {
+            0%, 100% {
+                text-shadow: 0 0 10px rgba(0, 191, 255, 0.5), 0 0 20px rgba(139, 92, 246, 0.3), 0 0 30px rgba(236, 72, 153, 0.3);
+            }
+            50% {
+                text-shadow: 0 0 20px rgba(0, 191, 255, 0.8), 0 0 30px rgba(139, 92, 246, 0.6), 0 0 40px rgba(236, 72, 153, 0.6);
+            }
+        }
+
         /* Button secondary style */
         .btn-secondary {
             background: rgba(30, 41, 59, 0.8);
@@ -2455,7 +2476,7 @@
             <p class="text-slate-400 text-sm">
                 &copy; <span id="current-year"></span> جميع الحقوق محفوظة
             </p>
-            <p class="text-slate-500 text-sm mt-2">
+            <p class="neon-text mt-2">
                 يَرْفَعِ اللَّهُ الَّذِينَ آمَنُوا مِنْكُمْ وَالَّذِينَ أُوتُوا الْعِلْمَ دَرَجَاتٍ.
             </p>
         </div>
