@@ -529,12 +529,12 @@
                 <button onclick="showTool('docxformatter')" id="nav-docxformatter"
                     class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
                     <div
-                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
-                        <i class="fas fa-file-word text-white"></i>
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-wand-magic-sparkles text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">تنسيق ملفات Word</span>
-                        <span class="text-xs text-gray-400">DOCX Formatter</span>
+                        <span class="font-semibold block text-gray-700">تنسيق ذكي للمستندات</span>
+                        <span class="text-xs text-gray-400">AI Document Formatter</span>
                     </div>
                 </button>
             </div>
@@ -1560,58 +1560,130 @@
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
                     <div class="text-center mb-8">
                         <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
-                            <i class="fas fa-file-word ml-3 text-blue-500"></i>
-                            تنسيق ملفات Word (DOCX)
+                            <i class="fas fa-wand-magic-sparkles ml-3 text-blue-500"></i>
+                            تنسيق المستندات بالذكاء الاصطناعي
                         </h2>
-                        <p class="text-gray-500">ارفع ملف Word وسيتم تطبيق تنسيق بحث جامعي</p>
+                        <p class="text-gray-500">ارفع ملف Word أو PDF وحدد التنسيق المطلوب بوصفك أو بملف مرجعي</p>
                     </div>
 
-                    <div class="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                    <div class="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
                         <h3 class="font-bold text-gray-700 mb-2">
-                            <i class="fas fa-info-circle ml-2 text-blue-500"></i>
-                            التنسيق المُطبَّق:
+                            <i class="fas fa-robot ml-2 text-purple-500"></i>
+                            كيف تعمل الأداة:
                         </h3>
                         <ul class="text-gray-600 text-sm space-y-1 mr-6">
-                            <li><i class="fas fa-check text-green-500 ml-2"></i>هوامش: 2.5 سم من جميع الجوانب</li>
-                            <li><i class="fas fa-check text-green-500 ml-2"></i>حجم الخط: 14 نقطة</li>
-                            <li><i class="fas fa-check text-green-500 ml-2"></i>نوع الخط: Times New Roman</li>
-                            <li><i class="fas fa-check text-green-500 ml-2"></i>تباعد الأسطر: 1.5</li>
-                            <li><i class="fas fa-check text-green-500 ml-2"></i>محاذاة النص: ضبط كامل (Justify)</li>
+                            <li><i class="fas fa-upload text-blue-500 ml-2"></i>ارفع ملف Word أو PDF للتنسيق</li>
+                            <li><i class="fas fa-pen text-green-500 ml-2"></i>اكتب وصفاً للتنسيق المطلوب (مثال: تنسيق بحث جامعي)</li>
+                            <li><i class="fas fa-image text-orange-500 ml-2"></i>أو ارفع صورة/ملف مرجعي لنسخ التنسيق منه</li>
+                            <li><i class="fas fa-magic text-purple-500 ml-2"></i>الذكاء الاصطناعي يفهم ويطبق التنسيق تلقائياً</li>
                         </ul>
                     </div>
 
-                    <form id="docx-form" action="/format-docx" method="post" enctype="multipart/form-data">
-                        <div class="file-upload rounded-xl p-8 text-center cursor-pointer mb-6"
+                    <form id="docx-ai-form" onsubmit="handleAIDocxFormat(event)">
+                        <div class="file-upload rounded-xl p-6 text-center cursor-pointer mb-4"
                             onclick="document.getElementById('docx_file').click()">
-                            <input type="file" id="docx_file" name="file" accept=".docx" required class="hidden"
+                            <input type="file" id="docx_file" name="file" accept=".docx,.pdf" required class="hidden"
                                 onchange="handleDocxFileUpload(event)">
                             <div id="docx-upload-icon">
-                                <i class="fas fa-cloud-upload-alt text-5xl text-blue-300 mb-4"></i>
-                                <p class="text-gray-500">اضغط هنا لاختيار ملف Word</p>
-                                <p class="text-gray-400 text-sm mt-2">يدعم ملفات .docx فقط</p>
+                                <i class="fas fa-cloud-upload-alt text-5xl text-blue-300 mb-3"></i>
+                                <p class="text-gray-600 font-medium">ارفع الملف المراد تنسيقه</p>
+                                <p class="text-gray-400 text-sm mt-1">يدعم ملفات Word (.docx) و PDF</p>
                             </div>
                             <div id="docx-file-info" class="hidden">
-                                <i class="fas fa-file-word text-5xl text-blue-500 mb-4"></i>
+                                <i class="fas fa-file-alt text-5xl text-blue-500 mb-3"></i>
                                 <p id="docx-file-name" class="text-gray-700 font-medium"></p>
-                                <p class="text-gray-400 text-sm mt-2">اضغط لاختيار ملف آخر</p>
+                                <p class="text-gray-400 text-sm mt-1">اضغط لاختيار ملف آخر</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-pen-fancy ml-2 text-purple-500"></i>
+                                وصف التنسيق المطلوب:
+                            </label>
+                            <textarea id="format-instructions" name="instructions" rows="3"
+                                class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none transition-all resize-none"
+                                placeholder="مثال: أريد تنسيق بحث جامعي بخط Arial حجم 12، تباعد مزدوج، هوامش 3 سم..."></textarea>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-copy ml-2 text-orange-500"></i>
+                                أو ارفع ملف مرجعي لنسخ التنسيق منه (اختياري):
+                            </label>
+                            <div class="file-upload rounded-xl p-4 text-center cursor-pointer border-dashed border-orange-200 bg-orange-50/30"
+                                onclick="document.getElementById('reference_file').click()">
+                                <input type="file" id="reference_file" name="reference_file" 
+                                    accept=".docx,.pdf,.png,.jpg,.jpeg,.gif,.webp" class="hidden"
+                                    onchange="handleReferenceFileUpload(event)">
+                                <div id="ref-upload-icon">
+                                    <i class="fas fa-image text-3xl text-orange-300 mb-2"></i>
+                                    <p class="text-gray-500 text-sm">ارفع صورة أو ملف Word أو PDF كمرجع</p>
+                                </div>
+                                <div id="ref-file-info" class="hidden">
+                                    <i class="fas fa-check-circle text-3xl text-green-500 mb-2"></i>
+                                    <p id="ref-file-name" class="text-gray-700 text-sm font-medium"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="docx-progress-box" class="hidden mb-6">
+                            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="text-gray-700 font-bold">
+                                        <i class="fas fa-cog fa-spin ml-2 text-purple-500"></i>
+                                        جارٍ المعالجة
+                                    </span>
+                                    <span id="docx-total-percent" class="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">0%</span>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-gray-600">
+                                                <i class="fas fa-cloud-upload-alt ml-1 text-blue-400"></i>
+                                                رفع الملف
+                                            </span>
+                                            <span id="upload-percent" class="text-blue-600 font-semibold">0%</span>
+                                        </div>
+                                        <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                            <div id="upload-progress-bar" class="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-gray-600">
+                                                <i class="fas fa-wand-magic-sparkles ml-1 text-purple-400"></i>
+                                                تحليل وتنسيق
+                                            </span>
+                                            <span id="process-percent" class="text-purple-600 font-semibold">0%</span>
+                                        </div>
+                                        <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                            <div id="process-progress-bar" class="h-full bg-gradient-to-r from-purple-400 to-pink-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <p id="docx-status-text" class="text-center text-gray-500 text-sm mt-4">جارٍ رفع الملف...</p>
                             </div>
                         </div>
 
                         <button type="submit" id="format-docx-btn"
-                            class="w-full btn-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg">
-                            <i class="fas fa-magic ml-2"></i>
-                            ابدأ التنسيق وتحميل الملف الجديد
+                            class="w-full btn-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2">
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                            ابدأ التنسيق الذكي
                         </button>
                     </form>
-
-                    <div id="docx-loading" class="hidden mt-6 text-center">
-                        <div class="loader mx-auto mb-4"></div>
-                        <p class="text-gray-500">جارٍ تنسيق الملف...</p>
-                    </div>
 
                     <div id="docx-error" class="hidden mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
                         <i class="fas fa-exclamation-circle ml-2"></i>
                         <span id="docx-error-text"></span>
+                    </div>
+
+                    <div id="docx-success" class="hidden mt-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-600">
+                        <i class="fas fa-check-circle ml-2"></i>
+                        <span>تم تنسيق الملف بنجاح وجارٍ التحميل...</span>
                     </div>
                 </div>
             </div>
@@ -3631,61 +3703,154 @@
                 document.getElementById('docx-file-info').classList.remove('hidden');
                 document.getElementById('docx-file-name').textContent = file.name;
                 document.getElementById('docx-error').classList.add('hidden');
+                document.getElementById('docx-success').classList.add('hidden');
             }
         }
 
-        document.getElementById('docx-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        function handleReferenceFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('ref-upload-icon').classList.add('hidden');
+                document.getElementById('ref-file-info').classList.remove('hidden');
+                document.getElementById('ref-file-name').textContent = file.name;
+            }
+        }
+
+        function updateDocxProgress(uploadPercent, processPercent, statusText) {
+            const uploadBar = document.getElementById('upload-progress-bar');
+            const processBar = document.getElementById('process-progress-bar');
+            const uploadPercentEl = document.getElementById('upload-percent');
+            const processPercentEl = document.getElementById('process-percent');
+            const totalPercentEl = document.getElementById('docx-total-percent');
+            const statusTextEl = document.getElementById('docx-status-text');
+            
+            if (uploadBar) uploadBar.style.width = uploadPercent + '%';
+            if (processBar) processBar.style.width = processPercent + '%';
+            if (uploadPercentEl) uploadPercentEl.textContent = uploadPercent + '%';
+            if (processPercentEl) processPercentEl.textContent = processPercent + '%';
+            
+            const totalPercent = Math.round((uploadPercent * 0.3) + (processPercent * 0.7));
+            if (totalPercentEl) totalPercentEl.textContent = totalPercent + '%';
+            if (statusTextEl) statusTextEl.textContent = statusText;
+        }
+
+        async function handleAIDocxFormat(event) {
+            event.preventDefault();
             
             const fileInput = document.getElementById('docx_file');
+            const instructions = document.getElementById('format-instructions').value.trim();
+            const referenceFile = document.getElementById('reference_file').files[0];
+            
             if (!fileInput.files[0]) {
-                showToast('الرجاء اختيار ملف DOCX أولاً', 'error');
+                showToast('الرجاء اختيار ملف للتنسيق أولاً', 'error');
+                return;
+            }
+            
+            if (!instructions && !referenceFile) {
+                showToast('يرجى إدخال وصف التنسيق أو رفع ملف مرجعي', 'error');
                 return;
             }
 
             const submitBtn = document.getElementById('format-docx-btn');
-            const loadingDiv = document.getElementById('docx-loading');
+            const progressBox = document.getElementById('docx-progress-box');
             const errorDiv = document.getElementById('docx-error');
+            const successDiv = document.getElementById('docx-success');
 
             submitBtn.disabled = true;
-            loadingDiv.classList.remove('hidden');
+            progressBox.classList.remove('hidden');
             errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+            
+            updateDocxProgress(0, 0, 'جارٍ تجهيز الملفات...');
 
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
+            formData.append('instructions', instructions);
+            if (referenceFile) {
+                formData.append('reference_file', referenceFile);
+            }
 
             try {
-                const response = await fetch('/format-docx', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'حدث خطأ أثناء تنسيق الملف');
-                }
-
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'formatted_' + fileInput.files[0].name;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                a.remove();
-
-                showToast('تم تنسيق الملف وتحميله بنجاح!');
-
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        updateDocxProgress(percent, 0, 'جارٍ رفع الملفات...');
+                    }
+                };
+                
+                xhr.onload = async () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        updateDocxProgress(100, 100, 'تم التنسيق بنجاح!');
+                        
+                        const blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        
+                        const originalName = fileInput.files[0].name.replace(/\.[^/.]+$/, '');
+                        a.download = 'formatted_' + originalName + '.docx';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                        
+                        successDiv.classList.remove('hidden');
+                        showToast('تم تنسيق الملف وتحميله بنجاح!');
+                        
+                        setTimeout(() => {
+                            progressBox.classList.add('hidden');
+                            updateDocxProgress(0, 0, '');
+                        }, 2000);
+                    } else {
+                        let errorMsg = 'حدث خطأ أثناء تنسيق الملف';
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            errorMsg = response.error || errorMsg;
+                        } catch (e) {}
+                        throw new Error(errorMsg);
+                    }
+                };
+                
+                xhr.onerror = () => {
+                    throw new Error('فشل الاتصال بالخادم');
+                };
+                
+                xhr.open('POST', '/format-document-ai');
+                xhr.responseType = 'arraybuffer';
+                xhr.send(formData);
+                
+                updateDocxProgress(100, 0, 'جارٍ تحليل التنسيق المطلوب...');
+                
+                let processProgress = 0;
+                const progressInterval = setInterval(() => {
+                    if (processProgress < 90) {
+                        processProgress += Math.random() * 15;
+                        if (processProgress > 90) processProgress = 90;
+                        
+                        let statusMsg = 'جارٍ تحليل التنسيق المطلوب...';
+                        if (processProgress > 30) statusMsg = 'جارٍ قراءة المستند...';
+                        if (processProgress > 50) statusMsg = 'جارٍ تطبيق التنسيق...';
+                        if (processProgress > 70) statusMsg = 'جارٍ إنشاء الملف الجديد...';
+                        
+                        updateDocxProgress(100, Math.round(processProgress), statusMsg);
+                    }
+                }, 500);
+                
+                xhr.onloadend = () => {
+                    clearInterval(progressInterval);
+                    submitBtn.disabled = false;
+                };
+                
             } catch (error) {
                 document.getElementById('docx-error-text').textContent = error.message;
                 errorDiv.classList.remove('hidden');
+                progressBox.classList.add('hidden');
                 showToast(error.message, 'error');
-            } finally {
                 submitBtn.disabled = false;
-                loadingDiv.classList.add('hidden');
             }
-        });
+        }
     </script>
 </body>
 

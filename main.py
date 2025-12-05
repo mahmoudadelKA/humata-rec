@@ -2885,6 +2885,157 @@ def apply_basic_format(doc: Document):
             run.font.name = "Times New Roman"
 
 
+def extract_formatting_from_ai(instructions=None, reference_image=None):
+    """
+    Use Gemini AI to understand formatting requirements from text or image.
+    Returns a JSON-like dict with formatting specifications.
+    """
+    import json
+    
+    default_format = {
+        "font_name": "Times New Roman",
+        "font_size": 14,
+        "line_spacing": 1.5,
+        "alignment": "justify",
+        "margins": {"top": 2.5, "bottom": 2.5, "left": 2.5, "right": 2.5},
+        "paragraph_spacing_after": 6,
+        "first_line_indent": 0,
+        "heading_font_size": 16,
+        "heading_bold": True
+    }
+    
+    prompt = """أنت خبير في تنسيق المستندات. قم بتحليل متطلبات التنسيق المطلوبة وأرجع مواصفات التنسيق بصيغة JSON فقط.
+
+المواصفات المطلوبة يجب أن تكون بالشكل التالي (أرجع JSON فقط بدون أي نص إضافي):
+{
+    "font_name": "اسم الخط (مثل: Times New Roman, Arial, Simplified Arabic)",
+    "font_size": رقم حجم الخط بالنقاط (مثل: 12, 14, 16),
+    "line_spacing": تباعد الأسطر (مثل: 1.0, 1.5, 2.0),
+    "alignment": "محاذاة النص: justify أو right أو left أو center",
+    "margins": {"top": رقم بالسم, "bottom": رقم بالسم, "left": رقم بالسم, "right": رقم بالسم},
+    "paragraph_spacing_after": رقم بالنقاط للمسافة بعد الفقرة,
+    "first_line_indent": رقم بالسم للمسافة البادئة للسطر الأول,
+    "heading_font_size": رقم حجم خط العناوين,
+    "heading_bold": true أو false للعناوين العريضة
+}
+
+"""
+    
+    if instructions:
+        prompt += f"\nوصف التنسيق المطلوب من المستخدم:\n{instructions}\n"
+    
+    if reference_image:
+        prompt += "\nقم بتحليل الصورة المرفقة واستخرج أسلوب التنسيق منها."
+        result = call_gemini_vision(reference_image, prompt)
+    else:
+        result = call_gemini_text(prompt)
+    
+    if not result:
+        logging.warning("AI returned no result, using default format")
+        return default_format
+    
+    try:
+        result_clean = result.strip()
+        if result_clean.startswith("```json"):
+            result_clean = result_clean[7:]
+        if result_clean.startswith("```"):
+            result_clean = result_clean[3:]
+        if result_clean.endswith("```"):
+            result_clean = result_clean[:-3]
+        result_clean = result_clean.strip()
+        
+        format_spec = json.loads(result_clean)
+        
+        for key in default_format:
+            if key not in format_spec:
+                format_spec[key] = default_format[key]
+        
+        return format_spec
+    except json.JSONDecodeError as e:
+        logging.error(f"Failed to parse AI format response: {e}")
+        logging.error(f"Raw response: {result[:500]}")
+        return default_format
+
+
+def apply_ai_format(doc: Document, format_spec: dict):
+    """
+    Apply AI-generated formatting specifications to a Word document.
+    """
+    from docx.shared import RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    
+    alignment_map = {
+        "justify": WD_ALIGN_PARAGRAPH.JUSTIFY,
+        "right": WD_ALIGN_PARAGRAPH.RIGHT,
+        "left": WD_ALIGN_PARAGRAPH.LEFT,
+        "center": WD_ALIGN_PARAGRAPH.CENTER
+    }
+    
+    margins = format_spec.get("margins", {})
+    for section in doc.sections:
+        section.top_margin = Cm(float(margins.get("top", 2.5)))
+        section.bottom_margin = Cm(float(margins.get("bottom", 2.5)))
+        section.left_margin = Cm(float(margins.get("left", 2.5)))
+        section.right_margin = Cm(float(margins.get("right", 2.5)))
+    
+    font_name = format_spec.get("font_name", "Times New Roman")
+    font_size = float(format_spec.get("font_size", 14))
+    
+    try:
+        normal_style = doc.styles["Normal"]
+        normal_style.font.name = font_name
+        normal_style.font.size = Pt(font_size)
+    except Exception:
+        pass
+    
+    line_spacing = float(format_spec.get("line_spacing", 1.5))
+    alignment = alignment_map.get(format_spec.get("alignment", "justify"), WD_ALIGN_PARAGRAPH.JUSTIFY)
+    para_spacing = float(format_spec.get("paragraph_spacing_after", 6))
+    first_indent = float(format_spec.get("first_line_indent", 0))
+    heading_size = float(format_spec.get("heading_font_size", 16))
+    heading_bold = format_spec.get("heading_bold", True)
+    
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if not text:
+            continue
+        
+        is_heading = (
+            para.style.name.startswith("Heading") or 
+            (len(text) < 100 and not text.endswith(('.', '،', '؟', '!')))
+        )
+        
+        pf = para.paragraph_format
+        pf.line_spacing = line_spacing
+        pf.space_before = Pt(0)
+        pf.space_after = Pt(para_spacing)
+        pf.alignment = alignment
+        
+        if first_indent > 0:
+            pf.first_line_indent = Cm(first_indent)
+        
+        for run in para.runs:
+            if is_heading:
+                run.font.size = Pt(heading_size)
+                run.font.bold = heading_bold
+            else:
+                run.font.size = Pt(font_size)
+            run.font.name = font_name
+
+
+def convert_pdf_to_docx_for_formatting(pdf_path, output_path):
+    """Convert PDF to DOCX for formatting purposes."""
+    try:
+        from pdf2docx import Converter
+        cv = Converter(pdf_path)
+        cv.convert(output_path, start=0, end=None)
+        cv.close()
+        return True
+    except Exception as e:
+        logging.error(f"PDF to DOCX conversion failed: {e}")
+        return False
+
+
 @app.route("/format-docx", methods=["POST"])
 def format_docx():
     uploaded = request.files.get("file")
@@ -2907,6 +3058,115 @@ def format_docx():
         doc.save(out_path)
 
         download_name = f"formatted_{uploaded.filename}"
+        return send_file(out_path, as_attachment=True, download_name=download_name)
+
+
+@app.route("/format-document-ai", methods=["POST"])
+def format_document_ai():
+    """
+    AI-powered document formatting endpoint.
+    Accepts: main document (DOCX/PDF), optional formatting instructions, optional reference file (image/DOCX/PDF)
+    """
+    uploaded = request.files.get("file")
+    reference_file = request.files.get("reference_file")
+    instructions = request.form.get("instructions", "").strip()
+    
+    if not uploaded or uploaded.filename == "":
+        return jsonify({'error': 'من فضلك ارفع ملف للتنسيق'}), 400
+    
+    filename = uploaded.filename.lower()
+    if not filename.endswith((".docx", ".pdf")):
+        return jsonify({'error': 'يدعم ملفات Word (.docx) و PDF فقط'}), 400
+    
+    if not instructions and not reference_file:
+        return jsonify({'error': 'يرجى إدخال وصف التنسيق أو رفع ملف مرجعي'}), 400
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        in_path = os.path.join(tmpdir, "input" + os.path.splitext(uploaded.filename)[1])
+        docx_path = os.path.join(tmpdir, "document.docx")
+        out_path = os.path.join(tmpdir, "formatted.docx")
+        
+        uploaded.save(in_path)
+        
+        if filename.endswith(".pdf"):
+            logging.info("Converting PDF to DOCX for formatting...")
+            if not convert_pdf_to_docx_for_formatting(in_path, docx_path):
+                return jsonify({'error': 'فشل في تحويل ملف PDF. جرب ملف Word مباشرة.'}), 500
+        else:
+            docx_path = in_path
+        
+        reference_image = None
+        if reference_file and reference_file.filename:
+            ref_filename = reference_file.filename.lower()
+            ref_path = os.path.join(tmpdir, "reference" + os.path.splitext(reference_file.filename)[1])
+            reference_file.save(ref_path)
+            
+            if ref_filename.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
+                reference_image = ref_path
+            elif ref_filename.endswith(".pdf"):
+                try:
+                    import fitz
+                    pdf_doc = fitz.open(ref_path)
+                    page = pdf_doc[0]
+                    pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+                    img_path = os.path.join(tmpdir, "ref_screenshot.png")
+                    pix.save(img_path)
+                    pdf_doc.close()
+                    reference_image = img_path
+                    logging.info("Successfully extracted image from reference PDF")
+                except Exception as e:
+                    logging.error(f"Failed to extract image from reference PDF: {e}")
+                    instructions += "\n\nالملف المرجعي هو PDF. استخدم تنسيق بحثي أكاديمي مشابه."
+            elif ref_filename.endswith(".docx"):
+                try:
+                    ref_doc = Document(ref_path)
+                    ref_format_info = []
+                    
+                    if ref_doc.sections:
+                        section = ref_doc.sections[0]
+                        margins = {
+                            "top": round(section.top_margin.cm, 1) if section.top_margin else 2.5,
+                            "bottom": round(section.bottom_margin.cm, 1) if section.bottom_margin else 2.5,
+                            "left": round(section.left_margin.cm, 1) if section.left_margin else 2.5,
+                            "right": round(section.right_margin.cm, 1) if section.right_margin else 2.5
+                        }
+                        ref_format_info.append(f"الهوامش: أعلى {margins['top']}سم، أسفل {margins['bottom']}سم، يسار {margins['left']}سم، يمين {margins['right']}سم")
+                    
+                    for para in ref_doc.paragraphs[:5]:
+                        if para.runs:
+                            run = para.runs[0]
+                            if run.font.name:
+                                ref_format_info.append(f"الخط: {run.font.name}")
+                            if run.font.size:
+                                ref_format_info.append(f"حجم الخط: {run.font.size.pt} نقطة")
+                            break
+                    
+                    for para in ref_doc.paragraphs[:5]:
+                        if para.paragraph_format.line_spacing:
+                            ref_format_info.append(f"تباعد الأسطر: {para.paragraph_format.line_spacing}")
+                            break
+                    
+                    if ref_format_info:
+                        instructions += "\n\nالتنسيق المستخرج من الملف المرجعي:\n" + "\n".join(ref_format_info)
+                    else:
+                        instructions += "\n\nالملف المرجعي هو مستند Word. استخدم تنسيق بحثي أكاديمي مشابه."
+                    
+                    logging.info(f"Extracted formatting from reference DOCX: {ref_format_info}")
+                except Exception as e:
+                    logging.error(f"Failed to extract formatting from reference DOCX: {e}")
+                    instructions += "\n\nالملف المرجعي هو مستند Word. استخدم تنسيق بحثي أكاديمي مشابه."
+        
+        logging.info(f"Extracting formatting specs from AI... Instructions: {instructions[:100] if instructions else 'None'}, Reference: {bool(reference_image)}")
+        format_spec = extract_formatting_from_ai(instructions, reference_image)
+        logging.info(f"AI format spec: {format_spec}")
+        
+        doc = Document(docx_path)
+        apply_ai_format(doc, format_spec)
+        doc.save(out_path)
+        
+        original_name = os.path.splitext(uploaded.filename)[0]
+        download_name = f"formatted_{original_name}.docx"
+        
         return send_file(out_path, as_attachment=True, download_name=download_name)
 
 

@@ -99,16 +99,21 @@ A comprehensive web application with ten powerful tools, featuring a modern Arab
 - Copy, download, and clear transcribed text functionality
 - Extended timeout (2 hours) for large file processing
 
-### 10. DOCX Formatter (تنسيق ملفات Word)
-- Upload Word documents (.docx) for academic formatting
-- **Formatting applied:**
-  - Margins: 2.5 cm on all sides
-  - Font: Times New Roman, 14pt
-  - Line spacing: 1.5
-  - Paragraph alignment: Justified
-  - Paragraph spacing: 6pt after each paragraph
-- Downloads formatted file with "formatted_" prefix
-- Uses python-docx library
+### 10. AI Document Formatter (تنسيق ذكي للمستندات) - UPGRADED
+- **AI-Powered Formatting:** Uses Gemini AI to understand and apply formatting
+- **Supports both Word (.docx) and PDF files**
+- **Two ways to specify formatting:**
+  - **Text Description:** Describe the formatting you want in Arabic or English (e.g., "تنسيق بحث جامعي بخط Arial حجم 12")
+  - **Reference File:** Upload an image, Word, or PDF file as a formatting reference
+- **Smart formatting extraction:** AI analyzes reference files to understand font, margins, spacing, alignment
+- **Features:**
+  - Automatic PDF to DOCX conversion for editing
+  - Heading detection and styling
+  - First line indent support
+  - Custom margins and line spacing
+- **Modern dual-progress UI:** Shows both upload progress and AI processing progress
+- Downloads formatted file as .docx
+- Uses python-docx library with Gemini AI integration
 
 ## Tech Stack
 - **Backend**: Python Flask
@@ -132,7 +137,8 @@ A comprehensive web application with ten powerful tools, featuring a modern Arab
 - `POST /download-video` - Universal media downloader (accepts `format` param: 'video' for MP4, 'audio' for MP3)
 - `POST /convert-pdf` - PDF to Word converter (accepts `mode` param: 'original', 'ar', or 'en' for translation)
 - `POST /transcribe-video` - Video to text transcription (accepts `input_type`: 'file' or 'url', video file or url)
-- `POST /format-docx` - DOCX formatter (applies academic formatting and returns formatted file)
+- `POST /format-docx` - DOCX formatter (applies basic academic formatting and returns formatted file)
+- `POST /format-document-ai` - AI-powered document formatter (accepts file, instructions, reference_file)
 
 ## Running the Application
 The server runs on port 5000 using gunicorn with auto-reload and 1800s timeout (30 minutes for large videos).
