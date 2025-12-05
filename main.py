@@ -3364,5 +3364,192 @@ def get_audio():
         logging.error(f"Audio extraction error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+
+# Music Removal using Spleeter
+@app.route('/remove-music', methods=['POST'])
+def remove_music():
+    """
+    Remove music from audio/video files using Spleeter.
+    Accepts either a file upload or a URL (YouTube, etc.)
+    Returns the vocals-only audio file (music removed)
+    """
+    import shutil
+    
+    temp_dir = tempfile.mkdtemp()
+    input_path = None
+    output_path = None
+    
+    try:
+        # Check if file was uploaded or URL provided
+        if 'file' in request.files and request.files['file'].filename:
+            uploaded_file = request.files['file']
+            filename = uploaded_file.filename
+            input_path = os.path.join(temp_dir, filename)
+            uploaded_file.save(input_path)
+            logging.info(f"Music removal: Processing uploaded file: {filename}")
+            
+        elif 'url' in request.form and request.form['url']:
+            url = request.form['url']
+            logging.info(f"Music removal: Downloading from URL: {url}")
+            
+            # Download audio from URL using yt-dlp
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'outtmpl': os.path.join(temp_dir, 'downloaded_audio'),
+                'quiet': True,
+                'no_warnings': True,
+                'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
+            }
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                input_path = os.path.join(temp_dir, 'downloaded_audio.mp3')
+                
+                if not os.path.exists(input_path):
+                    # Try to find the downloaded file with different extensions
+                    for ext in ['.mp3', '.m4a', '.wav', '.opus', '.webm']:
+                        possible_path = os.path.join(temp_dir, f'downloaded_audio{ext}')
+                        if os.path.exists(possible_path):
+                            input_path = possible_path
+                            break
+                
+                if not os.path.exists(input_path):
+                    return jsonify({'error': 'فشل تحميل الملف من الرابط'}), 400
+                    
+            logging.info(f"Music removal: Downloaded audio to: {input_path}")
+        else:
+            return jsonify({'error': 'يرجى رفع ملف أو إدخال رابط'}), 400
+        
+        # Convert video to audio if needed (for video files)
+        file_ext = os.path.splitext(input_path)[1].lower()
+        video_extensions = ['.mp4', '.avi', '.mkv', '.mov', '.webm', '.flv', '.wmv', '.m4v']
+        
+        if file_ext in video_extensions:
+            logging.info(f"Music removal: Extracting audio from video file")
+            audio_path = os.path.join(temp_dir, 'extracted_audio.wav')
+            
+            ffmpeg_cmd = [
+                'ffmpeg', '-y', '-i', input_path,
+                '-vn', '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2',
+                audio_path
+            ]
+            
+            result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                logging.error(f"FFmpeg error: {result.stderr}")
+                return jsonify({'error': 'فشل استخراج الصوت من الفيديو'}), 500
+            
+            input_path = audio_path
+        
+        # Ensure input is WAV format for Spleeter
+        if not input_path.endswith('.wav'):
+            wav_path = os.path.join(temp_dir, 'input_audio.wav')
+            ffmpeg_cmd = [
+                'ffmpeg', '-y', '-i', input_path,
+                '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2',
+                wav_path
+            ]
+            
+            result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                logging.error(f"FFmpeg conversion error: {result.stderr}")
+                return jsonify({'error': 'فشل تحويل الملف الصوتي'}), 500
+            
+            input_path = wav_path
+        
+        # Run Spleeter to separate vocals from accompaniment
+        spleeter_output = os.path.join(temp_dir, 'spleeter_output')
+        os.makedirs(spleeter_output, exist_ok=True)
+        
+        logging.info(f"Music removal: Running Spleeter on: {input_path}")
+        
+        # Use spleeter command line (2stems model separates vocals and accompaniment)
+        spleeter_cmd = [
+            'spleeter', 'separate',
+            '-p', 'spleeter:2stems',
+            '-o', spleeter_output,
+            input_path
+        ]
+        
+        result = subprocess.run(spleeter_cmd, capture_output=True, text=True, timeout=600)
+        
+        if result.returncode != 0:
+            logging.error(f"Spleeter error: {result.stderr}")
+            # Try alternative approach with Python module
+            try:
+                from spleeter.separator import Separator
+                separator = Separator('spleeter:2stems')
+                separator.separate_to_file(input_path, spleeter_output)
+            except Exception as e:
+                logging.error(f"Spleeter Python error: {e}")
+                return jsonify({'error': 'فشل فصل الصوت عن الموسيقى. تأكد من تثبيت Spleeter'}), 500
+        
+        # Find the vocals file
+        input_basename = os.path.splitext(os.path.basename(input_path))[0]
+        vocals_path = os.path.join(spleeter_output, input_basename, 'vocals.wav')
+        
+        if not os.path.exists(vocals_path):
+            # Try to find vocals file in any subdirectory
+            for root, dirs, files in os.walk(spleeter_output):
+                for file in files:
+                    if 'vocal' in file.lower():
+                        vocals_path = os.path.join(root, file)
+                        break
+        
+        if not os.path.exists(vocals_path):
+            logging.error(f"Vocals file not found in: {spleeter_output}")
+            return jsonify({'error': 'لم يتم العثور على ملف الصوت المفصول'}), 500
+        
+        # Convert vocals to MP3 for download
+        output_path = os.path.join(temp_dir, 'vocals_only.mp3')
+        ffmpeg_cmd = [
+            'ffmpeg', '-y', '-i', vocals_path,
+            '-acodec', 'libmp3lame', '-b:a', '192k',
+            output_path
+        ]
+        
+        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            logging.error(f"FFmpeg MP3 conversion error: {result.stderr}")
+            # If MP3 conversion fails, try to return WAV directly
+            output_path = vocals_path
+        
+        if not os.path.exists(output_path):
+            return jsonify({'error': 'فشل إنشاء ملف الصوت النهائي'}), 500
+        
+        logging.info(f"Music removal: Successfully created vocals-only file: {output_path}")
+        
+        # Schedule cleanup after sending file
+        @after_this_request
+        def cleanup(response):
+            try:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            except Exception as e:
+                logging.error(f"Cleanup error: {e}")
+            return response
+        
+        return send_file(
+            output_path,
+            mimetype='audio/mpeg',
+            as_attachment=True,
+            download_name='vocals_only.mp3'
+        )
+        
+    except subprocess.TimeoutExpired:
+        logging.error("Spleeter process timed out")
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        return jsonify({'error': 'انتهت مهلة المعالجة. الملف كبير جداً'}), 500
+        
+    except Exception as e:
+        logging.error(f"Music removal error: {str(e)}")
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

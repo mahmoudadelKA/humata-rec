@@ -1532,6 +1532,18 @@
                         <span class="text-xs text-slate-500">AI Document Formatter</span>
                     </div>
                 </button>
+
+                <button onclick="showTool('musicremover', event)" id="nav-musicremover"
+                    class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-music text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-semibold block text-slate-200">إزالة الموسيقى من الصوت</span>
+                        <span class="text-xs text-slate-500">Music Removal AI</span>
+                    </div>
+                </button>
             </div>
 
             <!-- Bottom Controls -->
@@ -2693,6 +2705,160 @@
                     <div id="docx-success" class="hidden mt-6 p-4 rounded-xl bg-green-900/30 border border-green-500/30 text-green-600">
                         <i class="fas fa-check-circle ml-2"></i>
                         <span>تم تنسيق الملف بنجاح وجارٍ التحميل...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Music Remover Tool -->
+            <div id="tool-musicremover" class="tool-content hidden">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
+                            <i class="fas fa-music ml-3 text-green-400"></i>
+                            إزالة الموسيقى من الصوت
+                        </h2>
+                        <p class="text-slate-400">استخدم الذكاء الاصطناعي لفصل الصوت عن الموسيقى</p>
+                    </div>
+
+                    <div class="mb-6 p-4 rounded-xl bg-gradient-to-r from-green-900/20 to-teal-900/20 border border-green-500/30">
+                        <h3 class="font-bold text-slate-200 mb-2">
+                            <i class="fas fa-info-circle ml-2 text-green-500"></i>
+                            كيف تعمل الأداة:
+                        </h3>
+                        <ul class="text-slate-300 text-sm space-y-1 mr-6">
+                            <li><i class="fas fa-upload text-green-500 ml-2"></i>ارفع ملف صوتي أو فيديو يحتوي على موسيقى</li>
+                            <li><i class="fas fa-link text-blue-500 ml-2"></i>أو الصق رابط يوتيوب أو أي موقع آخر</li>
+                            <li><i class="fas fa-robot text-purple-500 ml-2"></i>الذكاء الاصطناعي يفصل الصوت عن الموسيقى</li>
+                            <li><i class="fas fa-download text-teal-500 ml-2"></i>حمّل الملف بدون موسيقى</li>
+                        </ul>
+                    </div>
+
+                    <!-- Tabs for different input methods -->
+                    <div class="flex justify-center gap-2 mb-6">
+                        <button onclick="switchMusicTab('file')" id="music-tab-file" 
+                            class="tab-btn active px-6 py-3 rounded-xl font-semibold transition-all">
+                            <i class="fas fa-file-audio ml-2"></i>
+                            رفع ملف
+                        </button>
+                        <button onclick="switchMusicTab('url')" id="music-tab-url" 
+                            class="tab-btn px-6 py-3 rounded-xl font-semibold transition-all">
+                            <i class="fas fa-link ml-2"></i>
+                            رابط URL
+                        </button>
+                    </div>
+
+                    <!-- File Upload Section -->
+                    <div id="music-file-section">
+                        <div class="file-upload rounded-xl p-8 text-center cursor-pointer mb-6"
+                            onclick="document.getElementById('music_file').click()">
+                            <input type="file" id="music_file" accept="audio/*,video/*" class="hidden"
+                                onchange="handleMusicFileUpload(event)">
+                            <div id="music-upload-icon">
+                                <i class="fas fa-cloud-upload-alt text-5xl text-green-300 mb-3"></i>
+                                <p class="text-slate-300 font-medium">اسحب الملف هنا أو اضغط للاختيار</p>
+                                <p class="text-slate-500 text-sm mt-1">يدعم ملفات الصوت (MP3, WAV, M4A...) والفيديو (MP4, AVI, MKV...)</p>
+                            </div>
+                            <div id="music-file-info" class="hidden">
+                                <i class="fas fa-file-audio text-5xl text-green-500 mb-3"></i>
+                                <p id="music-file-name" class="text-slate-200 font-medium"></p>
+                                <p class="text-slate-500 text-sm mt-1">اضغط لاختيار ملف آخر</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URL Input Section -->
+                    <div id="music-url-section" class="hidden">
+                        <div class="mb-6">
+                            <label class="block text-slate-200 font-medium mb-2">
+                                <i class="fas fa-link ml-2 text-blue-500"></i>
+                                رابط الفيديو أو الصوت:
+                            </label>
+                            <input type="text" id="music_url" 
+                                class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-green-400 focus:outline-none transition-all"
+                                placeholder="https://www.youtube.com/watch?v=... أو أي رابط آخر">
+                        </div>
+                        <div class="flex flex-wrap gap-2 justify-center mb-4">
+                            <span class="px-3 py-1 rounded-full bg-red-900/30 text-red-400 border border-red-500/30">
+                                <i class="fab fa-youtube ml-1"></i>
+                                YouTube
+                            </span>
+                            <span class="px-3 py-1 rounded-full bg-black/30 text-white border border-gray-500/30">
+                                <i class="fab fa-tiktok ml-1"></i>
+                                TikTok
+                            </span>
+                            <span class="px-3 py-1 rounded-full bg-blue-900/30 text-cyan-400 border border-cyan-500/30">
+                                <i class="fab fa-facebook ml-1"></i>
+                                Facebook
+                            </span>
+                            <span class="px-3 py-1 rounded-full bg-slate-800/50 text-slate-300 border border-slate-600/30">
+                                <i class="fas fa-ellipsis-h ml-1"></i>
+                                والمزيد
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Section -->
+                    <div id="music-progress-box" class="hidden mb-6">
+                        <div class="bg-slate-800/50 rounded-2xl p-6 shadow-lg border border-green-500/30">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-slate-200 font-bold">
+                                    <i class="fas fa-cog fa-spin ml-2 text-green-500"></i>
+                                    جارٍ المعالجة
+                                </span>
+                                <span id="music-total-percent" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-teal-500 bg-clip-text text-transparent">0%</span>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-slate-300">
+                                            <i class="fas fa-cloud-upload-alt ml-1 text-green-400"></i>
+                                            <span id="music-step-text">رفع الملف</span>
+                                        </span>
+                                        <span id="music-step-percent" class="text-green-600 font-semibold">0%</span>
+                                    </div>
+                                    <div class="h-3 bg-slate-700/50 rounded-full overflow-hidden">
+                                        <div id="music-progress-bar" class="h-full bg-gradient-to-r from-green-400 to-teal-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <p id="music-status-text" class="text-center text-slate-400 text-sm mt-4">جارٍ رفع الملف...</p>
+                        </div>
+                    </div>
+
+                    <!-- Process Button -->
+                    <button onclick="processMusicRemoval()" id="music-process-btn"
+                        class="w-full btn-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        إزالة الموسيقى
+                    </button>
+
+                    <!-- Error Message -->
+                    <div id="music-error" class="hidden mt-6 p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-400">
+                        <i class="fas fa-exclamation-circle ml-2"></i>
+                        <span id="music-error-text"></span>
+                    </div>
+
+                    <!-- Success/Download Section -->
+                    <div id="music-success" class="hidden mt-6 p-6 rounded-xl bg-green-900/30 border border-green-500/30">
+                        <div class="text-center">
+                            <i class="fas fa-check-circle text-4xl text-green-500 mb-3"></i>
+                            <p class="text-green-400 font-bold text-lg mb-4">تمت إزالة الموسيقى بنجاح!</p>
+                            <a id="music-download-link" href="#" download
+                                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-teal-700 transition-all">
+                                <i class="fas fa-download"></i>
+                                تحميل الملف
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Info Note -->
+                    <div class="mt-6 p-4 rounded-xl bg-amber-900/20 border border-amber-500/20">
+                        <p class="text-slate-300 text-sm text-center">
+                            <i class="fas fa-lightbulb ml-2 text-amber-400"></i>
+                            هذه الأداة تستخدم تقنية Spleeter من Deezer لفصل الأصوات بدقة عالية
+                        </p>
                     </div>
                 </div>
             </div>
@@ -5132,6 +5298,164 @@
                 progressBox.classList.add('hidden');
                 showToast(error.message, 'error');
                 submitBtn.disabled = false;
+            }
+        }
+
+        // =====================================================
+        // Music Remover Tool Functions
+        // =====================================================
+        
+        let uploadedMusicFile = null;
+        let currentMusicTab = 'file';
+        
+        function switchMusicTab(tab) {
+            currentMusicTab = tab;
+            
+            document.getElementById('music-tab-file').classList.remove('active');
+            document.getElementById('music-tab-url').classList.remove('active');
+            document.getElementById('music-tab-' + tab).classList.add('active');
+            
+            document.getElementById('music-file-section').classList.add('hidden');
+            document.getElementById('music-url-section').classList.add('hidden');
+            document.getElementById('music-' + tab + '-section').classList.remove('hidden');
+            
+            document.getElementById('music-error').classList.add('hidden');
+            document.getElementById('music-success').classList.add('hidden');
+        }
+        
+        function handleMusicFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadedMusicFile = file;
+                document.getElementById('music-upload-icon').classList.add('hidden');
+                document.getElementById('music-file-info').classList.remove('hidden');
+                document.getElementById('music-file-name').textContent = file.name;
+                document.getElementById('music-error').classList.add('hidden');
+                document.getElementById('music-success').classList.add('hidden');
+            }
+        }
+        
+        function updateMusicProgress(percent, stepText, statusText) {
+            const progressBar = document.getElementById('music-progress-bar');
+            const stepPercentEl = document.getElementById('music-step-percent');
+            const totalPercentEl = document.getElementById('music-total-percent');
+            const stepTextEl = document.getElementById('music-step-text');
+            const statusTextEl = document.getElementById('music-status-text');
+            
+            if (progressBar) progressBar.style.width = percent + '%';
+            if (stepPercentEl) stepPercentEl.textContent = percent + '%';
+            if (totalPercentEl) totalPercentEl.textContent = percent + '%';
+            if (stepTextEl) stepTextEl.textContent = stepText;
+            if (statusTextEl) statusTextEl.textContent = statusText;
+        }
+        
+        async function processMusicRemoval() {
+            const processBtn = document.getElementById('music-process-btn');
+            const progressBox = document.getElementById('music-progress-box');
+            const errorDiv = document.getElementById('music-error');
+            const successDiv = document.getElementById('music-success');
+            
+            errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+            
+            const formData = new FormData();
+            
+            if (currentMusicTab === 'file') {
+                if (!uploadedMusicFile) {
+                    showToast('الرجاء اختيار ملف أولاً', 'error');
+                    return;
+                }
+                formData.append('file', uploadedMusicFile);
+            } else {
+                const url = document.getElementById('music_url').value.trim();
+                if (!url) {
+                    showToast('الرجاء إدخال رابط صحيح', 'error');
+                    return;
+                }
+                formData.append('url', url);
+            }
+            
+            processBtn.disabled = true;
+            progressBox.classList.remove('hidden');
+            updateMusicProgress(0, 'رفع الملف', 'جارٍ رفع الملف...');
+            
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 30);
+                        updateMusicProgress(percent, 'رفع الملف', 'جارٍ رفع الملف...');
+                    }
+                };
+                
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        updateMusicProgress(100, 'اكتمل', 'تمت إزالة الموسيقى بنجاح!');
+                        
+                        const blob = new Blob([xhr.response], { type: 'audio/mpeg' });
+                        const url = window.URL.createObjectURL(blob);
+                        
+                        const downloadLink = document.getElementById('music-download-link');
+                        downloadLink.href = url;
+                        downloadLink.download = 'vocals_only.mp3';
+                        
+                        successDiv.classList.remove('hidden');
+                        showToast('تمت إزالة الموسيقى بنجاح!');
+                        
+                        setTimeout(() => {
+                            progressBox.classList.add('hidden');
+                        }, 1000);
+                    } else {
+                        let errorMsg = 'حدث خطأ أثناء معالجة الملف';
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            errorMsg = response.error || errorMsg;
+                        } catch (e) {}
+                        throw new Error(errorMsg);
+                    }
+                };
+                
+                xhr.onerror = () => {
+                    throw new Error('فشل الاتصال بالخادم');
+                };
+                
+                xhr.open('POST', '/remove-music');
+                xhr.responseType = 'arraybuffer';
+                xhr.send(formData);
+                
+                let processProgress = 30;
+                const progressInterval = setInterval(() => {
+                    if (processProgress < 95) {
+                        processProgress += Math.random() * 5;
+                        if (processProgress > 95) processProgress = 95;
+                        
+                        let stepText = 'معالجة الصوت';
+                        let statusMsg = 'جارٍ تحليل الملف...';
+                        if (processProgress > 40) {
+                            stepText = 'فصل الأصوات';
+                            statusMsg = 'جارٍ فصل الصوت عن الموسيقى...';
+                        }
+                        if (processProgress > 70) {
+                            stepText = 'إنشاء الملف';
+                            statusMsg = 'جارٍ إنشاء الملف النهائي...';
+                        }
+                        
+                        updateMusicProgress(Math.round(processProgress), stepText, statusMsg);
+                    }
+                }, 1000);
+                
+                xhr.onloadend = () => {
+                    clearInterval(progressInterval);
+                    processBtn.disabled = false;
+                };
+                
+            } catch (error) {
+                document.getElementById('music-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+                progressBox.classList.add('hidden');
+                showToast(error.message, 'error');
+                processBtn.disabled = false;
             }
         }
 
