@@ -215,10 +215,19 @@ The application supports up to 12 Gemini API keys with intelligent load balancin
 
 ## Setup Instructions for New Imports
 When importing this project to a new Replit account:
-1. Go to the "Secrets" tab in Replit
-2. Add `GEMINI_API_KEY` with your Google Gemini API key (get one free from https://makersuite.google.com/app/apikey)
-3. Optionally add `SESSION_SECRET` with any random string for session security
-4. The server will automatically restart and detect your keys
+1. The project is pre-configured to run on Replit with all dependencies installed
+2. Go to the "Secrets" tab in Replit
+3. Add `GEMINI_API_KEY` with your Google Gemini API key (get one free from https://aistudio.google.com/app/apikey)
+4. Optionally add `GEMINI_KEY_1` through `GEMINI_KEY_11` for load balancing
+5. Optionally add `SESSION_SECRET` with any random string for session security
+6. Optionally add `COOKIE_CONTENT` if you need YouTube cookie authentication for private videos
+7. The server will automatically restart and detect your keys
+
+## Replit Environment
+- **System Dependencies**: FFmpeg and Tesseract OCR are pre-installed
+- **Python Version**: 3.11
+- **Workflow**: Automatically starts on port 5000 with gunicorn
+- **Deployment**: Configured for Replit autoscale deployment
 
 ## Server Configuration
 - Timeout: 7200 seconds (2 hours) to support long video transcription
