@@ -380,15 +380,15 @@
                 overscroll-behavior: contain;
                 padding-top: 2rem;
                 padding-bottom: 2rem;
-                visibility: hidden;
+                pointer-events: none;
             }
 
             .sidebar-nav.open {
                 right: 0;
-                visibility: visible;
+                pointer-events: auto;
             }
 
-            .sidebar-nav * {
+            .sidebar-nav.open * {
                 pointer-events: auto;
             }
 
@@ -416,11 +416,13 @@
                 opacity: 0;
                 visibility: hidden;
                 transition: all 0.3s ease;
+                pointer-events: none;
             }
 
             .sidebar-overlay.open {
                 opacity: 1;
                 visibility: visible;
+                pointer-events: auto;
             }
 
             .main-content {
@@ -2755,13 +2757,13 @@
             overlay.classList.toggle('open');
             menuBtn.classList.toggle('active');
 
-            // Lock/unlock body scroll
-            if (isOpening) {
-                document.body.style.overflow = 'hidden';
-                document.body.style.touchAction = 'none';
-            } else {
-                document.body.style.overflow = '';
-                document.body.style.touchAction = '';
+            // Lock/unlock body scroll on mobile only
+            if (window.innerWidth < 1024) {
+                if (isOpening) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = '';
+                }
             }
 
             // Update icon
@@ -2786,12 +2788,19 @@
 
             // Unlock body scroll
             document.body.style.overflow = '';
-            document.body.style.touchAction = '';
 
             const icon = menuBtn.querySelector('i');
             icon.classList.remove('fa-times');
             icon.classList.add('fa-bars');
         }
+
+        // Handle resize events to close mobile menu when switching to desktop
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth >= 1024 && sidebar && sidebar.classList.contains('open')) {
+                closeMobileMenu();
+            }
+        });
 
         function showTool(tool) {
             document.querySelectorAll('.tool-content').forEach(el => el.classList.add('hidden'));
