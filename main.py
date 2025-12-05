@@ -3431,19 +3431,24 @@ def get_audio():
 
 
 # =============================================================================
-# Music Removal using Replicate Demucs API
-# UPDATED: Uses Replicate's cloud-based Demucs model for reliable audio separation
-# No heavy local dependencies required - processes via API
+# Music Removal using Local FFmpeg Processing (FREE - No API Required)
+# Uses FFmpeg audio filters to isolate vocals from music
+# Fast, free, and works offline - no paid API needed
 # =============================================================================
 @app.route('/remove-music', methods=['POST'])
 def remove_music():
     """
-    Remove music from audio/video files using Replicate's Demucs model.
+    Remove music from audio/video files using local FFmpeg processing.
     Accepts either a file upload or a URL (YouTube, etc.)
     Returns the vocals-only audio file (music removed)
+    
+    This uses FREE local processing with FFmpeg filters:
+    - Center channel extraction (vocals are usually centered in stereo)
+    - Frequency filtering (removes typical instrumental frequencies)
+    - Dynamic normalization for clarity
     """
     import shutil
-    from services.replicate_audio import separate_vocals_with_replicate
+    from services.local_audio_separation import separate_vocals_enhanced
     
     temp_dir = tempfile.mkdtemp()
     input_path = None
@@ -3493,31 +3498,21 @@ def remove_music():
             
             input_path = audio_path
         
-        logging.info(f"Music removal: Sending to Replicate Demucs API...")
+        logging.info(f"Music removal: Starting local FFmpeg vocal isolation...")
         
         try:
-            vocals_path = separate_vocals_with_replicate(input_path, max_wait_seconds=300)
-            logging.info(f"Music removal: Received vocals file: {vocals_path}")
-        except ValueError as ve:
-            return jsonify({'error': str(ve)}), 400
-        except Exception as api_error:
-            logging.error(f"Replicate API error: {api_error}")
+            vocals_path = separate_vocals_enhanced(input_path)
+            logging.info(f"Music removal: Vocal isolation complete: {vocals_path}")
+        except FileNotFoundError as fnf:
+            return jsonify({'error': str(fnf)}), 400
+        except Exception as process_error:
+            logging.error(f"Local processing error: {process_error}")
             return jsonify({
                 'error': 'فشل فصل الصوت عن الموسيقى',
-                'details': str(api_error)
+                'details': str(process_error)
             }), 500
         
-        output_path = os.path.join(temp_dir, 'vocals_only.mp3')
-        ffmpeg_cmd = [
-            'ffmpeg', '-y', '-i', vocals_path,
-            '-acodec', 'libmp3lame', '-b:a', '192k',
-            output_path
-        ]
-        
-        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
-        if result.returncode != 0:
-            logging.warning(f"FFmpeg MP3 conversion warning: {result.stderr}")
-            output_path = vocals_path
+        output_path = vocals_path
         
         if not os.path.exists(output_path):
             return jsonify({'error': 'فشل إنشاء ملف الصوت النهائي'}), 500
@@ -3528,8 +3523,6 @@ def remove_music():
         def cleanup(response):
             try:
                 shutil.rmtree(temp_dir, ignore_errors=True)
-                if vocals_path and os.path.exists(vocals_path) and vocals_path != output_path:
-                    os.remove(vocals_path)
             except Exception as e:
                 logging.error(f"Cleanup error: {e}")
             return response
