@@ -374,16 +374,12 @@
                 overscroll-behavior: contain;
                 padding-top: 2rem;
                 padding-bottom: 2rem;
-                pointer-events: none;
+                visibility: hidden;
             }
 
             .sidebar-nav.open {
                 right: 0;
-                pointer-events: auto;
-            }
-
-            .sidebar-nav.open * {
-                pointer-events: auto;
+                visibility: visible;
             }
 
             .sidebar-nav .nav-item {
@@ -391,7 +387,14 @@
                 z-index: 10000;
                 cursor: pointer;
                 touch-action: manipulation;
-                -webkit-tap-highlight-color: transparent;
+                -webkit-tap-highlight-color: rgba(99, 102, 241, 0.3);
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            .sidebar-nav .nav-item:active {
+                transform: scale(0.98);
+                background: rgba(99, 102, 241, 0.25) !important;
             }
 
             .sidebar-nav .space-y-3 {
@@ -410,13 +413,11 @@
                 opacity: 0;
                 visibility: hidden;
                 transition: all 0.3s ease;
-                pointer-events: none;
             }
 
             .sidebar-overlay.open {
                 opacity: 1;
                 visibility: visible;
-                pointer-events: auto;
             }
 
             .main-content {
@@ -611,18 +612,9 @@
             width: 100%;
             text-align: center;
             padding: 1.5rem;
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4));
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(99, 102, 241, 0.3);
+            background: transparent;
+            border: none;
             border-radius: 24px;
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.4),
-                0 0 60px rgba(99, 102, 241, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-            transform-style: preserve-3d;
-            perspective: 1000px;
             animation: logoSectionFloat 8s ease-in-out infinite;
         }
 
@@ -632,15 +624,7 @@
         }
 
         .auth-logo-section::before {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            background: linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(138, 43, 226, 0.3), rgba(99, 102, 241, 0.3));
-            border-radius: 26px;
-            z-index: -1;
-            filter: blur(15px);
-            opacity: 0.5;
-            animation: glowPulse 4s ease-in-out infinite alternate;
+            display: none;
         }
 
         @keyframes glowPulse {
@@ -648,43 +632,18 @@
             100% { opacity: 0.7; }
         }
 
-        /* Section 2: Auth Forms with Neon Floating Effect */
+        /* Section 2: Auth Forms / Enter Button Section */
         .auth-forms-section {
             position: relative;
             width: 100%;
-            padding: 1.5rem;
-            background: rgba(10, 15, 30, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            padding: 1rem;
+            background: transparent;
+            border: none;
             border-radius: 24px;
-            box-shadow: 
-                0 0 30px rgba(99, 102, 241, 0.2),
-                0 0 60px rgba(138, 43, 226, 0.1),
-                0 25px 50px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            border: 1px solid transparent;
-            background-clip: padding-box;
-            animation: neonFloat 6s ease-in-out infinite;
         }
 
         .auth-forms-section::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 24px;
-            padding: 2px;
-            background: linear-gradient(135deg, 
-                rgba(0, 191, 255, 0.5), 
-                rgba(138, 43, 226, 0.5), 
-                rgba(99, 102, 241, 0.5),
-                rgba(0, 191, 255, 0.5));
-            background-size: 300% 300%;
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            animation: neonBorder 4s linear infinite;
-            z-index: -1;
+            display: none;
         }
 
         @keyframes neonBorder {
@@ -694,20 +653,8 @@
         }
 
         @keyframes neonFloat {
-            0%, 100% { 
-                transform: translateY(0);
-                box-shadow: 
-                    0 0 30px rgba(99, 102, 241, 0.2),
-                    0 0 60px rgba(138, 43, 226, 0.1),
-                    0 25px 50px rgba(0, 0, 0, 0.4);
-            }
-            50% { 
-                transform: translateY(-8px);
-                box-shadow: 
-                    0 0 40px rgba(99, 102, 241, 0.3),
-                    0 0 80px rgba(138, 43, 226, 0.2),
-                    0 35px 60px rgba(0, 0, 0, 0.5);
-            }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
         }
 
         /* Section 3: Tools Preview with Glass Effect */
@@ -715,28 +662,14 @@
             position: relative;
             width: 100%;
             padding: 1.25rem;
-            background: rgba(15, 23, 42, 0.5);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(99, 102, 241, 0.2);
+            background: transparent;
+            border: none;
             border-radius: 20px;
-            box-shadow: 
-                0 15px 35px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                inset 0 0 20px rgba(99, 102, 241, 0.05);
             animation: toolsFloat 7s ease-in-out infinite;
         }
 
         .auth-tools-section::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 20px;
-            background: linear-gradient(135deg, 
-                rgba(255, 255, 255, 0.05) 0%, 
-                transparent 50%, 
-                rgba(99, 102, 241, 0.05) 100%);
-            pointer-events: none;
+            display: none;
         }
 
         @keyframes toolsFloat {
@@ -1062,68 +995,18 @@
                 <p class="text-slate-400 text-xs md:text-sm">منصة الأدوات الذكية للمحتوى العربي</p>
             </div>
 
-            <!-- Section 2: Auth Forms with Neon Floating Effect -->
-            <div class="auth-forms-section">
-                <!-- Auth Tabs -->
-                <div class="flex justify-center mb-5 border-b border-slate-700/50">
-                    <button id="login-tab" class="auth-tab active" onclick="showAuthTab('login')">
-                        تسجيل الدخول
-                    </button>
-                    <button id="register-tab" class="auth-tab" onclick="showAuthTab('register')">
-                        حساب جديد
-                    </button>
-                </div>
-
-                <!-- Error/Success Messages -->
-                <div id="auth-error" class="auth-error"></div>
-                <div id="auth-success" class="auth-success"></div>
-
-                <!-- Login Form -->
-                <form id="login-form" onsubmit="handleLogin(event)">
-                    <div class="space-y-3">
-                        <div>
-                            <input type="email" id="login-email" class="auth-input" placeholder="البريد الإلكتروني" required dir="ltr" autocomplete="email">
-                        </div>
-                        <div>
-                            <input type="password" id="login-password" class="auth-input" placeholder="كلمة المرور" required dir="ltr" autocomplete="current-password">
-                        </div>
-                        <button type="submit" id="login-btn" class="auth-btn">
-                            <span id="login-btn-text">دخول</span>
-                            <span id="login-btn-loading" class="hidden">
-                                <i class="fas fa-spinner fa-spin ml-2"></i> جاري التحميل...
-                            </span>
-                        </button>
-                    </div>
-                </form>
-
-                <!-- Register Form -->
-                <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
-                    <div class="space-y-3">
-                        <div>
-                            <input type="text" id="register-name" class="auth-input" placeholder="الاسم الكامل" required autocomplete="name">
-                        </div>
-                        <div>
-                            <input type="email" id="register-email" class="auth-input" placeholder="البريد الإلكتروني" required dir="ltr" autocomplete="email">
-                        </div>
-                        <div>
-                            <input type="password" id="register-password" class="auth-input" placeholder="كلمة المرور (6 أحرف على الأقل)" required minlength="6" dir="ltr" autocomplete="new-password">
-                        </div>
-                        <div>
-                            <input type="password" id="register-confirm" class="auth-input" placeholder="تأكيد كلمة المرور" required dir="ltr" autocomplete="new-password">
-                        </div>
-                        <button type="submit" id="register-btn" class="auth-btn">
-                            <span id="register-btn-text">إنشاء حساب</span>
-                            <span id="register-btn-loading" class="hidden">
-                                <i class="fas fa-spinner fa-spin ml-2"></i> جاري التحميل...
-                            </span>
-                        </button>
-                    </div>
-                </form>
+            <!-- Section 2: Enter AI World Button -->
+            <div class="auth-forms-section" style="background: transparent; border: none; box-shadow: none;">
+                <button onclick="enterAIWorld()" class="auth-btn w-full text-lg py-4 flex items-center justify-center gap-3">
+                    <i class="fas fa-rocket"></i>
+                    <span>الدخول إلى عالم الـ AI</span>
+                    <i class="fas fa-arrow-left"></i>
+                </button>
             </div>
 
             <!-- Section 3: Tools Preview with Glass Effect -->
             <div class="auth-tools-section">
-                <p class="text-center text-slate-400 text-xs mb-3">الأدوات المتاحة بعد التسجيل:</p>
+                <p class="text-center text-slate-400 text-xs mb-3">الأدوات المتاحة:</p>
                 <div class="grid grid-cols-2 gap-2">
                     <div class="tool-item">
                         <i class="fas fa-microphone text-red-400"></i>
@@ -1190,27 +1073,12 @@
                 </div>
             </div>
 
-            <!-- User Menu -->
-            <div id="user-menu" class="user-menu mb-6">
-                <button class="user-menu-btn w-full justify-center" onclick="toggleUserDropdown()">
-                    <i class="fas fa-user-circle"></i>
-                    <span id="user-display-name">المستخدم</span>
-                    <i class="fas fa-chevron-down text-xs"></i>
-                </button>
-                <div id="user-dropdown" class="user-dropdown">
-                    <div class="user-dropdown-item">
-                        <i class="fas fa-envelope text-slate-400"></i>
-                        <span id="user-display-email" class="text-sm text-slate-400 truncate"></span>
-                    </div>
-                    <div class="user-dropdown-item logout" onclick="handleLogout()">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>تسجيل الخروج</span>
-                    </div>
-                </div>
+            <!-- User Menu - Hidden since no auth -->
+            <div id="user-menu" class="user-menu mb-6 hidden">
             </div>
 
             <div class="space-y-3">
-                <button onclick="showTool('speech')" id="nav-speech"
+                <button onclick="showTool('speech', event)" id="nav-speech"
                     class="nav-item active w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center shadow-lg">
@@ -1222,7 +1090,7 @@
                     </div>
                 </button>
 
-                <button onclick="showTool('youtube')" id="nav-youtube"
+                <button onclick="showTool('youtube', event)" id="nav-youtube"
                     class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
@@ -1234,7 +1102,7 @@
                     </div>
                 </button>
 
-                <button onclick="showTool('anime')" id="nav-anime"
+                <button onclick="showTool('anime', event)" id="nav-anime"
                     class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg">
@@ -1246,7 +1114,7 @@
                     </div>
                 </button>
 
-                <button onclick="showTool('podcast')" id="nav-podcast"
+                <button onclick="showTool('podcast', event)" id="nav-podcast"
                     class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
@@ -1258,7 +1126,7 @@
                     </div>
                 </button>
 
-                <button onclick="showTool('file')" id="nav-file"
+                <button onclick="showTool('file', event)" id="nav-file"
                     class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center shadow-lg">
@@ -1270,7 +1138,7 @@
                     </div>
                 </button>
 
-                <button onclick="showTool('ocr')" id="nav-ocr"
+                <button onclick="showTool('ocr', event)" id="nav-ocr"
                     class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
@@ -1282,7 +1150,7 @@
                     </div>
                 </button>
 
-                <button onclick="showTool('downloader')" id="nav-downloader"
+                <button onclick="showTool('downloader', event)" id="nav-downloader"
                     class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-lg">
@@ -1294,7 +1162,7 @@
                     </div>
                 </button>
 
-                <button onclick="showTool('pdfconverter')" id="nav-pdfconverter"
+                <button onclick="showTool('pdfconverter', event)" id="nav-pdfconverter"
                     class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-lg">
@@ -1306,7 +1174,7 @@
                     </div>
                 </button>
 
-                <button onclick="showTool('videototext')" id="nav-videototext"
+                <button onclick="showTool('videototext', event)" id="nav-videototext"
                     class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg">
@@ -1318,7 +1186,7 @@
                     </div>
                 </button>
 
-                <button onclick="showTool('docxformatter')" id="nav-docxformatter"
+                <button onclick="showTool('docxformatter', event)" id="nav-docxformatter"
                     class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
@@ -2754,8 +2622,12 @@
             if (window.innerWidth < 1024) {
                 if (isOpening) {
                     document.body.style.overflow = 'hidden';
+                    document.body.style.position = 'fixed';
+                    document.body.style.width = '100%';
                 } else {
                     document.body.style.overflow = '';
+                    document.body.style.position = '';
+                    document.body.style.width = '';
                 }
             }
 
@@ -2781,6 +2653,8 @@
 
             // Unlock body scroll
             document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
 
             const icon = menuBtn.querySelector('i');
             icon.classList.remove('fa-times');
@@ -2795,7 +2669,13 @@
             }
         });
 
-        function showTool(tool) {
+        function showTool(tool, event) {
+            // Prevent any default behavior and stop propagation
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
             document.querySelectorAll('.tool-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
@@ -2804,9 +2684,25 @@
 
             // Close mobile menu when tool is selected on mobile
             if (window.innerWidth < 1024) {
-                closeMobileMenu();
+                setTimeout(() => {
+                    closeMobileMenu();
+                }, 50);
             }
         }
+        
+        // Add touch event support for mobile nav items
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(function(item) {
+                // Handle touch events
+                item.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Trigger the click
+                    this.click();
+                }, { passive: false });
+            });
+        });
 
         function setAnimeMode(mode) {
             const imageTab = document.getElementById('anime-tab-image');
@@ -4775,16 +4671,20 @@
             }
         }
         
-        // Show auth container
+        // Show auth container (welcome page)
         function showAuthContainer() {
             document.getElementById('auth-container').style.display = 'flex';
-            document.getElementById('user-menu').style.display = 'none';
         }
         
-        // Hide auth container
+        // Hide auth container (enter the app)
         function hideAuthContainer() {
             document.getElementById('auth-container').style.display = 'none';
-            document.getElementById('user-menu').style.display = 'block';
+        }
+        
+        // Enter AI World - main entry button
+        function enterAIWorld() {
+            hideAuthContainer();
+            showToast('مرحباً بك في عالم الـ AI! 🚀');
         }
         
         // Update user display
