@@ -2800,13 +2800,16 @@
             if (toolElement) toolElement.classList.remove('hidden');
             if (navElement) navElement.classList.add('active');
 
-            // Close mobile menu when tool is selected on mobile
+            // Keep sidebar open on desktop, close on mobile
             if (window.innerWidth < 1024 && mobileMenuOpen) {
                 // Small delay for visual feedback
                 setTimeout(() => {
                     closeMobileMenu();
                 }, 100);
             }
+            
+            // Store active tool in localStorage for persistence
+            localStorage.setItem('activeToolName', tool);
         }
         
         // Initialize mobile touch handling
@@ -2827,50 +2830,44 @@
             const closeBtn = document.getElementById('mobile-close-btn');
             
             if (menuBtn) {
-                // Remove onclick and add touch/click handlers
-                menuBtn.removeAttribute('onclick');
-                
+                // Keep onclick as fallback - add event listeners on top
                 menuBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     toggleMobileMenu();
-                });
+                }, true);
                 
                 menuBtn.addEventListener('touchend', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     toggleMobileMenu();
-                }, { passive: false });
+                }, { passive: false, capture: true });
             }
             
             if (overlay) {
-                overlay.removeAttribute('onclick');
-                
                 overlay.addEventListener('click', function(e) {
                     e.preventDefault();
                     closeMobileMenu();
-                });
+                }, true);
                 
                 overlay.addEventListener('touchend', function(e) {
                     e.preventDefault();
                     closeMobileMenu();
-                }, { passive: false });
+                }, { passive: false, capture: true });
             }
             
             if (closeBtn) {
-                closeBtn.removeAttribute('onclick');
-                
                 closeBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     closeMobileMenu();
-                });
+                }, true);
                 
                 closeBtn.addEventListener('touchend', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     closeMobileMenu();
-                }, { passive: false });
+                }, { passive: false, capture: true });
             }
         }
 
@@ -2878,12 +2875,8 @@
             const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
             
             navItems.forEach(function(item) {
-                // Remove any existing listeners by cloning
-                const newItem = item.cloneNode(true);
-                item.parentNode.replaceChild(newItem, item);
-                
-                // Add click handler
-                newItem.addEventListener('click', function(e) {
+                // Add click handler without cloning (keep event in HTML)
+                item.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     
@@ -2895,15 +2888,15 @@
                             showTool(match[1], e);
                         }
                     }
-                }, { passive: false });
+                }, true);
 
                 // Add touch handler for better mobile response
-                newItem.addEventListener('touchstart', function(e) {
+                item.addEventListener('touchstart', function(e) {
                     this.style.transform = 'scale(0.97)';
                     this.style.background = 'rgba(99, 102, 241, 0.3)';
                 }, { passive: true });
 
-                newItem.addEventListener('touchend', function(e) {
+                item.addEventListener('touchend', function(e) {
                     e.preventDefault();
                     
                     this.style.transform = '';
@@ -2917,9 +2910,9 @@
                             showTool(match[1], e);
                         }
                     }
-                }, { passive: false });
+                }, { passive: false, capture: true });
 
-                newItem.addEventListener('touchcancel', function() {
+                item.addEventListener('touchcancel', function() {
                     this.style.transform = '';
                     this.style.background = '';
                 }, { passive: true });
@@ -2928,11 +2921,11 @@
             // Setup overlay click
             const overlay = document.getElementById('sidebar-overlay');
             if (overlay) {
-                overlay.addEventListener('click', closeMobileMenu);
+                overlay.addEventListener('click', closeMobileMenu, true);
                 overlay.addEventListener('touchend', function(e) {
                     e.preventDefault();
                     closeMobileMenu();
-                }, { passive: false });
+                }, { passive: false, capture: true });
             }
 
             // Setup close button
@@ -2942,12 +2935,12 @@
                     e.preventDefault();
                     e.stopPropagation();
                     closeMobileMenu();
-                });
+                }, true);
                 closeBtn.addEventListener('touchend', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     closeMobileMenu();
-                }, { passive: false });
+                }, { passive: false, capture: true });
             }
 
             // Setup menu button
@@ -2957,7 +2950,7 @@
                     e.preventDefault();
                     e.stopPropagation();
                     toggleMobileMenu();
-                });
+                }, true);
             }
         }
 
