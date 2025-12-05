@@ -1,0 +1,3399 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> AI REC | HUMATA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
+
+        * {
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #e8f4fc, #fce4ec, #e3f2fd, #fff8e1);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-sidebar {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .soft-shadow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        @keyframes pulse-recording {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .recording {
+            animation: pulse-recording 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-continuous {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.7);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 20px rgba(251, 146, 60, 0);
+            }
+        }
+
+        .recording-continuous {
+            animation: pulse-continuous 1.5s ease-in-out infinite;
+            background: linear-gradient(135deg, rgba(251, 146, 60, 0.3), rgba(168, 85, 247, 0.3)) !important;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(236, 72, 153, 0.1);
+            transform: translateX(-5px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(167, 139, 250, 0.2));
+            border-color: rgba(236, 72, 153, 0.4);
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.2);
+        }
+
+        input[type="text"],
+        input[type="file"],
+        textarea {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(236, 72, 153, 0.2);
+            color: #374151;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: rgba(236, 72, 153, 0.5);
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.15);
+        }
+
+        input[type="text"]::placeholder,
+        textarea::placeholder {
+            color: #9ca3af;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #ec4899, #a78bfa);
+            border-radius: 4px;
+        }
+
+        .loader {
+            border: 3px solid rgba(236, 72, 153, 0.2);
+            border-top: 3px solid #ec4899;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ec4899, #a78bfa);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(236, 72, 153, 0.35);
+        }
+
+        .file-upload {
+            border: 2px dashed rgba(236, 72, 153, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            border-color: rgba(236, 72, 153, 0.7);
+            background: rgba(236, 72, 153, 0.05);
+        }
+
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #ec4899, #a78bfa);
+            color: white;
+        }
+
+        .anime-card {
+            transition: all 0.3s ease;
+        }
+
+        .anime-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .podcast-card {
+            transition: all 0.3s ease;
+        }
+
+        .podcast-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Mobile Menu Toggle Button */
+        .mobile-menu-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 100;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #ec4899, #a78bfa);
+            box-shadow: 0 4px 20px rgba(236, 72, 153, 0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(236, 72, 153, 0.5);
+        }
+
+        .mobile-menu-btn:active {
+            transform: scale(0.95);
+        }
+
+        .mobile-menu-btn i {
+            color: white;
+            font-size: 1.25rem;
+            transition: transform 0.3s ease;
+        }
+
+        .mobile-menu-btn.active i {
+            transform: rotate(90deg);
+        }
+
+        /* Mobile Sidebar Styles */
+        @media (max-width: 1023px) {
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .sidebar-nav {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 85%;
+                max-width: 320px;
+                height: 100vh;
+                z-index: 99;
+                transition: right 0.3s ease;
+                overflow-y: auto;
+                padding-top: 5rem;
+            }
+
+            .sidebar-nav.open {
+                right: 0;
+            }
+
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 98;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .sidebar-overlay.open {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .main-content {
+                padding-top: 5rem;
+            }
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 640px) {
+            .glass {
+                padding: 1rem;
+            }
+
+            .tool-content h2 {
+                font-size: 1.5rem;
+            }
+
+            .nav-item {
+                padding: 0.75rem;
+            }
+
+            .nav-item .w-10 {
+                width: 2rem;
+                height: 2rem;
+            }
+
+            .nav-item i {
+                font-size: 0.875rem;
+            }
+
+            .btn-primary {
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+    <div id="toast-container" class="fixed top-4 left-4 z-50 space-y-2"></div>
+
+    <!-- Mobile Menu Toggle Button -->
+    <button id="mobile-menu-btn" class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="القائمة">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        <nav id="sidebar" class="sidebar-nav lg:w-72 w-full glass-sidebar lg:min-h-screen p-4 lg:p-6">
+            <div class="flex items-center justify-center mb-8">
+                <div class="text-center">
+                    <img src="/logo.png" alt="Logo" class="w-32 mx-auto mb-4 rounded-2xl soft-shadow">
+                    <h1
+                        class="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+                        أدوات متعددة
+                    </h1>
+                    <p class="text-gray-500 text-sm mt-1">منصة الأدوات الذكية</p>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="showTool('speech')" id="nav-speech"
+                    class="nav-item active w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-microphone text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-semibold block text-gray-700">تحويل الصوت لنص مباشر</span>
+                        <span class="text-xs text-gray-400">Web Speech API</span>
+                    </div>
+                </button>
+
+                <button onclick="showTool('youtube')" id="nav-youtube"
+                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
+                        <i class="fab fa-youtube text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-semibold block text-gray-700">قص اليوتيوب</span>
+                        <span class="text-xs text-gray-400">yt-dlp & ffmpeg</span>
+                    </div>
+                </button>
+
+                <button onclick="showTool('anime')" id="nav-anime"
+                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-search text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-semibold block text-gray-700">كاشف الأنمي</span>
+                        <span class="text-xs text-gray-400">trace.moe & Anilist</span>
+                    </div>
+                </button>
+
+                <button onclick="showTool('podcast')" id="nav-podcast"
+                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-podcast text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-semibold block text-gray-700">كاشف البودكاست</span>
+                        <span class="text-xs text-gray-400">iTunes Search API</span>
+                    </div>
+                </button>
+
+                <button onclick="showTool('file')" id="nav-file"
+                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-audio text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-semibold block text-gray-700">تحويل ملف صوتي</span>
+                        <span class="text-xs text-gray-400">Speech Recognition</span>
+                    </div>
+                </button>
+
+                <button onclick="showTool('ocr')" id="nav-ocr"
+                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-image text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-semibold block text-gray-700">استخراج النص من الصورة</span>
+                        <span class="text-xs text-gray-400">Tesseract OCR</span>
+                    </div>
+                </button>
+
+                <button onclick="showTool('downloader')" id="nav-downloader"
+                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-download text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-semibold block text-gray-700">تحميل فيديو من أي موقع</span>
+                        <span class="text-xs text-gray-400">Universal Downloader</span>
+                    </div>
+                </button>
+
+                <button onclick="showTool('pdfconverter')" id="nav-pdfconverter"
+                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-pdf text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-semibold block text-gray-700">محول PDF الذكي</span>
+                        <span class="text-xs text-gray-400">PDF to Word + Translation</span>
+                    </div>
+                </button>
+
+                <button onclick="showTool('videototext')" id="nav-videototext"
+                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-video text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-semibold block text-gray-700">تحويل الفيديو إلى نص</span>
+                        <span class="text-xs text-gray-400">Video to Text</span>
+                    </div>
+                </button>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <div class="text-center text-gray-500 text-sm">
+                    <i class="fas fa-code ml-2 text-pink-400"></i>
+                    المبرمج محمود عادل
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content flex-1 p-4 lg:p-8">
+            <!-- Speech to Text Tool -->
+            <div id="tool-speech" class="tool-content fade-in">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                            <i class="fas fa-microphone-alt ml-3 text-pink-500"></i>
+                            تحويل الصوت إلى نص
+                        </h2>
+                        <p class="text-gray-500">استخدم الميكروفون لتحويل كلامك إلى نص عربي</p>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <div class="flex gap-4 mb-6">
+                            <button id="mic-btn" onclick="toggleRecording()"
+                                class="w-32 h-32 rounded-full glass soft-shadow transition-all duration-300 flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg">
+                                <i id="mic-icon" class="fas fa-microphone text-4xl text-gray-400 mb-2"></i>
+                                <span class="text-xs text-gray-500">تسجيل عادي</span>
+                            </button>
+                            <button id="continuous-btn" onclick="toggleContinuousRecording()"
+                                class="w-32 h-32 rounded-full glass soft-shadow transition-all duration-300 flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg bg-gradient-to-br from-orange-50 to-purple-50"
+                                title="استماع مستمر للميكروفون - ضع الميكروفون قريباً من مصدر الصوت">
+                                <i id="continuous-icon"
+                                    class="fas fa-broadcast-tower text-4xl text-orange-400 mb-2"></i>
+                                <span class="text-xs text-orange-600 font-medium">استماع مستمر</span>
+                            </button>
+                        </div>
+                        <p id="mic-status" class="text-gray-500 mb-6">اضغط على الميكروفون للبدء</p>
+
+                        <div class="w-full">
+                            <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
+                                <label class="text-gray-600 font-medium">النص المُحوَّل:</label>
+                                <div class="flex gap-2">
+                                    <button onclick="clearTranscript()"
+                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-red-50">
+                                        <i class="fas fa-trash-alt text-red-500"></i>
+                                        حذف النص
+                                    </button>
+                                    <button onclick="downloadTranscript()"
+                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-pink-50">
+                                        <i class="fas fa-download text-pink-500"></i>
+                                        تحميل (.txt)
+                                    </button>
+                                    <button onclick="copyText()"
+                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-pink-50">
+                                        <i class="fas fa-copy text-pink-500"></i>
+                                        نسخ النص
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea id="transcribed-text" readonly rows="10"
+                                class="w-full rounded-xl p-4 resize-none text-lg leading-relaxed"
+                                placeholder="سيظهر النص هنا..."></textarea>
+                            <div class="flex items-center justify-between mt-3 text-sm">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-gray-500">
+                                        <i class="fas fa-font ml-1"></i>
+                                        عدد الكلمات: <span id="word-count" class="text-pink-500 font-bold">0</span>
+                                    </span>
+                                    <span class="text-gray-500">
+                                        <i class="fas fa-text-width ml-1"></i>
+                                        عدد الأحرف: <span id="char-count" class="text-pink-500 font-bold">0</span>
+                                    </span>
+                                </div>
+                                <span id="recording-time" class="text-gray-500 hidden">
+                                    <i class="fas fa-clock ml-1 text-red-400"></i>
+                                    <span id="elapsed-time">00:00:00</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div id="speech-error"
+                            class="hidden mt-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 w-full">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span id="speech-error-text"></span>
+                        </div>
+
+                        <div class="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-100 w-full">
+                            <div class="text-gray-600 text-sm">
+                                <p class="text-center mb-2">
+                                    <i class="fas fa-info-circle ml-2 text-blue-400"></i>
+                                    يدعم التسجيل المطول للمحاضرات (حتى ساعتين). التسجيل يستمر تلقائياً حتى تضغط إيقاف.
+                                </p>
+                                <div class="mt-3 pt-3 border-t border-blue-200">
+                                    <p class="font-bold text-gray-700 mb-2"><i
+                                            class="fas fa-broadcast-tower ml-1 text-orange-400"></i> عن الاستماع
+                                        المستمر:</p>
+                                    <ul class="list-disc list-inside space-y-1 text-gray-500">
+                                        <li>يستخدم ميكروفون الجهاز لالتقاط الصوت الخارجي</li>
+                                        <li>لتحويل فيديو/صوت من اليوتيوب: ارفع الصوت وضع الميكروفون قريباً من السماعة
+                                        </li>
+                                        <li>لا يلتقط صوت النظام مباشرة - هذا قيد تقني في المتصفحات</li>
+                                        <li>للحصول على أفضل نتائج: استخدم سماعات خارجية وضع الميكروفون بجانبها</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- YouTube Cutter Tool -->
+            <div id="tool-youtube" class="tool-content hidden">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                            <i class="fab fa-youtube ml-3 text-red-500"></i>
+                            قص فيديو يوتيوب
+                        </h2>
+                        <p class="text-gray-500">قم بقص جزء معين من أي فيديو يوتيوب وتحميله</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-gray-600 font-medium mb-2">رابط الفيديو:</label>
+                            <div class="flex gap-3">
+                                <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=..."
+                                    class="flex-1 rounded-xl p-4">
+                                <button onclick="fetchVideoInfo()" id="fetch-btn"
+                                    class="px-6 py-4 rounded-xl btn-primary text-white font-medium flex items-center gap-2">
+                                    <i class="fas fa-info-circle"></i>
+                                    جلب المعلومات
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="video-info" class="hidden glass rounded-xl p-6">
+                            <div class="flex flex-col sm:flex-row gap-4 items-start">
+                                <img id="video-thumbnail" src="" alt=""
+                                    class="w-full sm:w-48 rounded-lg object-cover shadow-md">
+                                <div class="flex-1">
+                                    <h3 id="video-title" class="font-bold text-lg mb-2 text-gray-800"></h3>
+                                    <p id="video-channel" class="text-gray-500 mb-1"></p>
+                                    <p class="text-pink-500 font-medium">
+                                        <i class="fas fa-clock ml-1"></i>
+                                        المدة: <span id="video-duration"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-600 font-medium mb-2">وقت البداية:</label>
+                                <input type="text" id="start-time" placeholder="00:00"
+                                    class="w-full rounded-xl p-4 text-center">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 font-medium mb-2">وقت النهاية:</label>
+                                <input type="text" id="end-time" placeholder="01:30"
+                                    class="w-full rounded-xl p-4 text-center">
+                            </div>
+                        </div>
+
+                        <button onclick="downloadClip()" id="download-btn"
+                            class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg flex items-center justify-center gap-3">
+                            <i class="fas fa-download"></i>
+                            تحميل المقطع
+                        </button>
+
+                        <div id="youtube-loading" class="hidden text-center py-8">
+                            <div class="loader mx-auto mb-4"></div>
+                            <p id="loading-text" class="text-gray-500">جاري المعالجة...</p>
+                        </div>
+
+                        <div id="youtube-error"
+                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span id="youtube-error-text"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anime Search Tool (Dual Mode) -->
+            <div id="tool-anime" class="tool-content hidden">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                            <i class="fas fa-search ml-3 text-purple-500"></i>
+                            كاشف الأنمي
+                        </h2>
+                        <p class="text-gray-500">ابحث عن الأنمي بالصورة أو بالاسم</p>
+                    </div>
+
+                    <!-- Tab Selection -->
+                    <div class="flex rounded-xl overflow-hidden border-2 border-purple-200 mb-6">
+                        <button id="anime-tab-image" onclick="setAnimeMode('image')"
+                            class="tab-btn active flex-1 py-3 font-medium">
+                            <i class="fas fa-image ml-2"></i>
+                            البحث بالصورة
+                        </button>
+                        <button id="anime-tab-name" onclick="setAnimeMode('name')"
+                            class="tab-btn flex-1 py-3 font-medium bg-white text-gray-600 hover:bg-purple-50">
+                            <i class="fas fa-pen ml-2"></i>
+                            البحث بالوصف
+                        </button>
+                    </div>
+
+                    <!-- Image Search Mode -->
+                    <div id="anime-image-mode" class="space-y-6">
+                        <div class="file-upload rounded-xl p-8 text-center cursor-pointer"
+                            onclick="document.getElementById('anime-image').click()">
+                            <input type="file" id="anime-image" accept="image/*" class="hidden"
+                                onchange="handleAnimeUpload(event)">
+                            <div id="anime-preview-container" class="hidden mb-4">
+                                <img id="anime-preview" src="" alt="" class="max-h-64 mx-auto rounded-lg shadow-md">
+                            </div>
+                            <div id="anime-upload-prompt">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-pink-400 mb-3"></i>
+                                <p class="text-gray-600 font-medium">اضغط لرفع صورة أو اسحبها هنا</p>
+                                <p class="text-gray-400 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
+                            </div>
+                        </div>
+
+                        <button onclick="searchAnime()" id="search-anime-btn"
+                            class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg flex items-center justify-center gap-3">
+                            <i class="fas fa-search"></i>
+                            البحث عن الأنمي
+                        </button>
+
+                        <div id="anime-loading" class="hidden text-center py-8">
+                            <div class="loader mx-auto mb-4"></div>
+                            <p class="text-gray-500">جاري البحث...</p>
+                        </div>
+
+                        <div id="anime-result" class="hidden glass rounded-xl p-6">
+                            <h3 class="font-bold text-lg mb-4 text-gray-800 border-b border-gray-100 pb-2">نتيجة البحث
+                            </h3>
+                            <div class="space-y-3">
+                                <p><span class="text-gray-500">اسم الأنمي:</span> <span id="result-name"
+                                        class="font-bold text-pink-600"></span></p>
+                                <p><span class="text-gray-500">الحلقة:</span> <span id="result-episode"
+                                        class="font-bold"></span></p>
+                                <p><span class="text-gray-500">التوقيت:</span> <span id="result-timestamp"
+                                        class="font-bold"></span></p>
+                                <p><span class="text-gray-500">نسبة التطابق:</span> <span id="result-similarity"
+                                        class="font-bold text-green-600"></span>%</p>
+                            </div>
+                            <div id="anime-preview-video" class="mt-4 hidden">
+                                <video id="result-video" controls class="w-full rounded-lg shadow-md"></video>
+                            </div>
+                        </div>
+
+                        <div id="anime-not-found"
+                            class="hidden p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+                            <i class="fas fa-info-circle ml-2"></i>
+                            <span id="not-found-text"></span>
+                            <a href="https://lens.google.com/" target="_blank"
+                                class="block mt-2 text-purple-600 hover:underline">
+                                <i class="fas fa-external-link-alt ml-1"></i>
+                                جرب البحث في Google Lens
+                            </a>
+                        </div>
+
+                        <div id="anime-error"
+                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span id="anime-error-text"></span>
+                        </div>
+                    </div>
+
+                    <!-- Description Search Mode -->
+                    <div id="anime-name-mode" class="hidden space-y-6">
+                        <div>
+                            <label class="block text-gray-600 font-medium mb-2">وصف الأنمي:</label>
+                            <textarea id="anime-name-input"
+                                placeholder="اوصف الأنمي، الشخصيات، الأحداث، القوى الخاصة، أو أي تفاصيل تتذكرها...&#10;&#10;مثال: ولد يبحث عن كرات التنين السبعة ليحقق أمنيته&#10;مثال: شخص يستخدم دفتر لقتل المجرمين&#10;مثال: قراصنة يبحثون عن كنز ون بيس"
+                                class="w-full rounded-xl p-4 min-h-[120px] resize-y"></textarea>
+                        </div>
+
+                        <button onclick="searchAnimeByName()" id="search-anime-name-btn"
+                            class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg flex items-center justify-center gap-3">
+                            <i class="fas fa-magic"></i>
+                            تحليل وبحث بالذكاء الاصطناعي
+                        </button>
+
+                        <div id="anime-name-loading" class="hidden text-center py-8">
+                            <div class="loader mx-auto mb-4"></div>
+                            <p class="text-gray-500">جاري تحليل الوصف بالذكاء الاصطناعي...</p>
+                        </div>
+
+                        <div id="anime-ai-suggestion"
+                            class="hidden p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 mb-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fas fa-robot text-purple-600"></i>
+                                <span class="font-bold text-purple-700">تحليل الذكاء الاصطناعي:</span>
+                            </div>
+                            <p class="text-gray-700">الأنمي المتوقع: <span id="ai-anime-name"
+                                    class="font-bold text-pink-600"></span></p>
+                            <p class="text-sm text-gray-500">درجة الثقة: <span id="ai-confidence"
+                                    class="font-medium"></span></p>
+                            <div id="ai-alternatives-container" class="hidden mt-2">
+                                <p class="text-sm text-gray-500">احتمالات أخرى: <span id="ai-alternatives"
+                                        class="text-gray-600"></span></p>
+                            </div>
+                        </div>
+
+                        <div id="anime-name-results" class="hidden space-y-4">
+                            <h3 class="font-bold text-lg text-gray-800 border-b border-gray-100 pb-2">نتائج البحث</h3>
+                            <div id="anime-name-list" class="space-y-4"></div>
+                        </div>
+
+                        <div id="anime-name-not-found"
+                            class="hidden p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+                            <i class="fas fa-info-circle ml-2"></i>
+                            <span id="anime-name-not-found-text"></span>
+                        </div>
+
+                        <div id="anime-name-error"
+                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span id="anime-name-error-text"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Podcast Detector Tool -->
+            <div id="tool-podcast" class="tool-content hidden">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                            <i class="fas fa-podcast ml-3 text-green-500"></i>
+                            كاشف البودكاست
+                        </h2>
+                        <p class="text-gray-500">اكتشف البودكاست من صورة الغلاف أو مقطع صوتي</p>
+                    </div>
+
+                    <!-- Tab Selection -->
+                    <div class="flex rounded-xl overflow-hidden border-2 border-green-200 mb-6">
+                        <button id="podcast-tab-image" onclick="setPodcastMode('image')"
+                            class="tab-btn active flex-1 py-3 font-medium"
+                            style="background: linear-gradient(135deg, #22c55e, #10b981); color: white;">
+                            <i class="fas fa-image ml-2"></i>
+                            من صورة
+                        </button>
+                        <button id="podcast-tab-audio" onclick="setPodcastMode('audio')"
+                            class="tab-btn flex-1 py-3 font-medium bg-white text-gray-600 hover:bg-green-50">
+                            <i class="fas fa-microphone ml-2"></i>
+                            من مقطع صوتي
+                        </button>
+                    </div>
+
+                    <!-- Image Mode -->
+                    <div id="podcast-image-mode" class="space-y-6">
+                        <div class="file-upload rounded-xl p-8 text-center cursor-pointer"
+                            onclick="document.getElementById('podcast-image').click()">
+                            <input type="file" id="podcast-image" accept="image/*" class="hidden"
+                                onchange="handlePodcastImageUpload(event)">
+                            <div id="podcast-image-preview-container" class="hidden mb-4">
+                                <img id="podcast-image-preview" src="" alt=""
+                                    class="max-h-64 mx-auto rounded-lg shadow-md">
+                            </div>
+                            <div id="podcast-image-upload-prompt">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-green-400 mb-3"></i>
+                                <p class="text-gray-600 font-medium">ارفع صورة غلاف البودكاست أو لقطة شاشة</p>
+                                <p class="text-gray-400 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
+                            </div>
+                        </div>
+
+                        <button onclick="searchPodcastByImage()" id="search-podcast-image-btn"
+                            class="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
+                            <i class="fas fa-search"></i>
+                            البحث عن البودكاست
+                        </button>
+
+                        <div id="podcast-image-loading" class="hidden text-center py-8">
+                            <div class="loader mx-auto mb-4" style="border-top-color: #22c55e;"></div>
+                            <p class="text-gray-500">جاري تحليل الصورة والبحث...</p>
+                        </div>
+
+                        <div id="podcast-image-result" class="hidden">
+                            <div id="podcast-extracted-text"
+                                class="mb-4 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                                <p class="text-gray-500 text-sm mb-1">النص المستخرج من الصورة:</p>
+                                <p id="podcast-ocr-text" class="text-gray-700 font-medium"></p>
+                            </div>
+                            <div id="podcast-image-card" class="podcast-card glass rounded-xl p-6"></div>
+                        </div>
+
+                        <div id="podcast-image-not-found"
+                            class="hidden p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+                            <i class="fas fa-info-circle ml-2"></i>
+                            <span id="podcast-image-not-found-text"></span>
+                        </div>
+
+                        <div id="podcast-image-error"
+                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span id="podcast-image-error-text"></span>
+                        </div>
+                    </div>
+
+                    <!-- Audio Mode -->
+                    <div id="podcast-audio-mode" class="hidden space-y-6">
+                        <div class="file-upload rounded-xl p-8 text-center cursor-pointer"
+                            onclick="document.getElementById('podcast-audio').click()">
+                            <input type="file" id="podcast-audio" accept="audio/*" class="hidden"
+                                onchange="handlePodcastAudioUpload(event)">
+                            <div id="podcast-audio-file-info" class="hidden mb-4">
+                                <i class="fas fa-file-audio text-4xl text-green-500 mb-2"></i>
+                                <p id="podcast-audio-file-name" class="text-gray-700 font-medium"></p>
+                            </div>
+                            <div id="podcast-audio-upload-prompt">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-green-400 mb-3"></i>
+                                <p class="text-gray-600 font-medium">ارفع مقطع صوتي من البودكاست</p>
+                                <p class="text-gray-400 text-sm mt-1">MP3, WAV, OGG, M4A, FLAC</p>
+                            </div>
+                        </div>
+
+                        <button onclick="searchPodcastByAudio()" id="search-podcast-audio-btn"
+                            class="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
+                            <i class="fas fa-search"></i>
+                            البحث عن البودكاست
+                        </button>
+
+                        <div id="podcast-audio-loading" class="hidden text-center py-8">
+                            <div class="loader mx-auto mb-4" style="border-top-color: #22c55e;"></div>
+                            <p class="text-gray-500">جاري تحليل الصوت والبحث...</p>
+                        </div>
+
+                        <div id="podcast-audio-result" class="hidden">
+                            <div id="podcast-transcribed-text"
+                                class="mb-4 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                                <p class="text-gray-500 text-sm mb-1">النص المستخرج من الصوت:</p>
+                                <p id="podcast-speech-text" class="text-gray-700 font-medium"></p>
+                            </div>
+                            <div class="mb-3">
+                                <span class="badge bg-blue-100 text-blue-700">
+                                    <i class="fas fa-lightbulb ml-1"></i>
+                                    أفضل تطابق بناءً على الكلمات المفتاحية
+                                </span>
+                            </div>
+                            <div id="podcast-audio-list" class="space-y-4"></div>
+                        </div>
+
+                        <div id="podcast-audio-not-found"
+                            class="hidden p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+                            <i class="fas fa-info-circle ml-2"></i>
+                            <span id="podcast-audio-not-found-text"></span>
+                        </div>
+
+                        <div id="podcast-audio-error"
+                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span id="podcast-audio-error-text"></span>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-green-50 border border-green-100">
+                            <p class="text-gray-600 text-sm text-center">
+                                <i class="fas fa-info-circle ml-2 text-green-400"></i>
+                                يتم تحليل أول 60 ثانية من المقطع الصوتي للحصول على أفضل النتائج
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio File Transcription Tool -->
+            <div id="tool-file" class="tool-content hidden">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                            <i class="fas fa-file-audio ml-3 text-cyan-500"></i>
+                            تحويل ملف صوتي إلى نص
+                        </h2>
+                        <p class="text-gray-500">ارفع ملف صوتي وسنحوله إلى نص مكتوب</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="file-upload rounded-xl p-8 text-center cursor-pointer"
+                            onclick="document.getElementById('audio-file').click()">
+                            <input type="file" id="audio-file" accept="audio/*" class="hidden"
+                                onchange="handleAudioUpload(event)">
+                            <div id="audio-file-info" class="hidden mb-4">
+                                <i class="fas fa-file-audio text-4xl text-cyan-500 mb-2"></i>
+                                <p id="audio-file-name" class="text-gray-700 font-medium"></p>
+                            </div>
+                            <div id="audio-upload-prompt">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-cyan-400 mb-3"></i>
+                                <p class="text-gray-600 font-medium">اضغط لرفع ملف صوتي</p>
+                                <p class="text-gray-400 text-sm mt-1">MP3, WAV, OGG, M4A, FLAC, AAC, WMA</p>
+                            </div>
+                        </div>
+
+                        <button onclick="transcribeAudioFile()" id="transcribe-btn"
+                            class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg flex items-center justify-center gap-3">
+                            <i class="fas fa-magic"></i>
+                            تحويل إلى نص
+                        </button>
+
+                        <div id="file-loading" class="hidden text-center py-8">
+                            <div class="loader mx-auto mb-4"></div>
+                            <p class="text-gray-500">جاري تحويل الملف...</p>
+                        </div>
+
+                        <div id="file-result" class="hidden">
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="text-gray-600 font-medium">النص المستخرج:</label>
+                                <div class="flex gap-2">
+                                    <button onclick="downloadFileTranscript()"
+                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-cyan-50">
+                                        <i class="fas fa-download text-cyan-500"></i>
+                                        تحميل
+                                    </button>
+                                    <button onclick="copyFileText()"
+                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-cyan-50">
+                                        <i class="fas fa-copy text-cyan-500"></i>
+                                        نسخ
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea id="file-transcribed-text" readonly rows="8"
+                                class="w-full rounded-xl p-4 resize-none text-lg leading-relaxed"
+                                placeholder="سيظهر النص هنا..."></textarea>
+                        </div>
+
+                        <div id="file-error" class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span id="file-error-text"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OCR Tool -->
+            <div id="tool-ocr" class="tool-content hidden">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                            <i class="fas fa-image ml-3 text-orange-500"></i>
+                            استخراج النص من الصورة
+                        </h2>
+                        <p class="text-gray-500">ارفع صورة تحتوي على نص وسنستخرجه لك</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="file-upload rounded-xl p-8 text-center cursor-pointer"
+                            onclick="document.getElementById('ocr-image').click()">
+                            <input type="file" id="ocr-image" accept="image/*" class="hidden"
+                                onchange="handleOcrUpload(event)">
+                            <div id="ocr-preview-container" class="hidden mb-4">
+                                <img id="ocr-preview" src="" alt="" class="max-h-64 mx-auto rounded-lg shadow-md">
+                            </div>
+                            <div id="ocr-upload-prompt">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-orange-400 mb-3"></i>
+                                <p class="text-gray-600 font-medium">اضغط لرفع صورة تحتوي على نص</p>
+                                <p class="text-gray-400 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
+                            </div>
+                        </div>
+
+                        <button onclick="extractText()" id="ocr-btn"
+                            class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg flex items-center justify-center gap-3">
+                            <i class="fas fa-magic"></i>
+                            استخراج النص
+                        </button>
+
+                        <div id="ocr-loading" class="hidden text-center py-8">
+                            <div class="loader mx-auto mb-4"></div>
+                            <p class="text-gray-500">جاري استخراج النص...</p>
+                        </div>
+
+                        <div id="ocr-result" class="hidden">
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="text-gray-600 font-medium">النص المستخرج:</label>
+                                <div class="flex gap-2">
+                                    <button onclick="downloadOcrText()"
+                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-orange-50">
+                                        <i class="fas fa-download text-orange-500"></i>
+                                        تحميل
+                                    </button>
+                                    <button onclick="copyOcrText()"
+                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-orange-50">
+                                        <i class="fas fa-copy text-orange-500"></i>
+                                        نسخ
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea id="ocr-text" readonly rows="15"
+                                class="w-full rounded-xl p-4 resize-y text-lg leading-relaxed overflow-y-auto"
+                                style="max-height: 600px; min-height: 200px;"
+                                placeholder="سيظهر النص هنا..."></textarea>
+                        </div>
+
+                        <div id="ocr-error" class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span id="ocr-error-text"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Universal Video Downloader Tool -->
+            <div id="tool-downloader" class="tool-content hidden">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                            <i class="fas fa-download ml-3 text-teal-500"></i>
+                            تحميل فيديو من أي موقع
+                        </h2>
+                        <p class="text-gray-500">قم بتحميل أي فيديو من يوتيوب، تيك توك، فيسبوك، انستغرام، تويتر والمزيد
+                        </p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-gray-600 font-medium mb-2">رابط الفيديو:</label>
+                            <input type="text" id="downloader-url"
+                                placeholder="https://www.youtube.com/watch?v=... أو أي رابط فيديو آخر"
+                                class="w-full rounded-xl p-4">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button onclick="downloadUniversalMedia('video')" id="universal-download-video-btn"
+                                class="w-full py-4 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
+                                <i class="fas fa-video"></i>
+                                تحميل فيديو MP4
+                            </button>
+                            <button onclick="downloadUniversalMedia('audio')" id="universal-download-audio-btn"
+                                class="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
+                                <i class="fas fa-music"></i>
+                                تحميل صوت MP3
+                            </button>
+                        </div>
+
+                        <div id="downloader-loading" class="hidden text-center py-8">
+                            <div class="loader mx-auto mb-4" style="border-top-color: #14b8a6;"></div>
+                            <p id="downloader-loading-text" class="text-gray-500">جاري التحميل والتحويل... قد يستغرق هذا
+                                بعض الوقت</p>
+                        </div>
+
+                        <div id="downloader-error"
+                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span id="downloader-error-text"></span>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-teal-50 border border-teal-100">
+                            <h4 class="font-medium text-gray-700 mb-2">
+                                <i class="fas fa-globe ml-2 text-teal-500"></i>
+                                المواقع المدعومة:
+                            </h4>
+                            <div class="flex flex-wrap gap-2 text-sm">
+                                <span class="px-3 py-1 rounded-full bg-red-100 text-red-600">
+                                    <i class="fab fa-youtube ml-1"></i>
+                                    YouTube
+                                </span>
+                                <span class="px-3 py-1 rounded-full bg-pink-100 text-pink-600">
+                                    <i class="fab fa-tiktok ml-1"></i>
+                                    TikTok
+                                </span>
+                                <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-600">
+                                    <i class="fab fa-facebook ml-1"></i>
+                                    Facebook
+                                </span>
+                                <span
+                                    class="px-3 py-1 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-600">
+                                    <i class="fab fa-instagram ml-1"></i>
+                                    Instagram
+                                </span>
+                                <span class="px-3 py-1 rounded-full bg-sky-100 text-sky-600">
+                                    <i class="fab fa-twitter ml-1"></i>
+                                    Twitter/X
+                                </span>
+                                <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600">
+                                    <i class="fas fa-ellipsis-h ml-1"></i>
+                                    والمزيد
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-amber-50 border border-amber-100">
+                            <p class="text-gray-600 text-sm text-center">
+                                <i class="fas fa-info-circle ml-2 text-amber-400"></i>
+                                الحد الأقصى: مدة ساعة واحدة وحجم 500 ميجابايت. الفيديو يُحوَّل إلى MP4 والصوت إلى MP3.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDF to Word Converter Tool -->
+            <div id="tool-pdfconverter" class="tool-content hidden">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                            <i class="fas fa-file-pdf ml-3 text-rose-500"></i>
+                            محول PDF الذكي
+                        </h2>
+                        <p class="text-gray-500">حول ملفات PDF إلى Word مع خيارات الترجمة للعربية والإنجليزية</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="file-upload rounded-xl p-8 text-center cursor-pointer"
+                            onclick="document.getElementById('pdf-file').click()">
+                            <input type="file" id="pdf-file" accept=".pdf" class="hidden"
+                                onchange="handlePdfUpload(event)">
+                            <div id="pdf-preview-container" class="hidden mb-4">
+                                <div class="flex items-center justify-center gap-3 text-rose-500">
+                                    <i class="fas fa-file-pdf text-5xl"></i>
+                                    <span id="pdf-filename" class="font-medium text-lg text-gray-700"></span>
+                                </div>
+                            </div>
+                            <div id="pdf-upload-prompt">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-rose-400 mb-3"></i>
+                                <p class="text-gray-600 font-medium">اضغط لرفع ملف PDF أو اسحبه هنا</p>
+                                <p class="text-gray-400 text-sm mt-1">PDF فقط</p>
+                            </div>
+                        </div>
+
+                        <div
+                            class="p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 mb-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">🔤</span>
+                                    <div>
+                                        <span class="font-medium text-gray-700">وضع النص العربي المحسّن (OCR)</span>
+                                        <p class="text-xs text-gray-500 mt-1">يستخدم الذكاء الاصطناعي لاستخراج النص
+                                            العربي بدقة عالية</p>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="pdf-ocr-mode" class="sr-only peer" checked>
+                                    <div
+                                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <button onclick="convertPdf('original')" id="pdf-convert-original-btn"
+                                class="w-full py-4 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 text-white font-bold text-base flex items-center justify-center gap-2 hover:shadow-lg transition-all">
+                                <span class="text-xl">📄</span>
+                                تحويل فقط
+                            </button>
+                            <button onclick="convertPdf('ar')" id="pdf-convert-ar-btn"
+                                class="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-base flex items-center justify-center gap-2 hover:shadow-lg transition-all">
+                                <span class="text-xl">🇸🇦</span>
+                                تحويل للعربية
+                            </button>
+                            <button onclick="convertPdf('en')" id="pdf-convert-en-btn"
+                                class="w-full py-4 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text-base flex items-center justify-center gap-2 hover:shadow-lg transition-all">
+                                <span class="text-xl">🇺🇸</span>
+                                تحويل للإنجليزية
+                            </button>
+                        </div>
+
+                        <div id="pdf-loading" class="hidden text-center py-8">
+                            <div class="loader mx-auto mb-4" style="border-top-color: #e11d48;"></div>
+                            <p id="pdf-loading-text" class="text-gray-500">جاري التحويل... قد يستغرق هذا بعض الوقت</p>
+                        </div>
+
+                        <div id="pdf-error" class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span id="pdf-error-text"></span>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-rose-50 border border-rose-100">
+                            <h4 class="font-medium text-gray-700 mb-2">
+                                <i class="fas fa-magic ml-2 text-rose-500"></i>
+                                خيارات التحويل:
+                            </h4>
+                            <div class="space-y-2 text-sm text-gray-600">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">📄</span>
+                                    <span><strong>تحويل فقط:</strong> يحافظ على اللغة الأصلية للملف</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">🇸🇦</span>
+                                    <span><strong>تحويل للعربية:</strong> يترجم المحتوى إلى اللغة العربية</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">🇺🇸</span>
+                                    <span><strong>تحويل للإنجليزية:</strong> يترجم المحتوى إلى اللغة الإنجليزية</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-amber-50 border border-amber-100">
+                            <p class="text-gray-600 text-sm text-center">
+                                <i class="fas fa-info-circle ml-2 text-amber-400"></i>
+                                عند تفعيل وضع النص العربي المحسّن، يتم استخدام الذكاء الاصطناعي لاستخراج النص العربي
+                                بدقة عالية دون تشوه أو تكسير في الحروف.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video to Text Tool -->
+            <div id="tool-videototext" class="tool-content hidden">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                            <i class="fas fa-video ml-3 text-indigo-500"></i>
+                            تحويل الفيديو إلى نص
+                        </h2>
+                        <p class="text-gray-500">استخرج النص من أي فيديو باستخدام الذكاء الاصطناعي</p>
+                    </div>
+
+                    <!-- Language Selection -->
+                    <div class="mb-6">
+                        <label class="block text-gray-600 font-medium mb-2">
+                            <i class="fas fa-language ml-2 text-indigo-500"></i>
+                            لغة الفيديو:
+                        </label>
+                        <select id="video-language"
+                            class="w-full rounded-xl p-4 glass border-2 border-indigo-100 focus:border-indigo-300 transition-all">
+                            <option value="ar" selected>🇸🇦 العربية (افتراضي)</option>
+                            <option value="en">🇺🇸 English</option>
+                            <option value="fr">🇫🇷 Français</option>
+                            <option value="es">🇪🇸 Español</option>
+                            <option value="de">🇩🇪 Deutsch</option>
+                            <option value="tr">🇹🇷 Türkçe</option>
+                            <option value="ur">🇵🇰 اردو</option>
+                            <option value="hi">🇮🇳 हिन्दी</option>
+                            <option value="id">🇮🇩 Bahasa Indonesia</option>
+                            <option value="pt">🇧🇷 Português</option>
+                            <option value="ru">🇷🇺 Русский</option>
+                            <option value="ja">🇯🇵 日本語</option>
+                            <option value="ko">🇰🇷 한국어</option>
+                            <option value="zh">🇨🇳 中文</option>
+                            <option value="auto">🌐 تلقائي (كشف تلقائي)</option>
+                        </select>
+                        <p class="text-gray-400 text-xs mt-1">اختر لغة الفيديو للحصول على نتائج أدق</p>
+                    </div>
+
+                    <!-- Tab Selection -->
+                    <div class="flex rounded-xl overflow-hidden border-2 border-indigo-200 mb-6">
+                        <button id="video-tab-upload" onclick="setVideoMode('upload')"
+                            class="tab-btn active flex-1 py-3 font-medium"
+                            style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+                            <i class="fas fa-upload ml-2"></i>
+                            رفع فيديو
+                        </button>
+                        <button id="video-tab-url" onclick="setVideoMode('url')"
+                            class="tab-btn flex-1 py-3 font-medium bg-white text-gray-600 hover:bg-indigo-50">
+                            <i class="fas fa-link ml-2"></i>
+                            رابط فيديو
+                        </button>
+                    </div>
+
+                    <!-- Upload Mode -->
+                    <div id="video-upload-mode" class="space-y-6">
+                        <div class="file-upload rounded-xl p-8 text-center cursor-pointer"
+                            onclick="document.getElementById('video-file').click()">
+                            <input type="file" id="video-file" accept=".mp4,.mov,.avi,.mkv,.webm,.flv,.wmv,.m4v"
+                                class="hidden" onchange="handleVideoUpload(event)">
+                            <div id="video-preview-container" class="hidden mb-4">
+                                <div class="flex items-center justify-center gap-3 text-indigo-500">
+                                    <i class="fas fa-file-video text-5xl"></i>
+                                    <span id="video-filename" class="font-medium text-lg text-gray-700"></span>
+                                </div>
+                            </div>
+                            <div id="video-upload-prompt">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-indigo-400 mb-3"></i>
+                                <p class="text-gray-600 font-medium">اضغط لرفع ملف فيديو أو اسحبه هنا</p>
+                                <p class="text-gray-400 text-sm mt-1">MP4, MOV, AVI, MKV, WEBM, FLV, WMV, M4V</p>
+                            </div>
+                        </div>
+
+                        <button onclick="transcribeVideoFile()" id="transcribe-video-btn"
+                            class="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
+                            <i class="fas fa-closed-captioning"></i>
+                            تحويل إلى نص
+                        </button>
+                    </div>
+
+                    <!-- URL Mode -->
+                    <div id="video-url-mode" class="hidden space-y-6">
+                        <div>
+                            <label class="block text-gray-600 font-medium mb-2">رابط الفيديو:</label>
+                            <input type="text" id="video-url-input"
+                                placeholder="https://www.youtube.com/watch?v=... أو رابط TikTok، Facebook، إلخ"
+                                class="w-full rounded-xl p-4">
+                        </div>
+
+                        <button onclick="transcribeVideoUrl()" id="transcribe-video-url-btn"
+                            class="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
+                            <i class="fas fa-closed-captioning"></i>
+                            تحويل إلى نص
+                        </button>
+                    </div>
+
+                    <!-- Common Elements -->
+                    <div id="video-loading" class="hidden text-center py-8 mt-6">
+                        <div class="loader mx-auto mb-4" style="border-top-color: #6366f1;"></div>
+                        <p id="video-loading-text" class="text-gray-500">جاري معالجة الفيديو واستخراج النص... قد يستغرق
+                            هذا بعض الوقت للفيديوهات الطويلة</p>
+                    </div>
+
+                    <div id="video-result" class="hidden mt-6">
+                        <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
+                            <label class="text-gray-600 font-medium">النص المُستخرج:</label>
+                            <div class="flex gap-2">
+                                <button onclick="clearVideoText()"
+                                    class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-red-50">
+                                    <i class="fas fa-trash-alt text-red-500"></i>
+                                    حذف
+                                </button>
+                                <button onclick="downloadVideoText()"
+                                    class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-indigo-50">
+                                    <i class="fas fa-download text-indigo-500"></i>
+                                    تحميل (.txt)
+                                </button>
+                                <button onclick="copyVideoText()"
+                                    class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-indigo-50">
+                                    <i class="fas fa-copy text-indigo-500"></i>
+                                    نسخ
+                                </button>
+                            </div>
+                        </div>
+                        <textarea id="video-transcribed-text" readonly rows="12"
+                            class="w-full rounded-xl p-4 resize-none text-base leading-relaxed"
+                            style="max-height: 400px; overflow-y: auto;" placeholder="سيظهر النص هنا..."></textarea>
+                        <div class="flex items-center gap-4 mt-3 text-sm">
+                            <span class="text-gray-500">
+                                <i class="fas fa-font ml-1"></i>
+                                عدد الكلمات: <span id="video-word-count" class="text-indigo-500 font-bold">0</span>
+                            </span>
+                            <span class="text-gray-500">
+                                <i class="fas fa-text-width ml-1"></i>
+                                عدد الأحرف: <span id="video-char-count" class="text-indigo-500 font-bold">0</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div id="video-error"
+                        class="hidden mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                        <i class="fas fa-exclamation-circle ml-2"></i>
+                        <span id="video-error-text"></span>
+                    </div>
+
+                    <div class="mt-6 p-4 rounded-xl bg-indigo-50 border border-indigo-100">
+                        <h4 class="font-medium text-gray-700 mb-2">
+                            <i class="fas fa-info-circle ml-2 text-indigo-500"></i>
+                            المنصات المدعومة:
+                        </h4>
+                        <div class="flex flex-wrap gap-2 text-sm">
+                            <span class="px-3 py-1 rounded-full bg-red-100 text-red-600">
+                                <i class="fab fa-youtube ml-1"></i>
+                                YouTube
+                            </span>
+                            <span class="px-3 py-1 rounded-full bg-gray-900 text-white">
+                                <i class="fab fa-tiktok ml-1"></i>
+                                TikTok
+                            </span>
+                            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-600">
+                                <i class="fab fa-facebook ml-1"></i>
+                                Facebook
+                            </span>
+                            <span
+                                class="px-3 py-1 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-600">
+                                <i class="fab fa-instagram ml-1"></i>
+                                Instagram
+                            </span>
+                            <span class="px-3 py-1 rounded-full bg-sky-100 text-sky-600">
+                                <i class="fab fa-twitter ml-1"></i>
+                                Twitter/X
+                            </span>
+                            <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600">
+                                <i class="fas fa-ellipsis-h ml-1"></i>
+                                والمزيد
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-100">
+                        <p class="text-gray-600 text-sm text-center">
+                            <i class="fas fa-lightbulb ml-2 text-amber-400"></i>
+                            يدعم الفيديوهات الطويلة حتى عدة ساعات.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="glass-sidebar py-6 text-center mt-auto">
+        <div class="container mx-auto px-4">
+            <p class="text-gray-500 text-sm">
+                &copy; <span id="current-year"></span> جميع الحقوق محفوظة
+            </p>
+            <p class="text-gray-400 text-sm mt-2">
+                صُنع بـ <i class="fas fa-heart text-pink-400 mx-1"></i> بواسطة المبرمج محمود عادل
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        let recognition = null;
+        let continuousRecognition = null;
+        let isRecording = false;
+        let isContinuousRecording = false;
+        let uploadedAnimeFile = null;
+        let uploadedAudioFile = null;
+        let uploadedOcrFile = null;
+        let uploadedPodcastImageFile = null;
+        let uploadedPodcastAudioFile = null;
+        let uploadedPdfFile = null;
+        let uploadedVideoFile = null;
+        let fullTranscript = '';
+        let recordingStartTime = null;
+        let recordingTimer = null;
+        let wakeLock = null;
+        
+        // Anti-duplication for mobile devices
+        let lastFinalTranscript = '';
+        let lastResultTimestamp = 0;
+        const DUPLICATE_THRESHOLD_MS = 800;
+        
+        function isDuplicateResult(transcript) {
+            const now = Date.now();
+            const trimmedTranscript = transcript.trim();
+            
+            // Check if this is the same as the last result within threshold time
+            if (trimmedTranscript === lastFinalTranscript && 
+                (now - lastResultTimestamp) < DUPLICATE_THRESHOLD_MS) {
+                console.log('Duplicate result blocked:', trimmedTranscript);
+                return true;
+            }
+            
+            // Check if this result is already contained in the recent transcript
+            if (lastFinalTranscript && trimmedTranscript === lastFinalTranscript) {
+                console.log('Exact duplicate blocked:', trimmedTranscript);
+                return true;
+            }
+            
+            // Update tracking
+            lastFinalTranscript = trimmedTranscript;
+            lastResultTimestamp = now;
+            return false;
+        }
+        
+        function resetDuplicateTracking() {
+            lastFinalTranscript = '';
+            lastResultTimestamp = 0;
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'from-green-500 to-emerald-500' : 'from-red-500 to-pink-500';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+
+            toast.className = `toast glass rounded-xl p-4 flex items-center gap-3 bg-gradient-to-r ${bgColor} text-white shadow-lg`;
+            toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const menuBtn = document.getElementById('mobile-menu-btn');
+
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('open');
+            menuBtn.classList.toggle('active');
+
+            // Update icon
+            const icon = menuBtn.querySelector('i');
+            if (sidebar.classList.contains('open')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const menuBtn = document.getElementById('mobile-menu-btn');
+
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+            menuBtn.classList.remove('active');
+
+            const icon = menuBtn.querySelector('i');
+            icon.classList.remove('fa-times');
+            icon.classList.add('fa-bars');
+        }
+
+        function showTool(tool) {
+            document.querySelectorAll('.tool-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(`tool-${tool}`).classList.remove('hidden');
+            document.getElementById(`nav-${tool}`).classList.add('active');
+
+            // Close mobile menu when tool is selected on mobile
+            if (window.innerWidth < 1024) {
+                closeMobileMenu();
+            }
+        }
+
+        function setAnimeMode(mode) {
+            const imageTab = document.getElementById('anime-tab-image');
+            const nameTab = document.getElementById('anime-tab-name');
+            const imageMode = document.getElementById('anime-image-mode');
+            const nameMode = document.getElementById('anime-name-mode');
+
+            if (mode === 'image') {
+                imageTab.classList.add('active');
+                nameTab.classList.remove('active');
+                nameTab.classList.add('bg-white', 'text-gray-600');
+                imageMode.classList.remove('hidden');
+                nameMode.classList.add('hidden');
+            } else {
+                nameTab.classList.add('active');
+                nameTab.classList.remove('bg-white', 'text-gray-600');
+                imageTab.classList.remove('active');
+                imageTab.classList.add('bg-white', 'text-gray-600');
+                nameMode.classList.remove('hidden');
+                imageMode.classList.add('hidden');
+            }
+        }
+
+        function setPodcastMode(mode) {
+            const imageTab = document.getElementById('podcast-tab-image');
+            const audioTab = document.getElementById('podcast-tab-audio');
+            const imageMode = document.getElementById('podcast-image-mode');
+            const audioMode = document.getElementById('podcast-audio-mode');
+
+            if (mode === 'image') {
+                imageTab.style.background = 'linear-gradient(135deg, #22c55e, #10b981)';
+                imageTab.style.color = 'white';
+                audioTab.style.background = 'white';
+                audioTab.style.color = '#4b5563';
+                imageMode.classList.remove('hidden');
+                audioMode.classList.add('hidden');
+            } else {
+                audioTab.style.background = 'linear-gradient(135deg, #22c55e, #10b981)';
+                audioTab.style.color = 'white';
+                imageTab.style.background = 'white';
+                imageTab.style.color = '#4b5563';
+                audioMode.classList.remove('hidden');
+                imageMode.classList.add('hidden');
+            }
+        }
+
+        function updateWordCount() {
+            const textArea = document.getElementById('transcribed-text');
+            const text = textArea.value.trim();
+            const words = text ? text.split(/\s+/).filter(w => w.length > 0).length : 0;
+            const chars = text.length;
+            document.getElementById('word-count').textContent = words.toLocaleString('ar-EG');
+            document.getElementById('char-count').textContent = chars.toLocaleString('ar-EG');
+        }
+
+        function formatElapsedTime(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function startRecordingTimer() {
+            recordingStartTime = Date.now();
+            document.getElementById('recording-time').classList.remove('hidden');
+            recordingTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                document.getElementById('elapsed-time').textContent = formatElapsedTime(elapsed);
+            }, 1000);
+        }
+
+        function stopRecordingTimer() {
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+                recordingTimer = null;
+            }
+            document.getElementById('recording-time').classList.add('hidden');
+        }
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        if (isRecording) {
+                            requestWakeLock();
+                        }
+                    });
+                }
+            } catch (err) {
+                console.log('Wake Lock not supported or failed:', err);
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock) {
+                wakeLock.release();
+                wakeLock = null;
+            }
+        }
+
+        function toggleRecording() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                showSpeechError('متصفحك لا يدعم تحويل الصوت إلى نص. جرب Chrome أو Edge.');
+                return;
+            }
+
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        function startRecording() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ar-SA';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            const micBtn = document.getElementById('mic-btn');
+            const micIcon = document.getElementById('mic-icon');
+            const micStatus = document.getElementById('mic-status');
+            const textArea = document.getElementById('transcribed-text');
+
+            fullTranscript = textArea.value;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                micBtn.classList.add('recording');
+                micBtn.style.background = 'rgba(239, 68, 68, 0.2)';
+                micIcon.classList.remove('text-gray-400');
+                micIcon.classList.add('text-red-500');
+                micStatus.textContent = 'جاري التسجيل... تحدث الآن';
+                hideSpeechError();
+
+                if (!recordingTimer) {
+                    startRecordingTimer();
+                    requestWakeLock();
+                }
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        // Check for duplicates before adding (mobile fix)
+                        if (!isDuplicateResult(transcript)) {
+                            fullTranscript += transcript + ' ';
+                        }
+                    } else {
+                        interimTranscript = transcript;
+                    }
+                }
+
+                textArea.value = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
+                updateWordCount();
+
+                textArea.scrollTop = textArea.scrollHeight;
+            };
+
+            recognition.onerror = (event) => {
+                if (event.error === 'no-speech' || event.error === 'network' || event.error === 'aborted') {
+                    if (isRecording) {
+                        setTimeout(() => {
+                            if (isRecording && recognition) {
+                                try {
+                                    recognition.start();
+                                } catch (e) {
+                                    createNewRecognition();
+                                }
+                            }
+                        }, 100);
+                    }
+                    return;
+                }
+
+                if (event.error === 'audio-capture') {
+                    showSpeechError('لم يتم العثور على ميكروفون. تأكد من توصيله.');
+                    stopRecording();
+                    return;
+                }
+
+                if (event.error === 'not-allowed') {
+                    showSpeechError('تم رفض إذن الميكروفون. اسمح بالوصول من إعدادات المتصفح.');
+                    stopRecording();
+                    return;
+                }
+            };
+
+            recognition.onend = () => {
+                if (isRecording) {
+                    setTimeout(() => {
+                        if (isRecording) {
+                            try {
+                                recognition.start();
+                            } catch (e) {
+                                createNewRecognition();
+                            }
+                        }
+                    }, 50);
+                }
+            };
+
+            try {
+                recognition.start();
+            } catch (e) {
+                showSpeechError('فشل في بدء التسجيل. حاول مرة أخرى.');
+            }
+        }
+
+        function createNewRecognition() {
+            if (!isRecording) return;
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ar-SA';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            const textArea = document.getElementById('transcribed-text');
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        // Check for duplicates before adding (mobile fix)
+                        if (!isDuplicateResult(transcript)) {
+                            fullTranscript += transcript + ' ';
+                        }
+                    } else {
+                        interimTranscript = transcript;
+                    }
+                }
+
+                textArea.value = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
+                updateWordCount();
+                textArea.scrollTop = textArea.scrollHeight;
+            };
+
+            recognition.onerror = (event) => {
+                if (event.error === 'no-speech' || event.error === 'network' || event.error === 'aborted') {
+                    if (isRecording) {
+                        setTimeout(() => {
+                            if (isRecording) {
+                                createNewRecognition();
+                            }
+                        }, 100);
+                    }
+                    return;
+                }
+
+                if (event.error === 'not-allowed' || event.error === 'audio-capture') {
+                    stopRecording();
+                }
+            };
+
+            recognition.onend = () => {
+                if (isRecording) {
+                    setTimeout(() => {
+                        if (isRecording) {
+                            createNewRecognition();
+                        }
+                    }, 50);
+                }
+            };
+
+            try {
+                recognition.start();
+            } catch (e) {
+                setTimeout(() => {
+                    if (isRecording) {
+                        createNewRecognition();
+                    }
+                }, 500);
+            }
+        }
+
+        function stopRecording() {
+            resetDuplicateTracking();
+            isRecording = false;
+
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (e) { }
+                recognition = null;
+            }
+
+            const micBtn = document.getElementById('mic-btn');
+            const micIcon = document.getElementById('mic-icon');
+            const micStatus = document.getElementById('mic-status');
+            const textArea = document.getElementById('transcribed-text');
+
+            micBtn.classList.remove('recording');
+            micBtn.style.background = '';
+            micIcon.classList.add('text-gray-400');
+            micIcon.classList.remove('text-red-500');
+            micStatus.textContent = 'اضغط على الميكروفون للبدء';
+
+            textArea.value = fullTranscript;
+            updateWordCount();
+
+            stopRecordingTimer();
+            releaseWakeLock();
+        }
+
+        function showSpeechError(message) {
+            const errorDiv = document.getElementById('speech-error');
+            const errorText = document.getElementById('speech-error-text');
+            errorDiv.classList.remove('hidden');
+            errorText.textContent = message;
+        }
+
+        function hideSpeechError() {
+            document.getElementById('speech-error').classList.add('hidden');
+        }
+
+        function downloadTranscript() {
+            const textArea = document.getElementById('transcribed-text');
+            if (!textArea.value.trim()) {
+                showToast('لا يوجد نص للتحميل', 'error');
+                return;
+            }
+
+            const blob = new Blob([textArea.value], {type: 'text/plain;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+            a.href = url;
+            a.download = `transcript_${timestamp}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('تم تحميل النص بنجاح!');
+        }
+
+        function copyText() {
+            const textArea = document.getElementById('transcribed-text');
+            if (!textArea.value) {
+                showToast('لا يوجد نص للنسخ', 'error');
+                return;
+            }
+            navigator.clipboard.writeText(textArea.value).then(() => {
+                showToast('تم نسخ النص بنجاح!');
+            }).catch(() => {
+                showToast('فشل نسخ النص', 'error');
+            });
+        }
+
+        function clearTranscript() {
+            const textArea = document.getElementById('transcribed-text');
+            if (!textArea.value.trim()) {
+                showToast('لا يوجد نص للحذف', 'error');
+                return;
+            }
+            textArea.value = '';
+            fullTranscript = '';
+            resetDuplicateTracking();
+            updateWordCount();
+            showToast('تم حذف النص بنجاح!');
+        }
+
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && (isRecording || isContinuousRecording) && !wakeLock) {
+                await requestWakeLock();
+            }
+        });
+
+        function toggleContinuousRecording() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                showSpeechError('متصفحك لا يدعم تحويل الصوت إلى نص. جرب Chrome أو Edge.');
+                return;
+            }
+
+            if (isContinuousRecording) {
+                stopContinuousRecording();
+            } else {
+                if (isRecording) {
+                    stopRecording();
+                }
+                startContinuousRecording();
+            }
+        }
+
+        async function startContinuousRecording() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            continuousRecognition = new SpeechRecognition();
+            continuousRecognition.lang = 'ar-EG';
+            continuousRecognition.continuous = true;
+            continuousRecognition.interimResults = true;
+            continuousRecognition.maxAlternatives = 5;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: true,
+                        channelCount: 1,
+                        sampleRate: 16000
+                    }
+                });
+                stream.getTracks().forEach(track => track.stop());
+            } catch (e) {
+                console.log('Microphone access check:', e);
+            }
+
+            const continuousBtn = document.getElementById('continuous-btn');
+            const continuousIcon = document.getElementById('continuous-icon');
+            const micStatus = document.getElementById('mic-status');
+            const textArea = document.getElementById('transcribed-text');
+
+            fullTranscript = textArea.value;
+
+            continuousRecognition.onstart = () => {
+                isContinuousRecording = true;
+                continuousBtn.classList.add('recording-continuous');
+                continuousIcon.classList.remove('text-orange-400');
+                continuousIcon.classList.add('text-purple-600');
+                micStatus.innerHTML = '<span class="text-purple-600 font-bold">🎙️ الاستماع المستمر نشط...</span><br><span class="text-gray-500 text-sm">💡 نصيحة: ارفع صوت المقطع وضع الميكروفون قريباً جداً من السماعة<br>⚠️ ملاحظة: هذه الميزة تستخدم ميكروفون الجهاز فقط ولا تلتقط صوت النظام مباشرة</span>';
+                hideSpeechError();
+
+                if (!recordingTimer) {
+                    startRecordingTimer();
+                    requestWakeLock();
+                }
+            };
+
+            continuousRecognition.onresult = (event) => {
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        // Check for duplicates before adding (mobile fix)
+                        if (!isDuplicateResult(transcript)) {
+                            fullTranscript += transcript + ' ';
+                        }
+                    } else {
+                        interimTranscript = transcript;
+                    }
+                }
+
+                textArea.value = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
+                updateWordCount();
+                textArea.scrollTop = textArea.scrollHeight;
+            };
+
+            continuousRecognition.onerror = (event) => {
+                if (event.error === 'no-speech' || event.error === 'network' || event.error === 'aborted') {
+                    if (isContinuousRecording) {
+                        setTimeout(() => {
+                            if (isContinuousRecording && continuousRecognition) {
+                                try {
+                                    continuousRecognition.start();
+                                } catch (e) {
+                                    createNewContinuousRecognition();
+                                }
+                            }
+                        }, 100);
+                    }
+                    return;
+                }
+
+                if (event.error === 'audio-capture') {
+                    showSpeechError('لم يتم العثور على ميكروفون. تأكد من توصيله.');
+                    stopContinuousRecording();
+                    return;
+                }
+
+                if (event.error === 'not-allowed') {
+                    showSpeechError('تم رفض إذن الميكروفون. اسمح بالوصول من إعدادات المتصفح.');
+                    stopContinuousRecording();
+                    return;
+                }
+            };
+
+            continuousRecognition.onend = () => {
+                if (isContinuousRecording) {
+                    setTimeout(() => {
+                        if (isContinuousRecording) {
+                            try {
+                                continuousRecognition.start();
+                            } catch (e) {
+                                createNewContinuousRecognition();
+                            }
+                        }
+                    }, 50);
+                }
+            };
+
+            try {
+                continuousRecognition.start();
+            } catch (e) {
+                showSpeechError('فشل في بدء الاستماع المستمر. حاول مرة أخرى.');
+            }
+        }
+
+        function createNewContinuousRecognition() {
+            if (!isContinuousRecording) return;
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            continuousRecognition = new SpeechRecognition();
+            continuousRecognition.lang = 'ar-EG';
+            continuousRecognition.continuous = true;
+            continuousRecognition.interimResults = true;
+            continuousRecognition.maxAlternatives = 3;
+
+            const textArea = document.getElementById('transcribed-text');
+
+            continuousRecognition.onresult = (event) => {
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        // Check for duplicates before adding (mobile fix)
+                        if (!isDuplicateResult(transcript)) {
+                            fullTranscript += transcript + ' ';
+                        }
+                    } else {
+                        interimTranscript = transcript;
+                    }
+                }
+
+                textArea.value = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
+                updateWordCount();
+                textArea.scrollTop = textArea.scrollHeight;
+            };
+
+            continuousRecognition.onerror = (event) => {
+                if (event.error === 'no-speech' || event.error === 'network' || event.error === 'aborted') {
+                    if (isContinuousRecording) {
+                        setTimeout(() => {
+                            if (isContinuousRecording) {
+                                createNewContinuousRecognition();
+                            }
+                        }, 100);
+                    }
+                    return;
+                }
+
+                if (event.error === 'not-allowed' || event.error === 'audio-capture') {
+                    stopContinuousRecording();
+                }
+            };
+
+            continuousRecognition.onend = () => {
+                if (isContinuousRecording) {
+                    setTimeout(() => {
+                        if (isContinuousRecording) {
+                            createNewContinuousRecognition();
+                        }
+                    }, 50);
+                }
+            };
+
+            try {
+                continuousRecognition.start();
+            } catch (e) {
+                setTimeout(() => {
+                    if (isContinuousRecording) {
+                        createNewContinuousRecognition();
+                    }
+                }, 500);
+            }
+        }
+
+        function stopContinuousRecording() {
+            resetDuplicateTracking();
+            isContinuousRecording = false;
+
+            if (continuousRecognition) {
+                try {
+                    continuousRecognition.stop();
+                } catch (e) { }
+                continuousRecognition = null;
+            }
+
+            const continuousBtn = document.getElementById('continuous-btn');
+            const continuousIcon = document.getElementById('continuous-icon');
+            const micStatus = document.getElementById('mic-status');
+            const textArea = document.getElementById('transcribed-text');
+
+            continuousBtn.classList.remove('recording-continuous');
+            continuousIcon.classList.add('text-orange-400');
+            continuousIcon.classList.remove('text-purple-600');
+            micStatus.textContent = 'اضغط على الميكروفون للبدء';
+
+            textArea.value = fullTranscript;
+            updateWordCount();
+
+            stopRecordingTimer();
+            releaseWakeLock();
+        }
+
+        async function fetchVideoInfo() {
+            const url = document.getElementById('youtube-url').value.trim();
+            if (!url) {
+                showToast('الرجاء إدخال رابط الفيديو', 'error');
+                return;
+            }
+
+            const fetchBtn = document.getElementById('fetch-btn');
+            const videoInfo = document.getElementById('video-info');
+            const errorDiv = document.getElementById('youtube-error');
+
+            fetchBtn.disabled = true;
+            fetchBtn.innerHTML = '<div class="loader"></div>';
+            videoInfo.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch('/video-info', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({url})
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'خطأ في جلب معلومات الفيديو');
+                }
+
+                document.getElementById('video-thumbnail').src = data.thumbnail;
+                document.getElementById('video-title').textContent = data.title;
+                document.getElementById('video-channel').textContent = data.channel;
+                document.getElementById('video-duration').textContent = data.duration;
+                videoInfo.classList.remove('hidden');
+
+            } catch (error) {
+                document.getElementById('youtube-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                fetchBtn.disabled = false;
+                fetchBtn.innerHTML = '<i class="fas fa-info-circle"></i> جلب المعلومات';
+            }
+        }
+
+        async function downloadClip() {
+            const url = document.getElementById('youtube-url').value.trim();
+            const startTime = document.getElementById('start-time').value.trim();
+            const endTime = document.getElementById('end-time').value.trim();
+
+            if (!url) {
+                showToast('الرجاء إدخال رابط الفيديو', 'error');
+                return;
+            }
+            if (!endTime) {
+                showToast('الرجاء تحديد وقت النهاية', 'error');
+                return;
+            }
+
+            const downloadBtn = document.getElementById('download-btn');
+            const loadingDiv = document.getElementById('youtube-loading');
+            const errorDiv = document.getElementById('youtube-error');
+
+            downloadBtn.disabled = true;
+            downloadBtn.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+            document.getElementById('loading-text').textContent = 'جاري تحميل ومعالجة الفيديو... قد يستغرق هذا بعض الوقت';
+
+            try {
+                const response = await fetch('/process-video', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({url, start_time: startTime || '00:00', end_time: endTime})
+                });
+
+                const contentType = response.headers.get('content-type');
+
+                if (!response.ok) {
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json();
+                        throw new Error(data.error || 'خطأ في تحميل المقطع');
+                    } else {
+                        throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                    }
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `clip_${startTime.replace(':', '-')}_${endTime.replace(':', '-')}.mp4`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+
+                showToast('تم تحميل المقطع بنجاح!');
+
+            } catch (error) {
+                document.getElementById('youtube-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                downloadBtn.disabled = false;
+                downloadBtn.classList.remove('hidden');
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function handleAnimeUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            uploadedAnimeFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('anime-preview').src = e.target.result;
+                document.getElementById('anime-preview-container').classList.remove('hidden');
+                document.getElementById('anime-upload-prompt').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function searchAnime() {
+            if (!uploadedAnimeFile) {
+                showToast('الرجاء تحميل صورة أولاً', 'error');
+                return;
+            }
+
+            const searchBtn = document.getElementById('search-anime-btn');
+            const loadingDiv = document.getElementById('anime-loading');
+            const resultDiv = document.getElementById('anime-result');
+            const notFoundDiv = document.getElementById('anime-not-found');
+            const errorDiv = document.getElementById('anime-error');
+
+            searchBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            notFoundDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('image', uploadedAnimeFile);
+
+            try {
+                const response = await fetch('/search-anime', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'خطأ في البحث');
+                }
+
+                if (data.found) {
+                    document.getElementById('result-name').textContent = data.anime_name;
+                    document.getElementById('result-episode').textContent = data.episode;
+                    document.getElementById('result-timestamp').textContent = data.timestamp;
+                    document.getElementById('result-similarity').textContent = data.similarity;
+
+                    if (data.video_preview) {
+                        document.getElementById('result-video').src = data.video_preview;
+                        document.getElementById('anime-preview-video').classList.remove('hidden');
+                    } else {
+                        document.getElementById('anime-preview-video').classList.add('hidden');
+                    }
+
+                    resultDiv.classList.remove('hidden');
+                } else {
+                    document.getElementById('not-found-text').textContent = data.message;
+                    notFoundDiv.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                document.getElementById('anime-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                searchBtn.disabled = false;
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        async function searchAnimeByName() {
+            const nameInput = document.getElementById('anime-name-input').value.trim();
+            if (!nameInput) {
+                showToast('الرجاء إدخال وصف الأنمي', 'error');
+                return;
+            }
+
+            const searchBtn = document.getElementById('search-anime-name-btn');
+            const loadingDiv = document.getElementById('anime-name-loading');
+            const resultsDiv = document.getElementById('anime-name-results');
+            const notFoundDiv = document.getElementById('anime-name-not-found');
+            const errorDiv = document.getElementById('anime-name-error');
+
+            const aiSuggestionDiv = document.getElementById('anime-ai-suggestion');
+
+            searchBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            resultsDiv.classList.add('hidden');
+            notFoundDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            aiSuggestionDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch('/search-anime-by-name', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: nameInput, is_description: true})
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'خطأ في البحث');
+                }
+
+                // Show AI suggestion if available
+                if (data.gemini_suggestion) {
+                    document.getElementById('ai-anime-name').textContent = data.gemini_suggestion.name;
+                    const confidenceMap = {'High': 'عالية 🟢', 'Medium': 'متوسطة 🟡', 'Low': 'منخفضة 🔴'};
+                    document.getElementById('ai-confidence').textContent = confidenceMap[data.gemini_suggestion.confidence] || data.gemini_suggestion.confidence;
+
+                    if (data.gemini_suggestion.alternatives && data.gemini_suggestion.alternatives.length > 0) {
+                        document.getElementById('ai-alternatives').textContent = data.gemini_suggestion.alternatives.join('، ');
+                        document.getElementById('ai-alternatives-container').classList.remove('hidden');
+                    } else {
+                        document.getElementById('ai-alternatives-container').classList.add('hidden');
+                    }
+
+                    aiSuggestionDiv.classList.remove('hidden');
+                }
+
+                if (data.found && data.results.length > 0) {
+                    const listDiv = document.getElementById('anime-name-list');
+                    listDiv.innerHTML = '';
+
+                    data.results.forEach(anime => {
+                        const card = document.createElement('div');
+                        card.className = 'anime-card glass rounded-xl p-4 flex gap-4';
+                        card.innerHTML = `
+                            <img src="${anime.cover}" alt="${anime.name}" class="w-24 h-36 object-cover rounded-lg shadow-md">
+                            <div class="flex-1">
+                                <h4 class="font-bold text-lg text-gray-800 mb-1">${anime.name}</h4>
+                                ${anime.name_native ? `<p class="text-gray-500 text-sm mb-2">${anime.name_native}</p>` : ''}
+                                <p class="text-gray-600 text-sm mb-2 line-clamp-3">${anime.description}</p>
+                                <div class="flex flex-wrap gap-2 text-xs">
+                                    <span class="badge bg-purple-100 text-purple-700">
+                                        <i class="fas fa-tv ml-1"></i>
+                                        ${anime.episodes} حلقة
+                                    </span>
+                                    <span class="badge bg-green-100 text-green-700">
+                                        <i class="fas fa-star ml-1"></i>
+                                        ${anime.score}%
+                                    </span>
+                                    <span class="badge bg-blue-100 text-blue-700">
+                                        <i class="fas fa-calendar ml-1"></i>
+                                        ${anime.year}
+                                    </span>
+                                </div>
+                                ${anime.genres.length > 0 ? `
+                                    <div class="flex flex-wrap gap-1 mt-2">
+                                        ${anime.genres.slice(0, 3).map(g => `<span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">${g}</span>`).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                        listDiv.appendChild(card);
+                    });
+
+                    resultsDiv.classList.remove('hidden');
+                } else {
+                    document.getElementById('anime-name-not-found-text').textContent = data.message || 'لم يتم العثور على نتائج.';
+                    notFoundDiv.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                document.getElementById('anime-name-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                searchBtn.disabled = false;
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function handlePodcastImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            uploadedPodcastImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('podcast-image-preview').src = e.target.result;
+                document.getElementById('podcast-image-preview-container').classList.remove('hidden');
+                document.getElementById('podcast-image-upload-prompt').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handlePodcastAudioUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            uploadedPodcastAudioFile = file;
+            document.getElementById('podcast-audio-file-name').textContent = file.name;
+            document.getElementById('podcast-audio-file-info').classList.remove('hidden');
+            document.getElementById('podcast-audio-upload-prompt').classList.add('hidden');
+        }
+
+        async function searchPodcastByImage() {
+            if (!uploadedPodcastImageFile) {
+                showToast('الرجاء تحميل صورة أولاً', 'error');
+                return;
+            }
+
+            const searchBtn = document.getElementById('search-podcast-image-btn');
+            const loadingDiv = document.getElementById('podcast-image-loading');
+            const resultDiv = document.getElementById('podcast-image-result');
+            const notFoundDiv = document.getElementById('podcast-image-not-found');
+            const errorDiv = document.getElementById('podcast-image-error');
+
+            searchBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            notFoundDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('image', uploadedPodcastImageFile);
+
+            try {
+                const response = await fetch('/search-podcast-by-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'خطأ في البحث');
+                }
+
+                if (data.found) {
+                    document.getElementById('podcast-ocr-text').textContent = data.extracted_text;
+
+                    const podcast = data.podcast;
+                    const links = data.search_links || {};
+                    const cardDiv = document.getElementById('podcast-image-card');
+                    cardDiv.innerHTML = `
+                        <div class="flex gap-4 items-start">
+                            <img src="${podcast.artwork}" alt="${podcast.name}" class="w-24 h-24 object-cover rounded-lg shadow-md">
+                            <div class="flex-1">
+                                <h4 class="font-bold text-lg text-gray-800 mb-1">${podcast.name}</h4>
+                                <p class="text-gray-500 text-sm mb-2">${podcast.artist}</p>
+                                <div class="flex flex-wrap gap-2 text-xs mb-3">
+                                    <span class="badge bg-green-100 text-green-700">
+                                        <i class="fas fa-check-circle ml-1"></i>
+                                        تطابق ${data.similarity}%
+                                    </span>
+                                    <span class="badge bg-purple-100 text-purple-700">
+                                        <i class="fas fa-tag ml-1"></i>
+                                        ${podcast.genre}
+                                    </span>
+                                    <span class="badge bg-blue-100 text-blue-700">
+                                        <i class="fas fa-podcast ml-1"></i>
+                                        ${podcast.episode_count} حلقة
+                                    </span>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mt-3">
+                                    ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
+                                    ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
+                                    ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
+                                    ${podcast.itunes_url ? `<a href="${podcast.itunes_url}" target="_blank" class="px-3 py-2 rounded-lg bg-purple-500 text-white text-sm hover:bg-purple-600 transition-all flex items-center gap-2"><i class="fab fa-itunes"></i>iTunes</a>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    resultDiv.classList.remove('hidden');
+                } else {
+                    let message = data.message;
+                    const links = data.search_links || {};
+                    let linksHtml = '';
+                    if (links.youtube || links.spotify || links.soundcloud) {
+                        linksHtml = `<div class="flex flex-wrap gap-2 mt-3">
+                            ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
+                            ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
+                            ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
+                        </div>`;
+                    }
+                    document.getElementById('podcast-image-not-found-text').innerHTML = message + linksHtml;
+                    notFoundDiv.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                document.getElementById('podcast-image-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                searchBtn.disabled = false;
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        async function searchPodcastByAudio() {
+            if (!uploadedPodcastAudioFile) {
+                showToast('الرجاء تحميل ملف صوتي أولاً', 'error');
+                return;
+            }
+
+            const searchBtn = document.getElementById('search-podcast-audio-btn');
+            const loadingDiv = document.getElementById('podcast-audio-loading');
+            const resultDiv = document.getElementById('podcast-audio-result');
+            const notFoundDiv = document.getElementById('podcast-audio-not-found');
+            const errorDiv = document.getElementById('podcast-audio-error');
+
+            searchBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            notFoundDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('audio', uploadedPodcastAudioFile);
+
+            try {
+                const response = await fetch('/search-podcast-by-audio', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    if (response.status === 504 || response.status === 502) {
+                        throw new Error('انتهت مهلة الخادم. الملف الصوتي طويل جداً، جرب ملفاً أقصر.');
+                    }
+                    throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'خطأ في البحث');
+                }
+
+                if (data.found) {
+                    document.getElementById('podcast-speech-text').textContent = data.transcribed_text;
+
+                    const listDiv = document.getElementById('podcast-audio-list');
+                    listDiv.innerHTML = '';
+
+                    if (data.identified_name && data.detection_method === 'gemini_ai') {
+                        const aiHeader = document.createElement('div');
+                        aiHeader.className = 'mb-4 p-3 rounded-lg bg-purple-50 border border-purple-200';
+                        aiHeader.innerHTML = `
+                            <div class="flex items-center gap-2 text-purple-700">
+                                <i class="fas fa-robot"></i>
+                                <span class="font-medium">تم التعرف بواسطة الذكاء الاصطناعي:</span>
+                                <span class="font-bold">${data.identified_name}</span>
+                            </div>
+                        `;
+                        listDiv.appendChild(aiHeader);
+                    }
+
+                    data.results.forEach((podcast, index) => {
+                        const links = podcast.search_links || data.search_links || {};
+                        const card = document.createElement('div');
+                        card.className = 'podcast-card glass rounded-xl p-4 flex gap-4';
+                        card.innerHTML = `
+                            <img src="${podcast.artwork}" alt="${podcast.name}" class="w-20 h-20 object-cover rounded-lg shadow-md">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-bold text-gray-800">${podcast.name}</h4>
+                                    ${index === 0 ? '<span class="badge bg-yellow-100 text-yellow-700 text-xs">أفضل تطابق</span>' : ''}
+                                </div>
+                                <p class="text-gray-500 text-sm mb-2">${podcast.artist}</p>
+                                <div class="flex flex-wrap gap-2 text-xs mb-2">
+                                    <span class="badge bg-purple-100 text-purple-700">
+                                        <i class="fas fa-tag ml-1"></i>
+                                        ${podcast.genre}
+                                    </span>
+                                    <span class="badge bg-blue-100 text-blue-700">
+                                        <i class="fas fa-podcast ml-1"></i>
+                                        ${podcast.episode_count} حلقة
+                                    </span>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-2 py-1 rounded-lg bg-red-500 text-white text-xs hover:bg-red-600 transition-all flex items-center gap-1"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
+                                    ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-2 py-1 rounded-lg bg-green-500 text-white text-xs hover:bg-green-600 transition-all flex items-center gap-1"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
+                                    ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-2 py-1 rounded-lg bg-orange-500 text-white text-xs hover:bg-orange-600 transition-all flex items-center gap-1"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
+                                    ${podcast.itunes_url ? `<a href="${podcast.itunes_url}" target="_blank" class="px-2 py-1 rounded-lg bg-purple-500 text-white text-xs hover:bg-purple-600 transition-all flex items-center gap-1"><i class="fab fa-itunes"></i>iTunes</a>` : ''}
+                                </div>
+                            </div>
+                        `;
+                        listDiv.appendChild(card);
+                    });
+
+                    resultDiv.classList.remove('hidden');
+                } else {
+                    let message = data.message;
+                    const links = data.search_links || {};
+                    let linksHtml = '';
+                    if (links.youtube || links.spotify || links.soundcloud) {
+                        linksHtml = `<div class="flex flex-wrap gap-2 mt-3">
+                            ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
+                            ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
+                            ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
+                        </div>`;
+                    }
+                    document.getElementById('podcast-audio-not-found-text').innerHTML = message + linksHtml;
+                    notFoundDiv.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                document.getElementById('podcast-audio-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                searchBtn.disabled = false;
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function handleAudioUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            uploadedAudioFile = file;
+            document.getElementById('audio-file-name').textContent = file.name;
+            document.getElementById('audio-file-info').classList.remove('hidden');
+            document.getElementById('audio-upload-prompt').classList.add('hidden');
+        }
+
+        async function transcribeAudioFile() {
+            if (!uploadedAudioFile) {
+                showToast('الرجاء تحميل ملف صوتي أولاً', 'error');
+                return;
+            }
+
+            const transcribeBtn = document.getElementById('transcribe-btn');
+            const loadingDiv = document.getElementById('file-loading');
+            const resultDiv = document.getElementById('file-result');
+            const errorDiv = document.getElementById('file-error');
+
+            transcribeBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('audio', uploadedAudioFile);
+
+            try {
+                const response = await fetch('/transcribe-file', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('انتهت مهلة الخادم. جرب ملفاً أقصر (أقل من دقيقتين) أو حاول مرة أخرى.');
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'خطأ في تحويل الملف');
+                }
+
+                if (data.message) {
+                    showToast(data.message, 'error');
+                }
+
+                document.getElementById('file-transcribed-text').value = data.text;
+                resultDiv.classList.remove('hidden');
+
+                if (data.text) {
+                    showToast('تم تحويل الملف بنجاح!');
+                }
+
+            } catch (error) {
+                document.getElementById('file-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                transcribeBtn.disabled = false;
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function downloadFileTranscript() {
+            const textArea = document.getElementById('file-transcribed-text');
+            if (!textArea.value.trim()) {
+                showToast('لا يوجد نص للتحميل', 'error');
+                return;
+            }
+
+            const blob = new Blob([textArea.value], {type: 'text/plain;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'audio_transcript.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('تم تحميل النص بنجاح!');
+        }
+
+        function copyFileText() {
+            const textArea = document.getElementById('file-transcribed-text');
+            if (!textArea.value) {
+                showToast('لا يوجد نص للنسخ', 'error');
+                return;
+            }
+            navigator.clipboard.writeText(textArea.value).then(() => {
+                showToast('تم نسخ النص بنجاح!');
+            }).catch(() => {
+                showToast('فشل نسخ النص', 'error');
+            });
+        }
+
+        function handleOcrUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            uploadedOcrFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('ocr-preview').src = e.target.result;
+                document.getElementById('ocr-preview-container').classList.remove('hidden');
+                document.getElementById('ocr-upload-prompt').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function extractText() {
+            if (!uploadedOcrFile) {
+                showToast('الرجاء تحميل صورة أولاً', 'error');
+                return;
+            }
+
+            const ocrBtn = document.getElementById('ocr-btn');
+            const loadingDiv = document.getElementById('ocr-loading');
+            const resultDiv = document.getElementById('ocr-result');
+            const errorDiv = document.getElementById('ocr-error');
+
+            ocrBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('image', uploadedOcrFile);
+
+            try {
+                const response = await fetch('/ocr-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'خطأ في استخراج النص');
+                }
+
+                if (data.message) {
+                    showToast(data.message, 'error');
+                }
+
+                document.getElementById('ocr-text').value = data.text;
+                resultDiv.classList.remove('hidden');
+
+                if (data.text) {
+                    showToast('تم استخراج النص بنجاح!');
+                }
+
+            } catch (error) {
+                document.getElementById('ocr-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                ocrBtn.disabled = false;
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function downloadOcrText() {
+            const textArea = document.getElementById('ocr-text');
+            if (!textArea.value.trim()) {
+                showToast('لا يوجد نص للتحميل', 'error');
+                return;
+            }
+
+            const blob = new Blob([textArea.value], {type: 'text/plain;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'extracted_text.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('تم تحميل النص بنجاح!');
+        }
+
+        function copyOcrText() {
+            const textArea = document.getElementById('ocr-text');
+            if (!textArea.value) {
+                showToast('لا يوجد نص للنسخ', 'error');
+                return;
+            }
+            navigator.clipboard.writeText(textArea.value).then(() => {
+                showToast('تم نسخ النص بنجاح!');
+            }).catch(() => {
+                showToast('فشل نسخ النص', 'error');
+            });
+        }
+
+        async function downloadUniversalMedia(format = 'video') {
+            const url = document.getElementById('downloader-url').value.trim();
+            const isAudio = format === 'audio';
+            const mediaType = isAudio ? 'الصوت' : 'الفيديو';
+
+            if (!url) {
+                showToast('الرجاء إدخال الرابط', 'error');
+                return;
+            }
+
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                showToast('الرابط غير صالح. يجب أن يبدأ بـ http:// أو https://', 'error');
+                return;
+            }
+
+            const videoBtn = document.getElementById('universal-download-video-btn');
+            const audioBtn = document.getElementById('universal-download-audio-btn');
+            const loadingDiv = document.getElementById('downloader-loading');
+            const loadingText = document.getElementById('downloader-loading-text');
+            const errorDiv = document.getElementById('downloader-error');
+
+            videoBtn.disabled = true;
+            audioBtn.disabled = true;
+            videoBtn.classList.add('hidden');
+            audioBtn.classList.add('hidden');
+            loadingText.textContent = isAudio ? 'جاري تحميل وتحويل الصوت... قد يستغرق هذا بعض الوقت' : 'جاري تحميل وتحويل الفيديو... قد يستغرق هذا بعض الوقت';
+            loadingDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                let response;
+                try {
+                    response = await fetch('/download-video', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({url, format})
+                    });
+                } catch (networkError) {
+                    throw new Error('فشل الاتصال بالخادم. تحقق من اتصالك بالإنترنت.');
+                }
+
+                const contentType = response.headers.get('content-type');
+
+                if (!response.ok) {
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json();
+                        throw new Error(data.error || `خطأ في تحميل ${mediaType}`);
+                    } else {
+                        throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                    }
+                }
+
+                let blob;
+                try {
+                    blob = await response.blob();
+                } catch (blobError) {
+                    throw new Error(`فشل في استلام ${mediaType}. حاول مرة أخرى.`);
+                }
+
+                if (!blob || blob.size === 0) {
+                    throw new Error('لم يتم استلام أي بيانات. جرب رابطاً آخر.');
+                }
+
+                const contentDisposition = response.headers.get('content-disposition');
+                let filename = isAudio ? 'audio.mp3' : 'video.mp4';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        filename = filenameMatch[1].replace(/['"]/g, '');
+                        try {
+                            filename = decodeURIComponent(filename);
+                        } catch (e) { }
+                    }
+                }
+
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+
+                showToast(`تم تحميل ${mediaType} بنجاح!`);
+
+            } catch (error) {
+                document.getElementById('downloader-error-text').textContent = error.message || 'خطأ غير متوقع. حاول مرة أخرى.';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                videoBtn.disabled = false;
+                audioBtn.disabled = false;
+                videoBtn.classList.remove('hidden');
+                audioBtn.classList.remove('hidden');
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function handlePdfUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                showToast('الرجاء تحميل ملف PDF فقط', 'error');
+                return;
+            }
+
+            uploadedPdfFile = file;
+            document.getElementById('pdf-filename').textContent = file.name;
+            document.getElementById('pdf-preview-container').classList.remove('hidden');
+            document.getElementById('pdf-upload-prompt').classList.add('hidden');
+        }
+
+        async function convertPdf(mode) {
+            if (!uploadedPdfFile) {
+                showToast('الرجاء تحميل ملف PDF أولاً', 'error');
+                return;
+            }
+
+            const originalBtn = document.getElementById('pdf-convert-original-btn');
+            const arBtn = document.getElementById('pdf-convert-ar-btn');
+            const enBtn = document.getElementById('pdf-convert-en-btn');
+            const loadingDiv = document.getElementById('pdf-loading');
+            const loadingText = document.getElementById('pdf-loading-text');
+            const errorDiv = document.getElementById('pdf-error');
+
+            originalBtn.disabled = true;
+            arBtn.disabled = true;
+            enBtn.disabled = true;
+            originalBtn.classList.add('hidden');
+            arBtn.classList.add('hidden');
+            enBtn.classList.add('hidden');
+
+            const isOcrMode = document.getElementById('pdf-ocr-mode').checked;
+            const ocrNote = isOcrMode ? ' (باستخدام الذكاء الاصطناعي للنص العربي)' : '';
+
+            if (mode === 'original') {
+                loadingText.textContent = 'جاري تحويل الملف إلى Word...' + ocrNote;
+            } else if (mode === 'ar') {
+                loadingText.textContent = 'جاري التحويل والترجمة إلى العربية... قد يستغرق هذا بعض الوقت' + ocrNote;
+            } else {
+                loadingText.textContent = 'جاري التحويل والترجمة إلى الإنجليزية... قد يستغرق هذا بعض الوقت' + ocrNote;
+            }
+
+            loadingDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('pdf', uploadedPdfFile);
+            formData.append('mode', mode);
+
+            const ocrMode = document.getElementById('pdf-ocr-mode').checked;
+            formData.append('extraction_method', ocrMode ? 'ocr' : 'standard');
+
+            try {
+                let response;
+                try {
+                    response = await fetch('/convert-pdf', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } catch (networkError) {
+                    throw new Error('فشل الاتصال بالخادم. تحقق من اتصالك بالإنترنت.');
+                }
+
+                const contentType = response.headers.get('content-type');
+
+                if (!response.ok) {
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json();
+                        throw new Error(data.error || 'خطأ في تحويل الملف');
+                    } else {
+                        throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                    }
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+
+                let suffix = '';
+                if (mode === 'ar') suffix = '_arabic';
+                else if (mode === 'en') suffix = '_english';
+
+                const originalName = uploadedPdfFile.name.replace('.pdf', '').replace('.PDF', '');
+                a.download = `${originalName}${suffix}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+
+                showToast('تم تحويل الملف بنجاح!');
+
+            } catch (error) {
+                document.getElementById('pdf-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                originalBtn.disabled = false;
+                arBtn.disabled = false;
+                enBtn.disabled = false;
+                originalBtn.classList.remove('hidden');
+                arBtn.classList.remove('hidden');
+                enBtn.classList.remove('hidden');
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function setVideoMode(mode) {
+            const uploadTab = document.getElementById('video-tab-upload');
+            const urlTab = document.getElementById('video-tab-url');
+            const uploadMode = document.getElementById('video-upload-mode');
+            const urlMode = document.getElementById('video-url-mode');
+
+            if (mode === 'upload') {
+                uploadTab.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+                uploadTab.style.color = 'white';
+                urlTab.style.background = 'white';
+                urlTab.style.color = '#4b5563';
+                uploadMode.classList.remove('hidden');
+                urlMode.classList.add('hidden');
+            } else {
+                urlTab.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+                urlTab.style.color = 'white';
+                uploadTab.style.background = 'white';
+                uploadTab.style.color = '#4b5563';
+                urlMode.classList.remove('hidden');
+                uploadMode.classList.add('hidden');
+            }
+        }
+
+        function handleVideoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const allowedExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (!allowedExtensions.includes(ext)) {
+                showToast('نوع الملف غير مدعوم. الأنواع المدعومة: MP4, MOV, AVI, MKV, WEBM, FLV, WMV, M4V', 'error');
+                return;
+            }
+
+            uploadedVideoFile = file;
+            document.getElementById('video-filename').textContent = file.name;
+            document.getElementById('video-preview-container').classList.remove('hidden');
+            document.getElementById('video-upload-prompt').classList.add('hidden');
+        }
+
+        async function transcribeVideoFile() {
+            if (!uploadedVideoFile) {
+                showToast('الرجاء تحميل ملف فيديو أولاً', 'error');
+                return;
+            }
+
+            const transcribeBtn = document.getElementById('transcribe-video-btn');
+            const loadingDiv = document.getElementById('video-loading');
+            const resultDiv = document.getElementById('video-result');
+            const errorDiv = document.getElementById('video-error');
+
+            transcribeBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('video', uploadedVideoFile);
+            formData.append('input_type', 'file');
+            formData.append('language', document.getElementById('video-language').value);
+
+            try {
+                let response;
+                try {
+                    response = await fetch('/transcribe-video', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } catch (networkError) {
+                    throw new Error('فشل الاتصال بالخادم. تحقق من اتصالك بالإنترنت.');
+                }
+
+                const contentType = response.headers.get('content-type');
+
+                if (!contentType || !contentType.includes('application/json')) {
+                    if (response.status === 504 || response.status === 502) {
+                        throw new Error('انتهت مهلة الخادم. الفيديو طويل جداً، جرب فيديو أقصر.');
+                    } else if (response.status >= 500) {
+                        throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                    } else {
+                        throw new Error('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
+                    }
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'خطأ في تحويل الفيديو');
+                }
+
+                document.getElementById('video-transcribed-text').value = data.text;
+                updateVideoTextStats();
+                resultDiv.classList.remove('hidden');
+
+                if (data.text) {
+                    showToast('تم تحويل الفيديو إلى نص بنجاح!');
+                }
+
+            } catch (error) {
+                document.getElementById('video-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                transcribeBtn.disabled = false;
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        async function transcribeVideoUrl() {
+            const url = document.getElementById('video-url-input').value.trim();
+
+            if (!url) {
+                showToast('الرجاء إدخال رابط الفيديو', 'error');
+                return;
+            }
+
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                showToast('الرابط غير صالح. يجب أن يبدأ بـ http:// أو https://', 'error');
+                return;
+            }
+
+            const transcribeBtn = document.getElementById('transcribe-video-url-btn');
+            const loadingDiv = document.getElementById('video-loading');
+            const resultDiv = document.getElementById('video-result');
+            const errorDiv = document.getElementById('video-error');
+
+            transcribeBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('url', url);
+            formData.append('input_type', 'url');
+            formData.append('language', document.getElementById('video-language').value);
+
+            try {
+                let response;
+                try {
+                    response = await fetch('/transcribe-video', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } catch (networkError) {
+                    throw new Error('فشل الاتصال بالخادم. تحقق من اتصالك بالإنترنت.');
+                }
+
+                const contentType = response.headers.get('content-type');
+
+                if (!contentType || !contentType.includes('application/json')) {
+                    if (response.status === 504 || response.status === 502) {
+                        throw new Error('انتهت مهلة الخادم. الفيديو طويل جداً، جرب فيديو أقصر.');
+                    } else if (response.status >= 500) {
+                        throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                    } else {
+                        throw new Error('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
+                    }
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'خطأ في تحويل الفيديو');
+                }
+
+                document.getElementById('video-transcribed-text').value = data.text;
+                updateVideoTextStats();
+                resultDiv.classList.remove('hidden');
+
+                if (data.text) {
+                    showToast('تم تحويل الفيديو إلى نص بنجاح!');
+                }
+
+            } catch (error) {
+                document.getElementById('video-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                transcribeBtn.disabled = false;
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function updateVideoTextStats() {
+            const text = document.getElementById('video-transcribed-text').value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            document.getElementById('video-word-count').textContent = words;
+            document.getElementById('video-char-count').textContent = chars;
+        }
+
+        function clearVideoText() {
+            document.getElementById('video-transcribed-text').value = '';
+            document.getElementById('video-result').classList.add('hidden');
+            document.getElementById('video-word-count').textContent = '0';
+            document.getElementById('video-char-count').textContent = '0';
+            showToast('تم حذف النص');
+        }
+
+        function downloadVideoText() {
+            const textArea = document.getElementById('video-transcribed-text');
+            if (!textArea.value.trim()) {
+                showToast('لا يوجد نص للتحميل', 'error');
+                return;
+            }
+
+            const blob = new Blob([textArea.value], {type: 'text/plain;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'video_transcript.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('تم تحميل النص بنجاح!');
+        }
+
+        function copyVideoText() {
+            const textArea = document.getElementById('video-transcribed-text');
+            if (!textArea.value) {
+                showToast('لا يوجد نص للنسخ', 'error');
+                return;
+            }
+            navigator.clipboard.writeText(textArea.value).then(() => {
+                showToast('تم نسخ النص بنجاح!');
+            }).catch(() => {
+                showToast('فشل نسخ النص', 'error');
+            });
+        }
+    </script>
+</body>
+
+</html>
