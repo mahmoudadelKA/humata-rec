@@ -25,8 +25,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 6. نسخ باقي المشروع
 COPY . .
 
-# 7. فتح المنفذ
-EXPOSE 8080
+# 7. فتح البورت (اختياري هنا، بس نخليه 7860 وهو الافتراضي في Hugging Face)
+EXPOSE 7860
 
-# 8. أمر التشغيل (مع مهلة ساعة)
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "3600", "--workers", "2", "--threads", "4", "main:app"]
+# 8. أمر التشغيل - يربط على $PORT اللي Hugging Face بيبعته (أو 7860 لو مش موجود)
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-7860} --timeout 3600 --workers 2 --threads 4 main:app"]
