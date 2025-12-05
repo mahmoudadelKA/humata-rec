@@ -9,6 +9,8 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
     <link rel="apple-touch-icon" sizes="64x64" href="/static/favicon-small.png">
+    <!-- Preload background for faster loading -->
+    <link rel="preload" href="/static/background-optimized.jpg" as="image" type="image/jpeg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -36,19 +38,9 @@
             display: none;
         }
 
+        /* Overlay removed for full background visibility */
         body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(ellipse at 30% 20%, rgba(0, 191, 255, 0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 70% 60%, rgba(138, 43, 226, 0.02) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, rgba(0, 100, 200, 0.02) 0%, transparent 60%);
-            pointer-events: none;
-            z-index: 0;
+            display: none;
         }
 
         body > * {
@@ -709,14 +701,14 @@
             z-index: 0;
             pointer-events: none;
             overflow: hidden;
-            background-image: url('/static/background-sunset.jpg');
+            background-image: url('/static/background-optimized.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
             background-repeat: no-repeat;
         }
         
-        /* Dark overlay for better readability - light for welcome page */
+        /* Very light overlay - background fully visible */
         .global-video-bg::after {
             content: '';
             position: absolute;
@@ -724,7 +716,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(5, 5, 16, 0.15);
+            background: rgba(5, 5, 16, 0.05);
             pointer-events: none;
             z-index: 1;
         }
@@ -1166,6 +1158,118 @@
             50% {
                 box-shadow: 0 12px 40px rgba(99, 102, 241, 0.8), 0 0 100px rgba(139, 92, 246, 0.6);
             }
+        }
+
+        /* 3D Glass Tabs for Footer */
+        .glass-3d-tab {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .tab-inner {
+            position: relative;
+            padding: 1.5rem 2rem;
+            background: linear-gradient(135deg, 
+                rgba(15, 23, 42, 0.4) 0%, 
+                rgba(30, 41, 59, 0.3) 50%,
+                rgba(15, 23, 42, 0.4) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.4),
+                0 0 30px rgba(99, 102, 241, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transform: rotateX(5deg) translateZ(0);
+            transform-style: preserve-3d;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .glass-3d-tab:hover .tab-inner {
+            transform: rotateX(0deg) translateZ(20px) scale(1.02);
+            box-shadow: 
+                0 35px 70px -15px rgba(0, 0, 0, 0.5),
+                0 0 50px rgba(99, 102, 241, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .tab-glow {
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(135deg, 
+                rgba(99, 102, 241, 0.3), 
+                rgba(139, 92, 246, 0.2),
+                rgba(34, 211, 238, 0.2));
+            border-radius: 22px;
+            filter: blur(15px);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: -1;
+        }
+
+        .glass-3d-tab:hover .tab-glow {
+            opacity: 1;
+        }
+
+        .tab-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .verse-tab .tab-inner {
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .verse-tab:hover .tab-inner {
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .verse-tab .tab-glow {
+            background: linear-gradient(135deg, 
+                rgba(16, 185, 129, 0.3), 
+                rgba(52, 211, 153, 0.2));
+        }
+
+        .copyright-tab .tab-inner {
+            border-color: rgba(34, 211, 238, 0.2);
+        }
+
+        .copyright-tab:hover .tab-inner {
+            border-color: rgba(34, 211, 238, 0.4);
+        }
+
+        .copyright-tab .tab-glow {
+            background: linear-gradient(135deg, 
+                rgba(34, 211, 238, 0.3), 
+                rgba(99, 102, 241, 0.2));
+        }
+
+        .verse-text {
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        /* Shine effect on hover */
+        .tab-inner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.1), 
+                transparent);
+            transition: left 0.7s ease;
+            border-radius: 20px;
+        }
+
+        .glass-3d-tab:hover .tab-inner::before {
+            left: 100%;
         }
 
     </style>
@@ -2587,14 +2691,40 @@
         </main>
     </div>
 
-    <footer class="glass-sidebar py-6 text-center mt-auto">
+    <!-- 3D Glass Tabs for Verse and Copyright -->
+    <footer class="py-8 mt-auto relative">
         <div class="container mx-auto px-4">
-            <p class="text-slate-400 text-sm">
-                &copy; <span id="current-year"></span> جميع الحقوق محفوظة
-            </p>
-            <p class="neon-text mt-2">
-                يَرْفَعِ اللَّهُ الَّذِينَ آمَنُوا مِنْكُمْ وَالَّذِينَ أُوتُوا الْعِلْمَ دَرَجَاتٍ.
-            </p>
+            <div class="flex flex-col md:flex-row justify-center items-center gap-6">
+                
+                <!-- Tab 1: Quranic Verse -->
+                <div class="glass-3d-tab verse-tab group">
+                    <div class="tab-inner">
+                        <div class="tab-glow"></div>
+                        <div class="tab-content">
+                            <i class="fas fa-book-quran text-2xl text-emerald-400 mb-2"></i>
+                            <p class="verse-text text-lg font-semibold text-white/90 leading-relaxed">
+                                يَرْفَعِ اللَّهُ الَّذِينَ آمَنُوا مِنْكُمْ وَالَّذِينَ أُوتُوا الْعِلْمَ دَرَجَاتٍ
+                            </p>
+                            <span class="text-emerald-300/70 text-xs mt-2 block">سورة المجادلة - آية 11</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab 2: Copyright -->
+                <div class="glass-3d-tab copyright-tab group">
+                    <div class="tab-inner">
+                        <div class="tab-glow"></div>
+                        <div class="tab-content">
+                            <i class="fas fa-shield-halved text-2xl text-cyan-400 mb-2"></i>
+                            <p class="text-white/80 text-sm">
+                                &copy; <span id="current-year"></span> جميع الحقوق محفوظة
+                            </p>
+                            <p class="text-cyan-300/70 text-xs mt-1">ARKAN AI - منصة الأدوات الذكية</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
         </div>
     </footer>
 
@@ -5084,38 +5214,61 @@
             backgroundAudio.volume = 0.3;
             backgroundAudio.loop = true;
             
-            // Try to fetch audio from server endpoint (with timeout)
-            const fetchTimeout = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), 10000)
-            );
+            // Use reliable ambient audio sources
+            const audioSources = [
+                '/static/background-audio.mp3',
+                'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3',
+                'https://cdn.pixabay.com/audio/2024/11/29/audio_02f4bd3a68.mp3'
+            ];
             
-            Promise.race([
-                fetch('/get-audio', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: 'https://www.youtube.com/shorts/sM_o_LFsn4g' })
-                }).then(response => response.blob()),
-                fetchTimeout
-            ])
+            let currentSourceIndex = 0;
+            
+            function tryLoadAudio() {
+                if (currentSourceIndex >= audioSources.length) {
+                    console.log('All audio sources failed');
+                    return;
+                }
+                
+                backgroundAudio.src = audioSources[currentSourceIndex];
+                backgroundAudio.crossOrigin = 'anonymous';
+                backgroundAudio.load();
+                
+                backgroundAudio.oncanplaythrough = function() {
+                    console.log('Audio loaded successfully from:', audioSources[currentSourceIndex]);
+                };
+                
+                backgroundAudio.onerror = function() {
+                    console.log('Audio source failed:', audioSources[currentSourceIndex]);
+                    currentSourceIndex++;
+                    tryLoadAudio();
+                };
+            }
+            
+            // Try to fetch from YouTube first (new URL)
+            fetch('/get-audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=ejVy3xV3YRI' })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Server error');
+                return response.blob();
+            })
             .then(blob => {
+                if (blob.size < 1000) throw new Error('Empty audio');
                 const audioUrl = URL.createObjectURL(blob);
                 backgroundAudio.src = audioUrl;
                 backgroundAudio.load();
                 console.log('Audio loaded from YouTube successfully');
-                showToast('تم تحميل الصوت بنجاح', 'success');
             })
             .catch(err => {
-                console.log('Could not load background audio:', err);
-                // Use ambient nature sound as fallback
-                backgroundAudio.src = 'https://assets.codepen.io/3728644/nature.mp3';
-                backgroundAudio.crossOrigin = 'anonymous';
-                backgroundAudio.load();
-                console.log('Using fallback ambient sound');
+                console.log('YouTube audio failed, using fallback:', err.message);
+                tryLoadAudio();
             });
             
-            // Try to play on user interaction
+            // Play on user interaction
             document.addEventListener('click', function() {
-                if (backgroundAudio && backgroundAudio.paused) {
+                if (backgroundAudio && backgroundAudio.paused && backgroundAudio.src) {
                     backgroundAudio.play().catch(() => {
                         console.log('Auto-play prevented by browser');
                     });
