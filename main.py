@@ -6,6 +6,7 @@ import subprocess
 import base64
 import logging
 from flask import Flask, render_template, request, jsonify, send_file, after_this_request
+from werkzeug.middleware.proxy_fix import ProxyFix
 import yt_dlp
 import requests
 import speech_recognition as sr
@@ -30,6 +31,7 @@ else:
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.secret_key = os.environ.get("SESSION_SECRET")
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 * 1024
 
