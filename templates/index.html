@@ -1129,34 +1129,13 @@
             }
         }
 
-        /* Hide video on mobile for better performance */
-        @media (max-width: 768px) {
-            .global-video-bg {
-                display: none !important;
-            }
-            body::before {
-                content: '';
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-                z-index: 0;
-            }
-        }
     </style>
 </head>
 
 <body class="text-slate-200">
     <!-- Global Video Background - Always visible -->
     <div id="global-video-bg" class="global-video-bg">
-        <iframe id="youtube-bg-iframe"
-            src="https://www.youtube.com/embed/wJJ1irx9tOA?autoplay=1&mute=0&loop=1&playlist=wJJ1irx9tOA&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=medium&wmode=transparent"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen>
-        </iframe>
+        <div id="youtube-player"></div>
     </div>
     
     <!-- Sound Toggle Button -->
@@ -1269,6 +1248,12 @@
                     </h1>
                     <p class="text-lg font-semibold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">أركان</p>
                     <p class="text-slate-400 text-xs mt-1">منصة الأدوات الذكية</p>
+                    
+                    <!-- Return to Welcome Button -->
+                    <button onclick="returnToWelcome()" class="return-welcome-btn mt-4 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 mx-auto">
+                        <i class="fas fa-home"></i>
+                        <span>العودة للترحيب</span>
+                    </button>
                 </div>
             </div>
 
@@ -5035,31 +5020,58 @@
             }, 100);
         }
         
-        // Background sound control
+        // YouTube Player API
+        let youtubePlayer;
         let backgroundSoundMuted = false;
         
+        // Load YouTube IFrame API
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        
+        // Initialize YouTube player when API is ready
+        function onYouTubeIframeAPIReady() {
+            youtubePlayer = new YT.Player('youtube-player', {
+                videoId: 'wJJ1irx9tOA',
+                playerVars: {
+                    autoplay: 1,
+                    mute: 0,
+                    loop: 1,
+                    playlist: 'wJJ1irx9tOA',
+                    controls: 0,
+                    showinfo: 0,
+                    rel: 0,
+                    modestbranding: 1,
+                    playsinline: 1,
+                    enablejsapi: 1
+                },
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        }
+        
+        function onPlayerReady(event) {
+            event.target.playVideo();
+        }
+        
+        // Background sound control using YouTube API
         function toggleBackgroundSound() {
+            if (!youtubePlayer || !youtubePlayer.unMute) return;
+            
             const soundBtn = document.getElementById('sound-toggle-btn');
             const soundIcon = document.getElementById('sound-icon');
-            const iframe = document.getElementById('youtube-bg-iframe');
-            
-            if (!iframe) return;
             
             backgroundSoundMuted = !backgroundSoundMuted;
             
-            // Update iframe src to toggle mute
-            const currentSrc = iframe.src;
-            const newSrc = currentSrc.replace(
-                backgroundSoundMuted ? 'mute=0' : 'mute=1',
-                backgroundSoundMuted ? 'mute=1' : 'mute=0'
-            );
-            iframe.src = newSrc;
-            
-            // Update button appearance
+            // Toggle mute without reloading video
             if (backgroundSoundMuted) {
+                youtubePlayer.mute();
                 soundBtn.classList.add('muted');
                 soundIcon.className = 'fas fa-volume-mute';
             } else {
+                youtubePlayer.unMute();
                 soundBtn.classList.remove('muted');
                 soundIcon.className = 'fas fa-volume-up';
             }
@@ -5069,11 +5081,10 @@
         function enterAIWorld() {
             localStorage.setItem('arkan_entered', 'true');
             
-            // Mute background sound when entering app
-            const iframe = document.getElementById('youtube-bg-iframe');
-            if (iframe) {
-                const currentSrc = iframe.src;
-                iframe.src = currentSrc.replace('mute=0', 'mute=1');
+            // Mute background sound when entering app using YouTube API
+            if (youtubePlayer && youtubePlayer.mute) {
+                youtubePlayer.mute();
+                backgroundSoundMuted = true;
             }
             
             // Hide sound toggle button
@@ -5084,6 +5095,31 @@
             
             hideAuthContainer();
             showToast('مرحباً بك في عالم الـ AI! 🚀');
+        }
+        
+        // Return to welcome screen
+        function returnToWelcome() {
+            localStorage.removeItem('arkan_entered');
+            
+            // Show sound button again
+            const soundBtn = document.getElementById('sound-toggle-btn');
+            if (soundBtn) {
+                soundBtn.classList.remove('hidden');
+            }
+            
+            // Unmute video
+            if (youtubePlayer && youtubePlayer.unMute) {
+                youtubePlayer.unMute();
+                backgroundSoundMuted = false;
+                const soundIcon = document.getElementById('sound-icon');
+                if (soundIcon) {
+                    soundIcon.className = 'fas fa-volume-up';
+                }
+                soundBtn.classList.remove('muted');
+            }
+            
+            showAuthContainer();
+            showToast('أهلاً بعودتك! 👋');
         }
         
         // Check if user already entered
@@ -5097,11 +5133,13 @@
                     soundBtn.classList.add('hidden');
                 }
                 
-                const iframe = document.getElementById('youtube-bg-iframe');
-                if (iframe) {
-                    const currentSrc = iframe.src;
-                    iframe.src = currentSrc.replace('mute=0', 'mute=1');
-                }
+                // Mute video using YouTube API when ready
+                setTimeout(() => {
+                    if (youtubePlayer && youtubePlayer.mute) {
+                        youtubePlayer.mute();
+                        backgroundSoundMuted = true;
+                    }
+                }, 1000);
             }
         }
         
