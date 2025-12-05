@@ -3320,5 +3320,40 @@ def format_document_ai():
         return send_file(out_path, as_attachment=True, download_name=download_name)
 
 
+# Extract audio from YouTube for background
+@app.route('/get-audio', methods=['POST'])
+def get_audio():
+    data = request.get_json()
+    url = data.get('url')
+    
+    if not url:
+        return jsonify({'error': 'No URL provided'}), 400
+    
+    try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'outtmpl': os.path.join(temp_dir, '%(id)s'),
+                'quiet': True,
+                'no_warnings': True,
+            }
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                audio_file = os.path.join(temp_dir, f"{info['id']}.mp3")
+                
+                if os.path.exists(audio_file):
+                    return send_file(audio_file, mimetype='audio/mpeg', as_attachment=False)
+                else:
+                    return jsonify({'error': 'Failed to extract audio'}), 500
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

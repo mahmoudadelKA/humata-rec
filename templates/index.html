@@ -699,7 +699,7 @@
             z-index: -1;
         }
 
-        /* Global Video Background - Capability-Aware */
+        /* Global Background - Static Gradient */
         .global-video-bg {
             position: fixed;
             top: 0;
@@ -709,39 +709,26 @@
             z-index: 0;
             pointer-events: none;
             overflow: hidden;
-            background: linear-gradient(135deg, #0f1729 0%, #1a2d4d 50%, #0d1b35 100%);
+            background: 
+                linear-gradient(135deg, #0f1729 0%, #1a2d4d 35%, #162d4a 50%, #0d1b35 100%),
+                radial-gradient(ellipse at 20% 50%, rgba(0, 100, 200, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(100, 50, 200, 0.1) 0%, transparent 50%);
+            animation: subtleGradientShift 15s ease-in-out infinite;
         }
 
-        .global-video-bg iframe {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 300%;
-            height: 300%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            border: none;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-        }
-
-        @media (min-aspect-ratio: 16/9) {
-            .global-video-bg iframe {
-                height: 400%;
-                width: 200%;
+        @keyframes subtleGradientShift {
+            0%, 100% {
+                background: 
+                    linear-gradient(135deg, #0f1729 0%, #1a2d4d 35%, #162d4a 50%, #0d1b35 100%),
+                    radial-gradient(ellipse at 20% 50%, rgba(0, 100, 200, 0.1) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 80%, rgba(100, 50, 200, 0.1) 0%, transparent 50%);
             }
-        }
-
-        @media (max-aspect-ratio: 16/9) {
-            .global-video-bg iframe {
-                width: 400%;
-                height: 200%;
+            50% {
+                background: 
+                    linear-gradient(135deg, #0d1b35 0%, #162d4a 35%, #1a2d4d 50%, #0f1729 100%),
+                    radial-gradient(ellipse at 30% 60%, rgba(0, 120, 220, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 70% 70%, rgba(120, 60, 220, 0.12) 0%, transparent 50%);
             }
-        }
-        
-        /* Hide video for low-capability devices */
-        html.low-capability-mode .global-video-bg iframe {
-            display: none;
         }
         
         /* Dark overlay for better readability - reduced for welcome page */
@@ -760,15 +747,6 @@
         /* Increase overlay when main app is visible */
         body.app-active .global-video-bg::after {
             background: rgba(5, 5, 16, 0.6);
-        }
-
-        /* Low capability mode: Gradient only */
-        html.low-capability-mode .global-video-bg::after {
-            background: rgba(5, 5, 16, 0.5);
-        }
-
-        html.low-capability-mode body.app-active .global-video-bg::after {
-            background: rgba(5, 5, 16, 0.7);
         }
 
         .auth-container::after {
@@ -1210,9 +1188,9 @@
 
 <body class="text-slate-200">
     <!-- Global Video Background - Always visible -->
-    <div id="global-video-bg" class="global-video-bg">
-        <div id="youtube-player"></div>
-    </div>
+    <div id="global-video-bg" class="global-video-bg"></div>
+    <!-- Background Audio Control -->
+    <audio id="background-audio" loop style="display: none;"></audio>
     
     <!-- Sound Toggle Button -->
     <button id="sound-toggle-btn" class="sound-toggle-btn" onclick="toggleBackgroundSound()" aria-label="تشغيل/إيقاف الصوت" title="تشغيل/إيقاف الصوت">
@@ -5096,6 +5074,69 @@
         }, { passive: true });
 
         // =====================================================
+        // Background Audio Control
+        // =====================================================
+        
+        let backgroundAudio = null;
+        let backgroundSoundMuted = false;
+        
+        function initializeBackgroundAudio() {
+            backgroundAudio = document.getElementById('background-audio');
+            backgroundAudio.volume = 0.3;
+            
+            // Fetch audio from server endpoint
+            fetch('/get-audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: 'https://www.youtube.com/shorts/sM_o_LFsn4g' })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const audioUrl = URL.createObjectURL(blob);
+                backgroundAudio.src = audioUrl;
+                backgroundAudio.load();
+                console.log('Audio loaded from YouTube');
+            })
+            .catch(err => {
+                console.log('Could not load background audio:', err);
+                // Use a fallback silence
+                backgroundAudio.src = 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==';
+            });
+            
+            // Try to play on user interaction
+            document.addEventListener('click', function() {
+                if (backgroundAudio && backgroundAudio.paused) {
+                    backgroundAudio.play().catch(() => {
+                        console.log('Auto-play prevented by browser');
+                    });
+                }
+            }, { once: true });
+        }
+        
+        function toggleBackgroundSound() {
+            if (!backgroundAudio) return;
+            
+            const soundBtn = document.getElementById('sound-toggle-btn');
+            const soundIcon = document.getElementById('sound-icon');
+            
+            if (backgroundAudio.paused) {
+                backgroundAudio.play().catch(() => {
+                    showToast('تعذر تشغيل الصوت', 'error');
+                });
+                backgroundSoundMuted = false;
+                soundBtn.classList.remove('muted');
+                soundIcon.className = 'fas fa-volume-up';
+                showToast('تم تشغيل الصوت ✓');
+            } else {
+                backgroundAudio.pause();
+                backgroundSoundMuted = true;
+                soundBtn.classList.add('muted');
+                soundIcon.className = 'fas fa-volume-mute';
+                showToast('تم إيقاف الصوت');
+            }
+        }
+
+        // =====================================================
         // Supabase Authentication
         // =====================================================
         
@@ -5184,70 +5225,13 @@
             }, 100);
         }
         
-        // YouTube Player API
-        let youtubePlayer;
-        let backgroundSoundMuted = false;
-        
-        // Load YouTube IFrame API
-        var tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        var firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        
-        // Initialize YouTube player when API is ready
-        function onYouTubeIframeAPIReady() {
-            youtubePlayer = new YT.Player('youtube-player', {
-                videoId: 'wJJ1irx9tOA',
-                playerVars: {
-                    autoplay: 1,
-                    mute: 0,
-                    loop: 1,
-                    playlist: 'wJJ1irx9tOA',
-                    controls: 0,
-                    showinfo: 0,
-                    rel: 0,
-                    modestbranding: 1,
-                    playsinline: 1,
-                    enablejsapi: 1
-                },
-                events: {
-                    'onReady': onPlayerReady
-                }
-            });
-        }
-        
-        function onPlayerReady(event) {
-            event.target.playVideo();
-        }
-        
-        // Background sound control using YouTube API
-        function toggleBackgroundSound() {
-            if (!youtubePlayer || !youtubePlayer.unMute) return;
-            
-            const soundBtn = document.getElementById('sound-toggle-btn');
-            const soundIcon = document.getElementById('sound-icon');
-            
-            backgroundSoundMuted = !backgroundSoundMuted;
-            
-            // Toggle mute without reloading video
-            if (backgroundSoundMuted) {
-                youtubePlayer.mute();
-                soundBtn.classList.add('muted');
-                soundIcon.className = 'fas fa-volume-mute';
-            } else {
-                youtubePlayer.unMute();
-                soundBtn.classList.remove('muted');
-                soundIcon.className = 'fas fa-volume-up';
-            }
-        }
-        
         // Enter AI World - main entry button
         function enterAIWorld() {
             localStorage.setItem('arkan_entered', 'true');
             
-            // Mute background sound when entering app using YouTube API
-            if (youtubePlayer && youtubePlayer.mute) {
-                youtubePlayer.mute();
+            // Pause background sound when entering app
+            if (backgroundAudio && !backgroundAudio.paused) {
+                backgroundAudio.pause();
                 backgroundSoundMuted = true;
             }
             
@@ -5271,9 +5255,11 @@
                 soundBtn.classList.remove('hidden');
             }
             
-            // Unmute video
-            if (youtubePlayer && youtubePlayer.unMute) {
-                youtubePlayer.unMute();
+            // Resume audio
+            if (backgroundAudio && backgroundAudio.paused) {
+                backgroundAudio.play().catch(() => {
+                    console.log('Auto-play prevented by browser');
+                });
                 backgroundSoundMuted = false;
                 const soundIcon = document.getElementById('sound-icon');
                 if (soundIcon) {
@@ -5291,19 +5277,19 @@
             if (localStorage.getItem('arkan_entered') === 'true') {
                 hideAuthContainer();
                 
-                // Hide sound button and mute video if already entered
+                // Hide sound button and pause audio if already entered
                 const soundBtn = document.getElementById('sound-toggle-btn');
                 if (soundBtn) {
                     soundBtn.classList.add('hidden');
                 }
                 
-                // Mute video using YouTube API when ready
+                // Pause audio when ready
                 setTimeout(() => {
-                    if (youtubePlayer && youtubePlayer.mute) {
-                        youtubePlayer.mute();
+                    if (backgroundAudio && !backgroundAudio.paused) {
+                        backgroundAudio.pause();
                         backgroundSoundMuted = true;
                     }
-                }, 1000);
+                }, 500);
             }
         }
         
@@ -5512,6 +5498,7 @@
         
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
+            initializeBackgroundAudio();
             checkIfEntered();
             initSupabase();
         });
