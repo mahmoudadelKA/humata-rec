@@ -15,9 +15,7 @@
         }
 
         body {
-            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 25%, #0d1b2a 50%, #1a1a3a 75%, #0a0a1a 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 20s ease infinite;
+            background: #050510;
             min-height: 100vh;
             position: relative;
         }
@@ -29,12 +27,33 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
-                radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+            background-image: url('/static/background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             pointer-events: none;
             z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 30% 20%, rgba(0, 191, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 60%, rgba(138, 43, 226, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(0, 100, 200, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+            animation: pulseGlow 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
         }
 
         body > * {
@@ -495,7 +514,12 @@
         <nav id="sidebar" class="sidebar-nav lg:w-72 w-full glass-sidebar lg:min-h-screen p-4 lg:p-6">
             <div class="flex items-center justify-center mb-8">
                 <div class="text-center">
-                    <img src="/logo.png" alt="Logo" class="w-32 mx-auto mb-4 rounded-2xl soft-shadow">
+                    <div class="relative mx-auto mb-4 w-32 h-32">
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/30 via-purple-500/20 to-blue-500/30 blur-xl"></div>
+                        <div class="absolute inset-0 rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-sm"></div>
+                        <img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover rounded-2xl p-1">
+                        <div class="absolute -inset-1 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-blue-500/20 blur-sm -z-10"></div>
+                    </div>
                     <h1
                         class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                         أدوات متعددة
@@ -861,7 +885,7 @@
                         </div>
 
                         <div id="anime-result" class="hidden glass rounded-xl p-6">
-                            <h3 class="font-bold text-lg mb-4 text-slate-100 border-b border-gray-100 pb-2">نتيجة البحث
+                            <h3 class="font-bold text-lg mb-4 text-slate-100 border-b border-cyan-500/20 pb-2">نتيجة البحث
                             </h3>
                             <div class="space-y-3">
                                 <p><span class="text-slate-400">اسم الأنمي:</span> <span id="result-name"
@@ -879,7 +903,7 @@
                         </div>
 
                         <div id="anime-not-found"
-                            class="hidden p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+                            class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400">
                             <i class="fas fa-info-circle ml-2"></i>
                             <span id="not-found-text"></span>
                             <a href="https://lens.google.com/" target="_blank"
@@ -917,10 +941,10 @@
                         </div>
 
                         <div id="anime-ai-suggestion"
-                            class="hidden p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 mb-4">
+                            class="hidden p-4 rounded-xl bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30 mb-4">
                             <div class="flex items-center gap-2 mb-2">
-                                <i class="fas fa-robot text-purple-600"></i>
-                                <span class="font-bold text-purple-700">تحليل الذكاء الاصطناعي:</span>
+                                <i class="fas fa-robot text-purple-400"></i>
+                                <span class="font-bold text-purple-300">تحليل الذكاء الاصطناعي:</span>
                             </div>
                             <p class="text-slate-200">الأنمي المتوقع: <span id="ai-anime-name"
                                     class="font-bold text-pink-600"></span></p>
@@ -933,12 +957,12 @@
                         </div>
 
                         <div id="anime-name-results" class="hidden space-y-4">
-                            <h3 class="font-bold text-lg text-slate-100 border-b border-gray-100 pb-2">نتائج البحث</h3>
+                            <h3 class="font-bold text-lg text-slate-100 border-b border-cyan-500/20 pb-2">نتائج البحث</h3>
                             <div id="anime-name-list" class="space-y-4"></div>
                         </div>
 
                         <div id="anime-name-not-found"
-                            class="hidden p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+                            class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400">
                             <i class="fas fa-info-circle ml-2"></i>
                             <span id="anime-name-not-found-text"></span>
                         </div>
@@ -1008,7 +1032,7 @@
 
                         <div id="podcast-image-result" class="hidden">
                             <div id="podcast-extracted-text"
-                                class="mb-4 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                                class="mb-4 p-3 rounded-lg bg-slate-800/50 border border-cyan-500/20">
                                 <p class="text-slate-400 text-sm mb-1">النص المستخرج من الصورة:</p>
                                 <p id="podcast-ocr-text" class="text-slate-200 font-medium"></p>
                             </div>
@@ -1016,7 +1040,7 @@
                         </div>
 
                         <div id="podcast-image-not-found"
-                            class="hidden p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+                            class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400"
                             <i class="fas fa-info-circle ml-2"></i>
                             <span id="podcast-image-not-found-text"></span>
                         </div>
@@ -1058,12 +1082,12 @@
 
                         <div id="podcast-audio-result" class="hidden">
                             <div id="podcast-transcribed-text"
-                                class="mb-4 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                                class="mb-4 p-3 rounded-lg bg-slate-800/50 border border-cyan-500/20">
                                 <p class="text-slate-400 text-sm mb-1">النص المستخرج من الصوت:</p>
                                 <p id="podcast-speech-text" class="text-slate-200 font-medium"></p>
                             </div>
                             <div class="mb-3">
-                                <span class="badge bg-blue-100 text-blue-700">
+                                <span class="badge bg-blue-900/30 text-cyan-400 border border-cyan-500/30">
                                     <i class="fas fa-lightbulb ml-1"></i>
                                     أفضل تطابق بناءً على الكلمات المفتاحية
                                 </span>
@@ -1072,7 +1096,7 @@
                         </div>
 
                         <div id="podcast-audio-not-found"
-                            class="hidden p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+                            class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400"
                             <i class="fas fa-info-circle ml-2"></i>
                             <span id="podcast-audio-not-found-text"></span>
                         </div>
@@ -1288,35 +1312,35 @@
                                 المواقع المدعومة:
                             </h4>
                             <div class="flex flex-wrap gap-2 text-sm">
-                                <span class="px-3 py-1 rounded-full bg-red-100 text-red-600">
+                                <span class="px-3 py-1 rounded-full bg-red-900/30 text-red-400 border border-red-500/30">
                                     <i class="fab fa-youtube ml-1"></i>
                                     YouTube
                                 </span>
-                                <span class="px-3 py-1 rounded-full bg-pink-100 text-pink-600">
+                                <span class="px-3 py-1 rounded-full bg-pink-900/30 text-pink-400 border border-pink-500/30">
                                     <i class="fab fa-tiktok ml-1"></i>
                                     TikTok
                                 </span>
-                                <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-600">
+                                <span class="px-3 py-1 rounded-full bg-blue-900/30 text-cyan-400 border border-cyan-500/30">
                                     <i class="fab fa-facebook ml-1"></i>
                                     Facebook
                                 </span>
                                 <span
-                                    class="px-3 py-1 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-600">
+                                    class="px-3 py-1 rounded-full bg-gradient-to-r from-purple-900/30 to-pink-900/30 text-purple-400 border border-purple-500/30">
                                     <i class="fab fa-instagram ml-1"></i>
                                     Instagram
                                 </span>
-                                <span class="px-3 py-1 rounded-full bg-sky-100 text-sky-600">
+                                <span class="px-3 py-1 rounded-full bg-sky-900/30 text-sky-400 border border-sky-500/30">
                                     <i class="fab fa-twitter ml-1"></i>
                                     Twitter/X
                                 </span>
-                                <span class="px-3 py-1 rounded-full bg-gray-100 text-slate-300">
+                                <span class="px-3 py-1 rounded-full bg-slate-800/50 text-slate-300 border border-slate-600/30">
                                     <i class="fas fa-ellipsis-h ml-1"></i>
                                     والمزيد
                                 </span>
                             </div>
                         </div>
 
-                        <div class="p-4 rounded-xl bg-amber-50 border border-amber-100">
+                        <div class="p-4 rounded-xl bg-amber-900/20 border border-amber-500/20">
                             <p class="text-slate-300 text-sm text-center">
                                 <i class="fas fa-info-circle ml-2 text-amber-400"></i>
                                 الحد الأقصى: مدة ساعة واحدة وحجم 500 ميجابايت. الفيديو يُحوَّل إلى MP4 والصوت إلى MP3.
@@ -1369,7 +1393,7 @@
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="pdf-ocr-mode" class="sr-only peer" checked>
                                     <div
-                                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-slate-800/50 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+                                        class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-500/30 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-emerald-400 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-slate-400 after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
                                     </div>
                                 </label>
                             </div>
@@ -1434,7 +1458,7 @@
                             </div>
                         </div>
 
-                        <div class="p-4 rounded-xl bg-amber-50 border border-amber-100">
+                        <div class="p-4 rounded-xl bg-amber-900/20 border border-amber-500/20">
                             <p class="text-slate-300 text-sm text-center">
                                 <i class="fas fa-info-circle ml-2 text-amber-400"></i>
                                 عند تفعيل وضع النص العربي المحسّن، يتم استخدام الذكاء الاصطناعي لاستخراج النص العربي
@@ -1605,7 +1629,7 @@
                             المنصات المدعومة:
                         </h4>
                         <div class="flex flex-wrap gap-2 text-sm">
-                            <span class="px-3 py-1 rounded-full bg-red-100 text-red-600">
+                            <span class="px-3 py-1 rounded-full bg-red-900/30 text-red-400 border border-red-500/30">
                                 <i class="fab fa-youtube ml-1"></i>
                                 YouTube
                             </span>
@@ -1613,27 +1637,27 @@
                                 <i class="fab fa-tiktok ml-1"></i>
                                 TikTok
                             </span>
-                            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-600">
+                            <span class="px-3 py-1 rounded-full bg-blue-900/30 text-cyan-400 border border-cyan-500/30">
                                 <i class="fab fa-facebook ml-1"></i>
                                 Facebook
                             </span>
                             <span
-                                class="px-3 py-1 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-600">
+                                class="px-3 py-1 rounded-full bg-gradient-to-r from-purple-900/30 to-pink-900/30 text-purple-400 border border-purple-500/30">
                                 <i class="fab fa-instagram ml-1"></i>
                                 Instagram
                             </span>
-                            <span class="px-3 py-1 rounded-full bg-sky-100 text-sky-600">
+                            <span class="px-3 py-1 rounded-full bg-sky-900/30 text-sky-400 border border-sky-500/30">
                                 <i class="fab fa-twitter ml-1"></i>
                                 Twitter/X
                             </span>
-                            <span class="px-3 py-1 rounded-full bg-gray-100 text-slate-300">
+                            <span class="px-3 py-1 rounded-full bg-slate-800/50 text-slate-300 border border-slate-600/30">
                                 <i class="fas fa-ellipsis-h ml-1"></i>
                                 والمزيد
                             </span>
                         </div>
                     </div>
 
-                    <div class="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-100">
+                    <div class="mt-4 p-4 rounded-xl bg-amber-900/20 border border-amber-500/20">
                         <p class="text-slate-300 text-sm text-center">
                             <i class="fas fa-lightbulb ml-2 text-amber-400"></i>
                             يدعم الفيديوهات الطويلة حتى عدة ساعات.
@@ -1733,7 +1757,7 @@
                                             </span>
                                             <span id="upload-percent" class="text-blue-600 font-semibold">0%</span>
                                         </div>
-                                        <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                        <div class="h-3 bg-slate-700/50 rounded-full overflow-hidden">
                                             <div id="upload-progress-bar" class="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-300" style="width: 0%"></div>
                                         </div>
                                     </div>
@@ -1746,7 +1770,7 @@
                                             </span>
                                             <span id="process-percent" class="text-purple-600 font-semibold">0%</span>
                                         </div>
-                                        <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                        <div class="h-3 bg-slate-700/50 rounded-full overflow-hidden">
                                             <div id="process-progress-bar" class="h-full bg-gradient-to-r from-purple-400 to-pink-500 rounded-full transition-all duration-300" style="width: 0%"></div>
                                         </div>
                                     </div>
@@ -1807,37 +1831,71 @@
         let recordingTimer = null;
         let wakeLock = null;
         
-        // Anti-duplication for mobile devices
-        let lastFinalTranscript = '';
+        // Enhanced anti-duplication for mobile devices
+        let processedResultIds = new Set();
+        let lastFinalTranscripts = [];
         let lastResultTimestamp = 0;
-        const DUPLICATE_THRESHOLD_MS = 800;
+        const DUPLICATE_THRESHOLD_MS = 1500;
+        const MAX_HISTORY_SIZE = 10;
+        let pendingUpdate = null;
         
-        function isDuplicateResult(transcript) {
+        function isDuplicateResult(transcript, resultIndex) {
             const now = Date.now();
-            const trimmedTranscript = transcript.trim();
+            const trimmedTranscript = transcript.trim().toLowerCase();
             
-            // Check if this is the same as the last result within threshold time
-            if (trimmedTranscript === lastFinalTranscript && 
-                (now - lastResultTimestamp) < DUPLICATE_THRESHOLD_MS) {
-                console.log('Duplicate result blocked:', trimmedTranscript);
+            if (!trimmedTranscript) return true;
+            
+            const resultId = `${resultIndex}_${trimmedTranscript.substring(0, 50)}`;
+            if (processedResultIds.has(resultId)) {
+                console.log('Result ID duplicate blocked:', resultId);
                 return true;
             }
             
-            // Check if this result is already contained in the recent transcript
-            if (lastFinalTranscript && trimmedTranscript === lastFinalTranscript) {
-                console.log('Exact duplicate blocked:', trimmedTranscript);
-                return true;
+            for (const prev of lastFinalTranscripts) {
+                if (trimmedTranscript === prev.text.toLowerCase()) {
+                    if ((now - prev.time) < DUPLICATE_THRESHOLD_MS) {
+                        console.log('Time-based duplicate blocked:', trimmedTranscript);
+                        return true;
+                    }
+                }
+                if (trimmedTranscript.includes(prev.text.toLowerCase()) || 
+                    prev.text.toLowerCase().includes(trimmedTranscript)) {
+                    if ((now - prev.time) < DUPLICATE_THRESHOLD_MS / 2) {
+                        console.log('Partial duplicate blocked:', trimmedTranscript);
+                        return true;
+                    }
+                }
             }
             
-            // Update tracking
-            lastFinalTranscript = trimmedTranscript;
+            processedResultIds.add(resultId);
+            if (processedResultIds.size > 100) {
+                const arr = Array.from(processedResultIds);
+                processedResultIds = new Set(arr.slice(-50));
+            }
+            
+            lastFinalTranscripts.push({ text: transcript.trim(), time: now });
+            if (lastFinalTranscripts.length > MAX_HISTORY_SIZE) {
+                lastFinalTranscripts.shift();
+            }
             lastResultTimestamp = now;
+            
             return false;
         }
         
         function resetDuplicateTracking() {
-            lastFinalTranscript = '';
+            processedResultIds.clear();
+            lastFinalTranscripts = [];
             lastResultTimestamp = 0;
+        }
+        
+        function debounceUpdate(textArea, content, delay = 150) {
+            if (pendingUpdate) clearTimeout(pendingUpdate);
+            pendingUpdate = setTimeout(() => {
+                textArea.value = content;
+                updateWordCount();
+                textArea.scrollTop = textArea.scrollHeight;
+                pendingUpdate = null;
+            }, delay);
         }
 
         function uploadWithProgress(url, formData, progressBarId, progressTextId, timeoutMs = 1800000) {
@@ -2002,15 +2060,15 @@
             if (mode === 'image') {
                 imageTab.style.background = 'linear-gradient(135deg, #22c55e, #10b981)';
                 imageTab.style.color = 'white';
-                audioTab.style.background = 'white';
-                audioTab.style.color = '#4b5563';
+                audioTab.style.background = 'rgba(30, 41, 59, 0.5)';
+                audioTab.style.color = '#94a3b8';
                 imageMode.classList.remove('hidden');
                 audioMode.classList.add('hidden');
             } else {
                 audioTab.style.background = 'linear-gradient(135deg, #22c55e, #10b981)';
                 audioTab.style.color = 'white';
-                imageTab.style.background = 'white';
-                imageTab.style.color = '#4b5563';
+                imageTab.style.background = 'rgba(30, 41, 59, 0.5)';
+                imageTab.style.color = '#94a3b8';
                 audioMode.classList.remove('hidden');
                 imageMode.classList.add('hidden');
             }
@@ -2120,8 +2178,7 @@
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        // Check for duplicates before adding (mobile fix)
-                        if (!isDuplicateResult(transcript)) {
+                        if (!isDuplicateResult(transcript, i)) {
                             fullTranscript += transcript + ' ';
                         }
                     } else {
@@ -2129,10 +2186,8 @@
                     }
                 }
 
-                textArea.value = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
-                updateWordCount();
-
-                textArea.scrollTop = textArea.scrollHeight;
+                const displayContent = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
+                debounceUpdate(textArea, displayContent);
             };
 
             recognition.onerror = (event) => {
@@ -2203,8 +2258,7 @@
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        // Check for duplicates before adding (mobile fix)
-                        if (!isDuplicateResult(transcript)) {
+                        if (!isDuplicateResult(transcript, i)) {
                             fullTranscript += transcript + ' ';
                         }
                     } else {
@@ -2212,9 +2266,8 @@
                     }
                 }
 
-                textArea.value = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
-                updateWordCount();
-                textArea.scrollTop = textArea.scrollHeight;
+                const displayContent = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
+                debounceUpdate(textArea, displayContent);
             };
 
             recognition.onerror = (event) => {
@@ -2413,8 +2466,7 @@
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        // Check for duplicates before adding (mobile fix)
-                        if (!isDuplicateResult(transcript)) {
+                        if (!isDuplicateResult(transcript, i)) {
                             fullTranscript += transcript + ' ';
                         }
                     } else {
@@ -2422,9 +2474,8 @@
                     }
                 }
 
-                textArea.value = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
-                updateWordCount();
-                textArea.scrollTop = textArea.scrollHeight;
+                const displayContent = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
+                debounceUpdate(textArea, displayContent);
             };
 
             continuousRecognition.onerror = (event) => {
@@ -2495,8 +2546,7 @@
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        // Check for duplicates before adding (mobile fix)
-                        if (!isDuplicateResult(transcript)) {
+                        if (!isDuplicateResult(transcript, i)) {
                             fullTranscript += transcript + ' ';
                         }
                     } else {
@@ -2504,9 +2554,8 @@
                     }
                 }
 
-                textArea.value = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
-                updateWordCount();
-                textArea.scrollTop = textArea.scrollHeight;
+                const displayContent = fullTranscript + (interimTranscript ? `[${interimTranscript}]` : '');
+                debounceUpdate(textArea, displayContent);
             };
 
             continuousRecognition.onerror = (event) => {
@@ -2853,7 +2902,7 @@
                                 </div>
                                 ${anime.genres.length > 0 ? `
                                     <div class="flex flex-wrap gap-1 mt-2">
-                                        ${anime.genres.slice(0, 3).map(g => `<span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-slate-300">${g}</span>`).join('')}
+                                        ${anime.genres.slice(0, 3).map(g => `<span class="text-xs px-2 py-1 rounded-full bg-slate-800/50 text-slate-300 border border-slate-600/30">${g}</span>`).join('')}
                                     </div>
                                 ` : ''}
                             </div>

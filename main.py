@@ -33,7 +33,7 @@ else:
 
 logging.basicConfig(level=logging.DEBUG)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 app.secret_key = os.environ.get("SESSION_SECRET")
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 * 1024
