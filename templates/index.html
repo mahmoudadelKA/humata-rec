@@ -20,24 +20,13 @@
         }
 
         body {
-            background: #050510;
+            background: transparent;
             min-height: 100vh;
             position: relative;
         }
 
         body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('/static/background.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            pointer-events: none;
-            z-index: 0;
+            display: none;
         }
 
         body::after {
@@ -57,7 +46,11 @@
 
         body > * {
             position: relative;
-            z-index: 1;
+            z-index: 2;
+        }
+        
+        #global-video-bg {
+            z-index: 0 !important;
         }
 
         @keyframes gradientShift {
@@ -530,20 +523,30 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 10000;
+            z-index: 20000;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #050510;
-            background-image: url('/static/background.png');
-            background-size: cover;
-            background-position: center;
+            background: transparent;
             overflow-y: auto;
             overflow-x: hidden;
             padding: 1rem;
         }
+        
+        /* Overlay to hide main app content on welcome page */
+        .auth-container::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 16, 0.75);
+            z-index: -1;
+        }
 
-        .auth-video-bg {
+        /* Global Video Background - Always visible */
+        .global-video-bg {
             position: fixed;
             top: 0;
             left: 0;
@@ -554,7 +557,7 @@
             overflow: hidden;
         }
 
-        .auth-video-bg iframe {
+        .global-video-bg iframe {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -566,17 +569,30 @@
         }
 
         @media (min-aspect-ratio: 16/9) {
-            .auth-video-bg iframe {
+            .global-video-bg iframe {
                 height: 400%;
                 width: 200%;
             }
         }
 
         @media (max-aspect-ratio: 16/9) {
-            .auth-video-bg iframe {
+            .global-video-bg iframe {
                 width: 400%;
                 height: 200%;
             }
+        }
+        
+        /* Dark overlay for better readability */
+        .global-video-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 16, 0.6);
+            pointer-events: none;
+            z-index: 1;
         }
 
         .auth-container::after {
@@ -960,19 +976,20 @@
 </head>
 
 <body class="text-slate-200">
+    <!-- Global Video Background - Always visible -->
+    <div id="global-video-bg" class="global-video-bg">
+        <iframe 
+            src="https://www.youtube.com/embed/wJJ1irx9tOA?autoplay=1&mute=1&loop=1&playlist=wJJ1irx9tOA&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd720&wmode=transparent"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+        </iframe>
+    </div>
+    
     <div id="toast-container" class="fixed top-4 left-4 z-50 space-y-2"></div>
 
     <!-- Auth Container -->
     <div id="auth-container" class="auth-container">
-        <!-- YouTube Video Background -->
-        <div class="auth-video-bg">
-            <iframe 
-                src="https://www.youtube.com/embed/wJJ1irx9tOA?autoplay=1&mute=1&loop=1&playlist=wJJ1irx9tOA&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd720"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-            </iframe>
-        </div>
 
         <!-- New 3-Section Auth Wrapper -->
         <div class="auth-wrapper">
@@ -1053,7 +1070,7 @@
     <!-- Mobile Sidebar Overlay -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
 
-    <div class="flex flex-col lg:flex-row min-h-screen">
+    <div id="main-app" class="flex flex-col lg:flex-row min-h-screen" style="display: none;">
         <nav id="sidebar" class="sidebar-nav lg:w-72 w-full glass-sidebar lg:min-h-screen p-4 lg:p-6">
             <div class="flex items-center justify-center mb-8">
                 <div class="text-center">
@@ -4619,6 +4636,11 @@
         
         // Initialize Supabase
         function initSupabase() {
+            // Skip if user already entered
+            if (localStorage.getItem('arkan_entered') === 'true') {
+                return;
+            }
+            
             if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL === '' || SUPABASE_ANON_KEY === '') {
                 console.warn('Supabase credentials not configured - Development mode');
                 // في وضع التطوير، نعرض صفحة الدخول للمعاينة
@@ -4679,6 +4701,7 @@
         // Hide auth container (enter the app)
         function hideAuthContainer() {
             document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('main-app').style.display = 'flex';
         }
         
         // Enter AI World - main entry button
@@ -4898,8 +4921,11 @@
             }
         }
         
-        // Initialize Supabase on page load
-        document.addEventListener('DOMContentLoaded', initSupabase);
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkIfEntered();
+            initSupabase();
+        });
     </script>
 </body>
 
