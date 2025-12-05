@@ -70,6 +70,9 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
         "socket_timeout": 60,
         "retries": 5,
         "fragment_retries": 5,
+        "concurrent_fragment_downloads": 4,
+        "buffersize": 1024 * 16,
+        "http_chunk_size": 10485760,
         "http_headers": {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -3428,25 +3431,25 @@ def get_audio():
 
 
 # =============================================================================
-# Music Removal using Spleeter
-# UPDATED: Now uses centralized download_audio_from_youtube() helper function
-# for better error handling and YouTube bypass support
+# Music Removal using Replicate Demucs API
+# UPDATED: Uses Replicate's cloud-based Demucs model for reliable audio separation
+# No heavy local dependencies required - processes via API
 # =============================================================================
 @app.route('/remove-music', methods=['POST'])
 def remove_music():
     """
-    Remove music from audio/video files using Spleeter.
+    Remove music from audio/video files using Replicate's Demucs model.
     Accepts either a file upload or a URL (YouTube, etc.)
     Returns the vocals-only audio file (music removed)
     """
     import shutil
+    from services.replicate_audio import separate_vocals_with_replicate
     
     temp_dir = tempfile.mkdtemp()
     input_path = None
     output_path = None
     
     try:
-        # Check if file was uploaded or URL provided
         if 'file' in request.files and request.files['file'].filename:
             uploaded_file = request.files['file']
             filename = uploaded_file.filename
@@ -3458,8 +3461,6 @@ def remove_music():
             url = request.form['url']
             logger.info(f"Music removal: Downloading from URL: {url}")
             
-            # Use centralized helper function for YouTube downloads
-            # This handles cookies, error handling, and bypass techniques
             try:
                 input_path = download_audio_from_youtube(url, temp_dir)
                 logger.info(f"Music removal: Downloaded audio to: {input_path}")
@@ -3472,17 +3473,16 @@ def remove_music():
         else:
             return jsonify({'error': 'يرجى رفع ملف أو إدخال رابط'}), 400
         
-        # Convert video to audio if needed (for video files)
         file_ext = os.path.splitext(input_path)[1].lower()
         video_extensions = ['.mp4', '.avi', '.mkv', '.mov', '.webm', '.flv', '.wmv', '.m4v']
         
         if file_ext in video_extensions:
             logging.info(f"Music removal: Extracting audio from video file")
-            audio_path = os.path.join(temp_dir, 'extracted_audio.wav')
+            audio_path = os.path.join(temp_dir, 'extracted_audio.mp3')
             
             ffmpeg_cmd = [
                 'ffmpeg', '-y', '-i', input_path,
-                '-vn', '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2',
+                '-vn', '-acodec', 'libmp3lame', '-b:a', '192k',
                 audio_path
             ]
             
@@ -3493,66 +3493,20 @@ def remove_music():
             
             input_path = audio_path
         
-        # Ensure input is WAV format for Spleeter
-        if not input_path.endswith('.wav'):
-            wav_path = os.path.join(temp_dir, 'input_audio.wav')
-            ffmpeg_cmd = [
-                'ffmpeg', '-y', '-i', input_path,
-                '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2',
-                wav_path
-            ]
-            
-            result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
-            if result.returncode != 0:
-                logging.error(f"FFmpeg conversion error: {result.stderr}")
-                return jsonify({'error': 'فشل تحويل الملف الصوتي'}), 500
-            
-            input_path = wav_path
+        logging.info(f"Music removal: Sending to Replicate Demucs API...")
         
-        # Run Spleeter to separate vocals from accompaniment
-        spleeter_output = os.path.join(temp_dir, 'spleeter_output')
-        os.makedirs(spleeter_output, exist_ok=True)
+        try:
+            vocals_path = separate_vocals_with_replicate(input_path, max_wait_seconds=300)
+            logging.info(f"Music removal: Received vocals file: {vocals_path}")
+        except ValueError as ve:
+            return jsonify({'error': str(ve)}), 400
+        except Exception as api_error:
+            logging.error(f"Replicate API error: {api_error}")
+            return jsonify({
+                'error': 'فشل فصل الصوت عن الموسيقى',
+                'details': str(api_error)
+            }), 500
         
-        logging.info(f"Music removal: Running Spleeter on: {input_path}")
-        
-        # Use spleeter command line (2stems model separates vocals and accompaniment)
-        spleeter_cmd = [
-            'spleeter', 'separate',
-            '-p', 'spleeter:2stems',
-            '-o', spleeter_output,
-            input_path
-        ]
-        
-        result = subprocess.run(spleeter_cmd, capture_output=True, text=True, timeout=600)
-        
-        if result.returncode != 0:
-            logging.error(f"Spleeter error: {result.stderr}")
-            # Try alternative approach with Python module
-            try:
-                from spleeter.separator import Separator
-                separator = Separator('spleeter:2stems')
-                separator.separate_to_file(input_path, spleeter_output)
-            except Exception as e:
-                logging.error(f"Spleeter Python error: {e}")
-                return jsonify({'error': 'فشل فصل الصوت عن الموسيقى. تأكد من تثبيت Spleeter'}), 500
-        
-        # Find the vocals file
-        input_basename = os.path.splitext(os.path.basename(input_path))[0]
-        vocals_path = os.path.join(spleeter_output, input_basename, 'vocals.wav')
-        
-        if not os.path.exists(vocals_path):
-            # Try to find vocals file in any subdirectory
-            for root, dirs, files in os.walk(spleeter_output):
-                for file in files:
-                    if 'vocal' in file.lower():
-                        vocals_path = os.path.join(root, file)
-                        break
-        
-        if not os.path.exists(vocals_path):
-            logging.error(f"Vocals file not found in: {spleeter_output}")
-            return jsonify({'error': 'لم يتم العثور على ملف الصوت المفصول'}), 500
-        
-        # Convert vocals to MP3 for download
         output_path = os.path.join(temp_dir, 'vocals_only.mp3')
         ffmpeg_cmd = [
             'ffmpeg', '-y', '-i', vocals_path,
@@ -3562,8 +3516,7 @@ def remove_music():
         
         result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
         if result.returncode != 0:
-            logging.error(f"FFmpeg MP3 conversion error: {result.stderr}")
-            # If MP3 conversion fails, try to return WAV directly
+            logging.warning(f"FFmpeg MP3 conversion warning: {result.stderr}")
             output_path = vocals_path
         
         if not os.path.exists(output_path):
@@ -3571,11 +3524,12 @@ def remove_music():
         
         logging.info(f"Music removal: Successfully created vocals-only file: {output_path}")
         
-        # Schedule cleanup after sending file
         @after_this_request
         def cleanup(response):
             try:
                 shutil.rmtree(temp_dir, ignore_errors=True)
+                if vocals_path and os.path.exists(vocals_path) and vocals_path != output_path:
+                    os.remove(vocals_path)
             except Exception as e:
                 logging.error(f"Cleanup error: {e}")
             return response
@@ -3586,11 +3540,6 @@ def remove_music():
             as_attachment=True,
             download_name='vocals_only.mp3'
         )
-        
-    except subprocess.TimeoutExpired:
-        logging.error("Spleeter process timed out")
-        shutil.rmtree(temp_dir, ignore_errors=True)
-        return jsonify({'error': 'انتهت مهلة المعالجة. الملف كبير جداً'}), 500
         
     except Exception as e:
         logging.error(f"Music removal error: {str(e)}")
