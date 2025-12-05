@@ -3,6 +3,14 @@
 ## Overview
 The Multi-Tool Arabic Platform is a comprehensive web application offering ten powerful tools. Its primary purpose is to provide a suite of utilities for media processing, AI-driven content analysis, and document manipulation, all within a modern, Arabic RTL, glassmorphism-designed interface. The platform aims to serve users with efficient and intelligent tools for tasks like speech-to-text conversion, video cutting, anime and podcast detection, universal media downloading, PDF to Word conversion, video transcription, and AI-powered document formatting. It leverages advanced AI models and various APIs to deliver robust functionality, catering to both general users and those requiring specialized Arabic language support.
 
+## Recent Changes (December 5, 2025)
+- **Replit Environment Setup:** Successfully imported and configured the project for Replit deployment
+- **System Dependencies:** Installed FFmpeg and Tesseract OCR via Nix packages
+- **Python Dependencies:** Installed all required packages from requirements.txt
+- **Workflow Configuration:** Configured Gunicorn to run on 0.0.0.0:5000 with webview output
+- **Deployment Configuration:** Set up autoscale deployment with proper timeout settings (1800s)
+- **Status:** Application is running and accessible, showing authentication page
+
 ## User Preferences
 I prefer simple language and clear explanations. I want iterative development where I can provide feedback at each stage. Ask before making major changes to the project's architecture or core functionalities. Ensure the application maintains its Arabic RTL design and glassmorphism aesthetic. All new features should seamlessly integrate with the existing UI/UX. Do not make changes to the `replit.md` file without explicit instruction.
 
@@ -29,9 +37,10 @@ The platform is built on a Python Flask backend with a responsive frontend using
 **System Design Choices:**
 - **AI Integration:** Centralized Gemini AI engine with multi-key rotation (up to 12 keys), automatic failover, and smart cooldown for exhausted keys to prevent quota limits.
 - **Media Processing:** Extensive use of `ffmpeg` for audio/video manipulation and `yt-dlp` for media extraction.
-- **Backend Infrastructure:** Flask application served by Gunicorn with extended timeouts (7200s) for long-running tasks, configured for Replit deployment.
-- **Concurrency:** 2 Gunicorn workers for improved concurrency.
+- **Backend Infrastructure:** Flask application served by Gunicorn with extended timeouts (1800s) for long-running tasks, configured for Replit deployment.
+- **Concurrency:** 2 Gunicorn workers with 4 threads each for improved concurrency.
 - **File Handling:** Temporary files are managed and deleted post-processing to conserve server space.
+- **Proxy Configuration:** Flask app uses ProxyFix middleware to properly handle Replit's proxy setup.
 
 ## External Dependencies
 - **Backend Framework:** Flask
@@ -44,3 +53,19 @@ The platform is built on a Python Flask backend with a responsive frontend using
     - `Google Gemini AI` (Vision + Text - for advanced detection, transcription, and formatting)
     - `Supabase Auth` (User authentication and management)
 - **OCR Engine:** `Tesseract` (system-level)
+
+## Environment Variables
+**Required:**
+- `SESSION_SECRET` - Flask session secret (already configured in Replit)
+- `GEMINI_API_KEY` or `GEMINI_KEY_1` - At least one Google Gemini API key for AI features
+
+**Optional (for additional features):**
+- `GEMINI_KEY_2` through `GEMINI_KEY_11` - Additional API keys for load balancing
+- `SUPABASE_URL` - Supabase project URL for authentication
+- `SUPABASE_ANON_KEY` - Supabase anonymous key for authentication
+- `COOKIE_CONTENT` - YouTube cookies for downloading age-restricted content
+
+**Notes:**
+- The app supports up to 12 Gemini API keys for load balancing
+- Without Supabase credentials, app runs in development mode (authentication disabled)
+- Get Gemini API keys from: https://aistudio.google.com/app/apikey
