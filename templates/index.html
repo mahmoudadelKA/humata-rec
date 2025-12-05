@@ -325,6 +325,7 @@
             border: 2px solid rgba(255, 255, 255, 0.2);
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            pointer-events: auto !important;
         }
 
         .mobile-menu-btn:hover {
@@ -368,7 +369,7 @@
         .sidebar-overlay.open {
             opacity: 1;
             visibility: visible;
-            pointer-events: auto;
+            pointer-events: auto !important;
         }
 
         /* Mobile Sidebar Styles */
@@ -400,6 +401,7 @@
 
             .sidebar-nav.open {
                 right: 0 !important;
+                pointer-events: auto !important;
             }
 
             /* Mobile nav items - complete rebuild */
@@ -2812,9 +2814,65 @@
             // Setup nav items for touch
             setupMobileNavigation();
             
+            // Setup mobile menu button touch handlers
+            setupMobileMenuButton();
+            
             // Check if already entered
             checkIfEntered();
         });
+        
+        function setupMobileMenuButton() {
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const overlay = document.getElementById('sidebar-overlay');
+            const closeBtn = document.getElementById('mobile-close-btn');
+            
+            if (menuBtn) {
+                // Remove onclick and add touch/click handlers
+                menuBtn.removeAttribute('onclick');
+                
+                menuBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleMobileMenu();
+                });
+                
+                menuBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleMobileMenu();
+                }, { passive: false });
+            }
+            
+            if (overlay) {
+                overlay.removeAttribute('onclick');
+                
+                overlay.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeMobileMenu();
+                });
+                
+                overlay.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    closeMobileMenu();
+                }, { passive: false });
+            }
+            
+            if (closeBtn) {
+                closeBtn.removeAttribute('onclick');
+                
+                closeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeMobileMenu();
+                });
+                
+                closeBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeMobileMenu();
+                }, { passive: false });
+            }
+        }
 
         function setupMobileNavigation() {
             const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
@@ -4888,9 +4946,10 @@
             document.getElementById('main-app').style.display = 'flex';
             document.body.classList.add('app-active');
             
-            // Re-setup mobile navigation after main app is shown
+            // Re-setup mobile navigation and menu button after main app is shown
             setTimeout(function() {
                 setupMobileNavigation();
+                setupMobileMenuButton();
             }, 100);
         }
         
