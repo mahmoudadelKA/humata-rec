@@ -2852,5 +2852,63 @@ def transcribe_video():
             {'error': f'حدث خطأ أثناء المعالجة: {error_message[:80]}'}), 500
 
 
+def apply_basic_format(doc: Document):
+    """
+    Basic formatting: margins 2.5 cm, font size 14, justified paragraphs, 1.5 line spacing.
+    """
+    for section in doc.sections:
+        section.top_margin = Cm(2.5)
+        section.bottom_margin = Cm(2.5)
+        section.left_margin = Cm(2.5)
+        section.right_margin = Cm(2.5)
+
+    try:
+        normal_style = doc.styles["Normal"]
+        normal_style.font.name = "Times New Roman"
+        normal_style.font.size = Pt(14)
+    except Exception:
+        pass
+
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if not text:
+            continue
+
+        pf = para.paragraph_format
+        pf.line_spacing = 1.5
+        pf.space_before = Pt(0)
+        pf.space_after = Pt(6)
+        pf.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+
+        for run in para.runs:
+            run.font.size = Pt(14)
+            run.font.name = "Times New Roman"
+
+
+@app.route("/format-docx", methods=["POST"])
+def format_docx():
+    uploaded = request.files.get("file")
+
+    if not uploaded or uploaded.filename == "":
+        return jsonify({'error': 'من فضلك ارفع ملف DOCX'}), 400
+
+    filename = uploaded.filename.lower()
+    if not filename.endswith(".docx"):
+        return jsonify({'error': 'النسخة الحالية تدعم ملفات Word بصيغة .docx فقط'}), 400
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        in_path = os.path.join(tmpdir, "input.docx")
+        out_path = os.path.join(tmpdir, "formatted.docx")
+
+        uploaded.save(in_path)
+
+        doc = Document(in_path)
+        apply_basic_format(doc)
+        doc.save(out_path)
+
+        download_name = f"formatted_{uploaded.filename}"
+        return send_file(out_path, as_attachment=True, download_name=download_name)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
