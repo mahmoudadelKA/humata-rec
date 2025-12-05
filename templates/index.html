@@ -4683,8 +4683,16 @@
         
         // Enter AI World - main entry button
         function enterAIWorld() {
+            localStorage.setItem('arkan_entered', 'true');
             hideAuthContainer();
             showToast('مرحباً بك في عالم الـ AI! 🚀');
+        }
+        
+        // Check if user already entered
+        function checkIfEntered() {
+            if (localStorage.getItem('arkan_entered') === 'true') {
+                hideAuthContainer();
+            }
         }
         
         // Update user display
