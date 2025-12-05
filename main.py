@@ -31,7 +31,69 @@ else:
     print("⚠️ Warning: COOKIE_CONTENT not found in environment variables.")
 # -------------------------------------------------------
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# =============================================================================
+# HELPER FUNCTION: Centralized YouTube Audio Download
+# This function handles all YouTube downloads with proper error handling,
+# cookies support, and bypass techniques for 403 errors.
+# =============================================================================
+def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
+    """
+    Download audio from YouTube URL using yt-dlp with robust error handling.
+    
+    Args:
+        url: YouTube video URL
+        output_dir: Directory to save the file (uses temp dir if None)
+    
+    Returns:
+        Path to the downloaded audio file
+    
+    Raises:
+        Exception: If download fails
+    """
+    if output_dir is None:
+        output_dir = tempfile.gettempdir()
+    
+    out_template = os.path.join(output_dir, "%(id)s.%(ext)s")
+    
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "outtmpl": out_template,
+        "noplaylist": True,
+        "quiet": True,
+        "no_warnings": True,
+        "nocheckcertificate": True,
+        "geo_bypass": True,
+        "geo_bypass_country": "US",
+        "socket_timeout": 60,
+        "retries": 5,
+        "fragment_retries": 5,
+        "http_headers": {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Accept-Language": "en-US,en;q=0.5",
+        },
+    }
+    
+    # Add cookies file if available (critical for bypassing YouTube restrictions)
+    if os.path.exists('cookies.txt'):
+        ydl_opts['cookiefile'] = 'cookies.txt'
+        logger.info("Using cookies.txt for YouTube authentication")
+    
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info)
+            logger.info(f"Downloaded YouTube audio to: {filename}")
+            return filename
+    except Exception as e:
+        logger.error(f"Error downloading YouTube audio: {e}")
+        raise
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
@@ -3365,7 +3427,11 @@ def get_audio():
         return jsonify({'error': str(e)}), 500
 
 
+# =============================================================================
 # Music Removal using Spleeter
+# UPDATED: Now uses centralized download_audio_from_youtube() helper function
+# for better error handling and YouTube bypass support
+# =============================================================================
 @app.route('/remove-music', methods=['POST'])
 def remove_music():
     """
@@ -3386,74 +3452,23 @@ def remove_music():
             filename = uploaded_file.filename
             input_path = os.path.join(temp_dir, filename)
             uploaded_file.save(input_path)
-            logging.info(f"Music removal: Processing uploaded file: {filename}")
+            logger.info(f"Music removal: Processing uploaded file: {filename}")
             
         elif 'url' in request.form and request.form['url']:
             url = request.form['url']
-            logging.info(f"Music removal: Downloading from URL: {url}")
+            logger.info(f"Music removal: Downloading from URL: {url}")
             
-            # Download audio from URL using yt-dlp with advanced options to bypass 403
-            ydl_opts = {
-                'format': 'bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-                'outtmpl': os.path.join(temp_dir, 'downloaded_audio'),
-                'quiet': True,
-                'no_warnings': True,
-                'noplaylist': True,
-                'socket_timeout': 7200,
-                'retries': 10,
-                'fragment_retries': 10,
-                'source_address': '0.0.0.0',
-                'nocheckcertificate': True,
-                'geo_bypass': True,
-                'geo_bypass_country': 'US',
-                'legacy_server_connect': True,
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['android', 'web'],
-                        'skip': ['dash', 'hls'],
-                    }
-                },
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-                    'Sec-Ch-Ua-Mobile': '?0',
-                    'Sec-Ch-Ua-Platform': '"Windows"',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                    'Sec-Fetch-User': '?1',
-                    'Upgrade-Insecure-Requests': '1',
-                },
-            }
-            
-            # Add cookies file if it exists
-            if os.path.exists('cookies.txt'):
-                ydl_opts['cookiefile'] = 'cookies.txt'
-            
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                input_path = os.path.join(temp_dir, 'downloaded_audio.mp3')
-                
-                if not os.path.exists(input_path):
-                    # Try to find the downloaded file with different extensions
-                    for ext in ['.mp3', '.m4a', '.wav', '.opus', '.webm']:
-                        possible_path = os.path.join(temp_dir, f'downloaded_audio{ext}')
-                        if os.path.exists(possible_path):
-                            input_path = possible_path
-                            break
-                
-                if not os.path.exists(input_path):
-                    return jsonify({'error': 'فشل تحميل الملف من الرابط'}), 400
-                    
-            logging.info(f"Music removal: Downloaded audio to: {input_path}")
+            # Use centralized helper function for YouTube downloads
+            # This handles cookies, error handling, and bypass techniques
+            try:
+                input_path = download_audio_from_youtube(url, temp_dir)
+                logger.info(f"Music removal: Downloaded audio to: {input_path}")
+            except Exception as download_error:
+                logger.error(f"Music removal error during download: {download_error}")
+                return jsonify({
+                    'error': 'فشل تحميل الملف من YouTube. قد يكون الفيديو مقيداً أو محظوراً.',
+                    'details': str(download_error)
+                }), 500
         else:
             return jsonify({'error': 'يرجى رفع ملف أو إدخال رابط'}), 400
         
