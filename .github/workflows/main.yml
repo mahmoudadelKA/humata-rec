@@ -1,0 +1,30 @@
+name: Sync to Hugging Face hub
+
+on:
+  push:
+    branches:
+      - main   # كل ما تعمل push على main هيشتغل
+
+env:
+  HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Configure git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Add Hugging Face remote
+        run: |
+          git remote add space https://toeanimationn:${HF_TOKEN}@huggingface.co/spaces/toeanimationn/Humata-rec
+
+      - name: Push to Hugging Face Space
+        run: |
+          git push space main --force
