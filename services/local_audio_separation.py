@@ -11,15 +11,16 @@ def separate_vocals_local(audio_file_path: str) -> str:
     Use FFmpeg audio filters to isolate vocals from music (free, local processing).
     
     This approach uses multiple audio filters:
-    1. Center channel extraction (vocals are usually centered)
-    2. High-pass filter to remove bass frequencies (often instrumental)
-    3. Dynamic compression to enhance vocal clarity
+    1. Center channel extraction - averages L+R to extract center-panned vocals
+    2. Frequency filtering - highpass/lowpass to focus on vocal frequency range (85Hz-10kHz)
+    3. EQ boost in vocal presence frequencies (250Hz, 1.5kHz, 3kHz)
+    4. Dynamic compression and normalization for clarity
     
     Args:
         audio_file_path: Path to the input audio file
     
     Returns:
-        Path to the processed vocals-only audio file
+        Path to the processed vocals-emphasized audio file
     
     Note: This is a simplified approach that works well for most pop/spoken content.
           For professional-grade separation, dedicated AI models are needed.
@@ -34,12 +35,15 @@ def separate_vocals_local(audio_file_path: str) -> str:
     logger.info(f"Starting local vocal isolation: {audio_file_path}")
     
     vocal_filter = (
-        "pan=stereo|c0=c0-c1|c1=c1-c0,"
-        "highpass=f=100,"
-        "lowpass=f=8000,"
-        "acompressor=threshold=-20dB:ratio=4:attack=5:release=50,"
-        "dynaudnorm=p=0.9:m=100:s=12,"
-        "volume=1.5"
+        "pan=mono|c0=0.5*c0+0.5*c1,"
+        "highpass=f=85,"
+        "lowpass=f=10000,"
+        "equalizer=f=250:t=q:w=2:g=2,"
+        "equalizer=f=1500:t=q:w=1.5:g=3,"
+        "equalizer=f=3000:t=q:w=1:g=2,"
+        "acompressor=threshold=-18dB:ratio=3:attack=10:release=100,"
+        "dynaudnorm=p=0.95:m=50:s=8,"
+        "volume=1.3"
     )
     
     ffmpeg_cmd = [
@@ -64,7 +68,7 @@ def separate_vocals_local(audio_file_path: str) -> str:
         if result.returncode != 0:
             logger.warning(f"FFmpeg center isolation warning: {result.stderr[:500]}")
             
-            simple_filter = "highpass=f=200,lowpass=f=6000,volume=1.3"
+            simple_filter = "pan=mono|c0=0.5*c0+0.5*c1,highpass=f=120,lowpass=f=8000,volume=1.2"
             ffmpeg_simple = [
                 'ffmpeg', '-y',
                 '-i', audio_file_path,
@@ -111,11 +115,11 @@ def separate_vocals_enhanced(audio_file_path: str) -> str:
     output_path = os.path.join(temp_dir, f"vocals_enhanced_{int(os.path.getmtime(audio_file_path))}.mp3")
     
     try:
-        logger.info("Step 1: Center channel extraction...")
+        logger.info("Step 1: Center channel extraction (vocal isolation)...")
         center_cmd = [
             'ffmpeg', '-y',
             '-i', audio_file_path,
-            '-af', 'pan=stereo|c0=c0-c1|c1=c1-c0',
+            '-af', 'pan=mono|c0=0.5*c0+0.5*c1',
             '-ar', '44100',
             intermediate_path
         ]
