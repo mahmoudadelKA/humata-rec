@@ -3392,9 +3392,9 @@ def remove_music():
             url = request.form['url']
             logging.info(f"Music removal: Downloading from URL: {url}")
             
-            # Download audio from URL using yt-dlp
+            # Download audio from URL using yt-dlp with advanced options to bypass 403
             ydl_opts = {
-                'format': 'bestaudio/best',
+                'format': 'bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio/best',
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
@@ -3403,20 +3403,40 @@ def remove_music():
                 'outtmpl': os.path.join(temp_dir, 'downloaded_audio'),
                 'quiet': True,
                 'no_warnings': True,
-                'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
-                'socket_timeout': 30,
-                'retries': 3,
+                'noplaylist': True,
+                'socket_timeout': 7200,
+                'retries': 10,
+                'fragment_retries': 10,
+                'source_address': '0.0.0.0',
+                'nocheckcertificate': True,
+                'geo_bypass': True,
+                'geo_bypass_country': 'US',
+                'legacy_server_connect': True,
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['android', 'web'],
+                        'skip': ['dash', 'hls'],
+                    }
+                },
                 'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'Accept-Language': 'en-us,en;q=0.5',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+                    'Sec-Ch-Ua-Mobile': '?0',
+                    'Sec-Ch-Ua-Platform': '"Windows"',
+                    'Sec-Fetch-Dest': 'document',
                     'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'Upgrade-Insecure-Requests': '1',
                 },
             }
             
-            # Remove cookiefile if None to avoid yt-dlp errors
-            if ydl_opts.get('cookiefile') is None:
-                del ydl_opts['cookiefile']
+            # Add cookies file if it exists
+            if os.path.exists('cookies.txt'):
+                ydl_opts['cookiefile'] = 'cookies.txt'
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
