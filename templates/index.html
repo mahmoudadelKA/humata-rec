@@ -313,7 +313,7 @@
             color: #a78bfa;
         }
 
-        /* Mobile Menu Toggle Button */
+        /* Mobile Menu Toggle Button - Enhanced for all devices */
         .mobile-menu-btn {
             position: fixed;
             top: 1rem;
@@ -333,6 +333,11 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
             pointer-events: auto !important;
+            -webkit-appearance: none;
+            appearance: none;
+            padding: 0;
+            font-family: inherit;
+            background-color: transparent;
         }
 
         .mobile-menu-btn:hover {
@@ -340,8 +345,10 @@
             box-shadow: 0 6px 25px rgba(99, 102, 241, 0.6);
         }
 
-        .mobile-menu-btn:active {
+        .mobile-menu-btn:active,
+        .mobile-menu-btn:focus {
             transform: scale(0.92);
+            outline: none;
         }
 
         .mobile-menu-btn i {
@@ -349,6 +356,7 @@
             font-size: 1.35rem;
             transition: transform 0.3s ease;
             pointer-events: none;
+            display: block;
         }
 
         .mobile-menu-btn.active i {
@@ -691,7 +699,7 @@
             z-index: -1;
         }
 
-        /* Global Video Background - Always visible */
+        /* Global Video Background - Capability-Aware */
         .global-video-bg {
             position: fixed;
             top: 0;
@@ -701,6 +709,7 @@
             z-index: 0;
             pointer-events: none;
             overflow: hidden;
+            background: linear-gradient(135deg, #0f1729 0%, #1a2d4d 50%, #0d1b35 100%);
         }
 
         .global-video-bg iframe {
@@ -712,6 +721,8 @@
             transform: translate(-50%, -50%);
             pointer-events: none;
             border: none;
+            opacity: 1;
+            transition: opacity 0.3s ease;
         }
 
         @media (min-aspect-ratio: 16/9) {
@@ -726,6 +737,11 @@
                 width: 400%;
                 height: 200%;
             }
+        }
+        
+        /* Hide video for low-capability devices */
+        html.low-capability-mode .global-video-bg iframe {
+            display: none;
         }
         
         /* Dark overlay for better readability - reduced for welcome page */
@@ -744,6 +760,15 @@
         /* Increase overlay when main app is visible */
         body.app-active .global-video-bg::after {
             background: rgba(5, 5, 16, 0.6);
+        }
+
+        /* Low capability mode: Gradient only */
+        html.low-capability-mode .global-video-bg::after {
+            background: rgba(5, 5, 16, 0.5);
+        }
+
+        html.low-capability-mode body.app-active .global-video-bg::after {
+            background: rgba(5, 5, 16, 0.7);
         }
 
         .auth-container::after {
@@ -2995,6 +3020,19 @@
                     e.stopPropagation();
                     toggleMobileMenu();
                 }, { passive: false, capture: true });
+                
+                // Pointer events for better device compatibility (including Xiaomi devices)
+                menuBtn.addEventListener('pointerdown', function(e) {
+                    menuBtn.style.opacity = '0.8';
+                }, { passive: true });
+                
+                menuBtn.addEventListener('pointerup', function(e) {
+                    menuBtn.style.opacity = '1';
+                }, { passive: true });
+                
+                menuBtn.addEventListener('pointercancel', function(e) {
+                    menuBtn.style.opacity = '1';
+                }, { passive: true });
             }
             
             if (overlay && !overlay._overlaySetup) {
@@ -4983,8 +5021,54 @@
         }
 
         // =====================================================
-        // Mobile Touch & Performance Optimization
+        // Browser Capability Detection & Performance Optimization
         // =====================================================
+        
+        let browserCapabilities = {};
+        
+        // Detect browser capabilities instead of device type
+        function detectBrowserCapabilities() {
+            // Get device memory (Chrome, Edge, Opera)
+            const deviceMemory = navigator.deviceMemory || 4;
+            
+            // Get connection info (Chrome, Edge, Opera)
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const effectiveType = connection?.effectiveType || '4g';
+            const saveData = connection?.saveData || false;
+            
+            // Estimate CPU cores
+            const cpuCores = navigator.hardwareConcurrency || 2;
+            
+            // Check if user reduced motion preference
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            
+            // Determine if device can handle video background
+            let canHandleVideo = true;
+            
+            // Low end devices detection
+            if (deviceMemory <= 2 || effectiveType === 'slow-2g' || effectiveType === '2g' || effectiveType === '3g' || saveData || prefersReducedMotion) {
+                canHandleVideo = false;
+            }
+            
+            browserCapabilities = {
+                deviceMemory,
+                effectiveType,
+                saveData,
+                cpuCores,
+                prefersReducedMotion,
+                canHandleVideo
+            };
+            
+            return browserCapabilities;
+        }
+        
+        // Detect capabilities on load
+        detectBrowserCapabilities();
+        
+        // Apply capability-based optimizations
+        if (!browserCapabilities.canHandleVideo) {
+            document.documentElement.classList.add('low-capability-mode');
+        }
         
         // Prevent accidental text selection on touch
         document.addEventListener('touchstart', function(e) {
@@ -5010,16 +5094,6 @@
             }
             lastTouchEnd = now;
         }, { passive: true });
-        
-        // Performance: Lazy load animations
-        const mediaQuery = window.matchMedia('(max-width: 768px)');
-        if (mediaQuery.matches) {
-            document.documentElement.classList.add('mobile-mode');
-            // Disable some animations on mobile for better performance
-            document.querySelectorAll('[class*="hover:"]').forEach(el => {
-                el.classList.remove('hover:scale-102', 'hover:translateY-5');
-            });
-        }
 
         // =====================================================
         // Supabase Authentication
