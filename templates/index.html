@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> AI REC | HUMATA</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
@@ -507,11 +508,327 @@
             background: #1e293b;
             color: #e2e8f0;
         }
+
+        /* Auth Page Styles */
+        .auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #050510;
+        }
+
+        .auth-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('/static/background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .auth-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 30% 20%, rgba(0, 191, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 60%, rgba(138, 43, 226, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(0, 100, 200, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+            animation: pulseGlow 8s ease-in-out infinite alternate;
+        }
+
+        .auth-box {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            margin: 1rem;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px rgba(99, 102, 241, 0.15);
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: rgba(139, 92, 246, 0.6);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+        }
+
+        .auth-input::placeholder {
+            color: #64748b;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+        }
+
+        .auth-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .auth-tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: #64748b;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .auth-tab.active {
+            color: #a78bfa;
+            border-bottom-color: #8b5cf6;
+        }
+
+        .auth-tab:hover:not(.active) {
+            color: #94a3b8;
+        }
+
+        .auth-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .auth-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-menu-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .user-menu-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 0.5rem;
+            display: none;
+            z-index: 100;
+        }
+
+        .user-dropdown.show {
+            display: block;
+        }
+
+        .user-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .user-dropdown-item:hover {
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        .user-dropdown-item.logout {
+            color: #fca5a5;
+        }
+
+        .user-dropdown-item.logout:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
     </style>
 </head>
 
 <body class="text-slate-200">
     <div id="toast-container" class="fixed top-4 left-4 z-50 space-y-2"></div>
+
+    <!-- Auth Container -->
+    <div id="auth-container" class="auth-container">
+        <div class="auth-box">
+            <!-- Logo and Title -->
+            <div class="text-center mb-8">
+                <div class="relative mx-auto mb-4 w-24 h-24">
+                    <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/30 via-purple-500/20 to-blue-500/30 blur-xl"></div>
+                    <div class="absolute inset-0 rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-sm"></div>
+                    <img src="/logo.png" alt="Logo" class="relative w-full h-full object-cover rounded-2xl p-1">
+                </div>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                    AI REC | HUMATA
+                </h1>
+                <p class="text-slate-400 text-sm">منصة الأدوات الذكية للمحتوى العربي</p>
+                <p class="text-slate-500 text-xs mt-2">تطوير: محمود عادل</p>
+            </div>
+
+            <!-- Auth Tabs -->
+            <div class="flex justify-center mb-6 border-b border-slate-700">
+                <button id="login-tab" class="auth-tab active" onclick="showAuthTab('login')">
+                    تسجيل الدخول
+                </button>
+                <button id="register-tab" class="auth-tab" onclick="showAuthTab('register')">
+                    حساب جديد
+                </button>
+            </div>
+
+            <!-- Error/Success Messages -->
+            <div id="auth-error" class="auth-error"></div>
+            <div id="auth-success" class="auth-success"></div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="space-y-4">
+                    <div>
+                        <input type="email" id="login-email" class="auth-input" placeholder="البريد الإلكتروني" required dir="ltr">
+                    </div>
+                    <div>
+                        <input type="password" id="login-password" class="auth-input" placeholder="كلمة المرور" required dir="ltr">
+                    </div>
+                    <button type="submit" id="login-btn" class="auth-btn">
+                        <span id="login-btn-text">دخول</span>
+                        <span id="login-btn-loading" class="hidden">
+                            <i class="fas fa-spinner fa-spin ml-2"></i> جاري التحميل...
+                        </span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
+                <div class="space-y-4">
+                    <div>
+                        <input type="text" id="register-name" class="auth-input" placeholder="الاسم الكامل" required>
+                    </div>
+                    <div>
+                        <input type="email" id="register-email" class="auth-input" placeholder="البريد الإلكتروني" required dir="ltr">
+                    </div>
+                    <div>
+                        <input type="password" id="register-password" class="auth-input" placeholder="كلمة المرور (6 أحرف على الأقل)" required minlength="6" dir="ltr">
+                    </div>
+                    <div>
+                        <input type="password" id="register-confirm" class="auth-input" placeholder="تأكيد كلمة المرور" required dir="ltr">
+                    </div>
+                    <button type="submit" id="register-btn" class="auth-btn">
+                        <span id="register-btn-text">إنشاء حساب</span>
+                        <span id="register-btn-loading" class="hidden">
+                            <i class="fas fa-spinner fa-spin ml-2"></i> جاري التحميل...
+                        </span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Features Preview -->
+            <div class="mt-8 pt-6 border-t border-slate-700">
+                <p class="text-center text-slate-500 text-sm mb-4">الأدوات المتاحة بعد التسجيل:</p>
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-400">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-microphone text-red-400"></i>
+                        <span>تحويل الصوت لنص</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fab fa-youtube text-red-500"></i>
+                        <span>قص فيديو يوتيوب</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-dragon text-purple-400"></i>
+                        <span>كاشف الأنمي</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-podcast text-green-400"></i>
+                        <span>كاشف البودكاست</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-file-audio text-blue-400"></i>
+                        <span>تحويل ملف صوتي</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-image text-cyan-400"></i>
+                        <span>استخراج نص من صورة</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Mobile Menu Toggle Button -->
     <button id="mobile-menu-btn" class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="القائمة">
@@ -536,6 +853,25 @@
                         أدوات متعددة
                     </h1>
                     <p class="text-slate-400 text-sm mt-1">منصة الأدوات الذكية</p>
+                </div>
+            </div>
+
+            <!-- User Menu -->
+            <div id="user-menu" class="user-menu mb-6">
+                <button class="user-menu-btn w-full justify-center" onclick="toggleUserDropdown()">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="user-display-name">المستخدم</span>
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div id="user-dropdown" class="user-dropdown">
+                    <div class="user-dropdown-item">
+                        <i class="fas fa-envelope text-slate-400"></i>
+                        <span id="user-display-email" class="text-sm text-slate-400 truncate"></span>
+                    </div>
+                    <div class="user-dropdown-item logout" onclick="handleLogout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>تسجيل الخروج</span>
+                    </div>
                 </div>
             </div>
 
@@ -4018,6 +4354,287 @@
                 submitBtn.disabled = false;
             }
         }
+
+        // =====================================================
+        // Supabase Authentication
+        // =====================================================
+        
+        const SUPABASE_URL = '{{ supabase_url }}';
+        const SUPABASE_ANON_KEY = '{{ supabase_anon_key }}';
+        
+        let supabaseClient = null;
+        let currentUser = null;
+        
+        // Initialize Supabase
+        function initSupabase() {
+            if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL === '' || SUPABASE_ANON_KEY === '') {
+                console.error('Supabase credentials not configured');
+                hideAuthContainer();
+                return;
+            }
+            
+            try {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                checkAuthState();
+            } catch (error) {
+                console.error('Failed to initialize Supabase:', error);
+                hideAuthContainer();
+            }
+        }
+        
+        // Check authentication state
+        async function checkAuthState() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                
+                if (error) {
+                    console.error('Auth session error:', error);
+                    showAuthContainer();
+                    return;
+                }
+                
+                if (session && session.user) {
+                    currentUser = session.user;
+                    hideAuthContainer();
+                    updateUserDisplay();
+                } else {
+                    showAuthContainer();
+                }
+                
+                // Listen for auth state changes
+                supabaseClient.auth.onAuthStateChange((event, session) => {
+                    if (event === 'SIGNED_IN' && session) {
+                        currentUser = session.user;
+                        hideAuthContainer();
+                        updateUserDisplay();
+                    } else if (event === 'SIGNED_OUT') {
+                        currentUser = null;
+                        showAuthContainer();
+                    }
+                });
+            } catch (error) {
+                console.error('Error checking auth state:', error);
+                showAuthContainer();
+            }
+        }
+        
+        // Show auth container
+        function showAuthContainer() {
+            document.getElementById('auth-container').style.display = 'flex';
+            document.getElementById('user-menu').style.display = 'none';
+        }
+        
+        // Hide auth container
+        function hideAuthContainer() {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('user-menu').style.display = 'block';
+        }
+        
+        // Update user display
+        function updateUserDisplay() {
+            if (currentUser) {
+                const displayName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'المستخدم';
+                document.getElementById('user-display-name').textContent = displayName;
+                document.getElementById('user-display-email').textContent = currentUser.email || '';
+            }
+        }
+        
+        // Toggle user dropdown
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('user-dropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const userMenu = document.getElementById('user-menu');
+            const dropdown = document.getElementById('user-dropdown');
+            if (userMenu && dropdown && !userMenu.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+        
+        // Show auth tab
+        function showAuthTab(tab) {
+            const loginTab = document.getElementById('login-tab');
+            const registerTab = document.getElementById('register-tab');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            
+            hideAuthMessages();
+            
+            if (tab === 'login') {
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+            } else {
+                registerTab.classList.add('active');
+                loginTab.classList.remove('active');
+                registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+            }
+        }
+        
+        // Show auth error
+        function showAuthError(message) {
+            const errorDiv = document.getElementById('auth-error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('auth-success').style.display = 'none';
+        }
+        
+        // Show auth success
+        function showAuthSuccess(message) {
+            const successDiv = document.getElementById('auth-success');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            document.getElementById('auth-error').style.display = 'none';
+        }
+        
+        // Hide auth messages
+        function hideAuthMessages() {
+            document.getElementById('auth-error').style.display = 'none';
+            document.getElementById('auth-success').style.display = 'none';
+        }
+        
+        // Handle login
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const btnText = document.getElementById('login-btn-text');
+            const btnLoading = document.getElementById('login-btn-loading');
+            const btn = document.getElementById('login-btn');
+            
+            hideAuthMessages();
+            btnText.classList.add('hidden');
+            btnLoading.classList.remove('hidden');
+            btn.disabled = true;
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    let errorMessage = 'خطأ في تسجيل الدخول';
+                    if (error.message.includes('Invalid login credentials')) {
+                        errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+                    } else if (error.message.includes('Email not confirmed')) {
+                        errorMessage = 'يرجى تأكيد بريدك الإلكتروني أولاً';
+                    }
+                    showAuthError(errorMessage);
+                } else if (data.user) {
+                    currentUser = data.user;
+                    hideAuthContainer();
+                    updateUserDisplay();
+                    showToast('تم تسجيل الدخول بنجاح!');
+                }
+            } catch (error) {
+                showAuthError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
+            } finally {
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+                btn.disabled = false;
+            }
+        }
+        
+        // Handle register
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('register-name').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm').value;
+            const btnText = document.getElementById('register-btn-text');
+            const btnLoading = document.getElementById('register-btn-loading');
+            const btn = document.getElementById('register-btn');
+            
+            hideAuthMessages();
+            
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                showAuthError('كلمات المرور غير متطابقة');
+                return;
+            }
+            
+            // Validate password length
+            if (password.length < 6) {
+                showAuthError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+                return;
+            }
+            
+            btnText.classList.add('hidden');
+            btnLoading.classList.remove('hidden');
+            btn.disabled = true;
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: name
+                        }
+                    }
+                });
+                
+                if (error) {
+                    let errorMessage = 'خطأ في إنشاء الحساب';
+                    if (error.message.includes('already registered')) {
+                        errorMessage = 'هذا البريد الإلكتروني مسجل بالفعل';
+                    } else if (error.message.includes('Password')) {
+                        errorMessage = 'كلمة المرور ضعيفة. استخدم 6 أحرف على الأقل';
+                    } else if (error.message.includes('email')) {
+                        errorMessage = 'البريد الإلكتروني غير صالح';
+                    }
+                    showAuthError(errorMessage);
+                } else if (data.user) {
+                    if (data.user.identities && data.user.identities.length === 0) {
+                        showAuthError('هذا البريد الإلكتروني مسجل بالفعل');
+                    } else if (data.session) {
+                        // Auto-confirmed (no email verification required)
+                        currentUser = data.user;
+                        hideAuthContainer();
+                        updateUserDisplay();
+                        showToast('تم إنشاء الحساب بنجاح!');
+                    } else {
+                        // Email verification required
+                        showAuthSuccess('تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب.');
+                        document.getElementById('register-form').reset();
+                    }
+                }
+            } catch (error) {
+                showAuthError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
+            } finally {
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+                btn.disabled = false;
+            }
+        }
+        
+        // Handle logout
+        async function handleLogout() {
+            try {
+                const { error } = await supabaseClient.auth.signOut();
+                if (error) {
+                    showToast('خطأ في تسجيل الخروج', 'error');
+                } else {
+                    currentUser = null;
+                    showAuthContainer();
+                    showToast('تم تسجيل الخروج بنجاح');
+                }
+            } catch (error) {
+                showToast('حدث خطأ غير متوقع', 'error');
+            }
+        }
+        
+        // Initialize Supabase on page load
+        document.addEventListener('DOMContentLoaded', initSupabase);
     </script>
 </body>
 
