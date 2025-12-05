@@ -313,108 +313,182 @@
             position: fixed;
             top: 1rem;
             right: 1rem;
-            z-index: 100;
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            z-index: 10001;
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
             display: none;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .mobile-menu-btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+            box-shadow: 0 6px 25px rgba(99, 102, 241, 0.6);
         }
 
         .mobile-menu-btn:active {
-            transform: scale(0.95);
+            transform: scale(0.92);
         }
 
         .mobile-menu-btn i {
             color: white;
-            font-size: 1.25rem;
+            font-size: 1.35rem;
             transition: transform 0.3s ease;
+            pointer-events: none;
         }
 
         .mobile-menu-btn.active i {
             transform: rotate(90deg);
         }
 
+        /* Mobile Sidebar Overlay */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 9998;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .sidebar-overlay.open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
         /* Mobile Sidebar Styles */
         @media (max-width: 1023px) {
             .mobile-menu-btn {
-                display: flex;
+                display: flex !important;
             }
 
             .sidebar-nav {
-                position: fixed;
-                top: 0;
-                right: -100%;
-                width: 85%;
-                max-width: 320px;
-                height: 100vh;
-                height: 100dvh;
-                z-index: 9999;
-                transition: right 0.3s ease;
-                overflow-y: auto;
-                overflow-x: hidden;
-                -webkit-overflow-scrolling: touch;
-                overscroll-behavior: contain;
-                padding-top: 2rem;
-                padding-bottom: 2rem;
-                visibility: hidden;
+                position: fixed !important;
+                top: 0 !important;
+                right: -100% !important;
+                left: auto !important;
+                width: 85% !important;
+                max-width: 340px !important;
+                height: 100vh !important;
+                height: 100dvh !important;
+                z-index: 9999 !important;
+                transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior: contain !important;
+                padding-top: 80px !important;
+                padding-bottom: 120px !important;
+                transform: translateZ(0);
+                will-change: right;
             }
 
             .sidebar-nav.open {
-                right: 0;
-                visibility: visible;
+                right: 0 !important;
             }
 
+            /* Mobile nav items - complete rebuild */
             .sidebar-nav .nav-item {
                 position: relative;
                 z-index: 10000;
                 cursor: pointer;
                 touch-action: manipulation;
-                -webkit-tap-highlight-color: rgba(99, 102, 241, 0.3);
+                -webkit-tap-highlight-color: transparent;
                 user-select: none;
                 -webkit-user-select: none;
+                pointer-events: auto !important;
+                min-height: 70px;
+                display: flex !important;
+                align-items: center !important;
             }
 
             .sidebar-nav .nav-item:active {
-                transform: scale(0.98);
-                background: rgba(99, 102, 241, 0.25) !important;
+                transform: scale(0.97);
+                background: rgba(99, 102, 241, 0.3) !important;
+            }
+
+            .sidebar-nav .nav-item.active {
+                background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.4)) !important;
             }
 
             .sidebar-nav .space-y-3 {
                 padding-bottom: 100px;
             }
 
-            .sidebar-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                height: 100dvh;
-                background: rgba(0, 0, 0, 0.7);
-                z-index: 9998;
-                opacity: 0;
-                visibility: hidden;
-                transition: all 0.3s ease;
+            /* Close button for sidebar */
+            .mobile-close-btn {
+                position: absolute;
+                top: 1rem;
+                left: 1rem;
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+                background: rgba(239, 68, 68, 0.2);
+                border: 1px solid rgba(239, 68, 68, 0.4);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                z-index: 10001;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
             }
 
-            .sidebar-overlay.open {
-                opacity: 1;
-                visibility: visible;
+            .mobile-close-btn i {
+                color: #fca5a5;
+                font-size: 1.25rem;
+                pointer-events: none;
+            }
+
+            .mobile-close-btn:active {
+                transform: scale(0.9);
+                background: rgba(239, 68, 68, 0.4);
             }
 
             .main-content {
                 padding-top: 5rem;
+                min-height: 100vh;
+            }
+
+            /* Hide logo section on mobile sidebar for more space */
+            .sidebar-nav > .flex.items-center.justify-center {
+                display: none !important;
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 480px) {
+            .sidebar-nav {
+                width: 92% !important;
+                max-width: none !important;
+            }
+
+            .mobile-menu-btn {
+                width: 48px;
+                height: 48px;
+                top: 0.75rem;
+                right: 0.75rem;
+            }
+
+            .main-content {
+                padding: 4.5rem 0.75rem 1rem 0.75rem;
             }
         }
 
@@ -533,7 +607,7 @@
             padding: 1rem;
         }
         
-        /* Overlay to hide main app content on welcome page */
+        /* Overlay to hide main app content on welcome page - reduced opacity */
         .auth-container::before {
             content: '';
             position: fixed;
@@ -541,7 +615,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(5, 5, 16, 0.75);
+            background: rgba(5, 5, 16, 0.35);
             z-index: -1;
         }
 
@@ -582,7 +656,7 @@
             }
         }
         
-        /* Dark overlay for better readability */
+        /* Dark overlay for better readability - reduced for welcome page */
         .global-video-bg::after {
             content: '';
             position: absolute;
@@ -590,9 +664,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(5, 5, 16, 0.6);
+            background: rgba(5, 5, 16, 0.3);
             pointer-events: none;
             z-index: 1;
+        }
+        
+        /* Increase overlay when main app is visible */
+        body.app-active .global-video-bg::after {
+            background: rgba(5, 5, 16, 0.6);
         }
 
         .auth-container::after {
@@ -1072,6 +1151,11 @@
 
     <div id="main-app" class="flex flex-col lg:flex-row min-h-screen" style="display: none;">
         <nav id="sidebar" class="sidebar-nav lg:w-72 w-full glass-sidebar lg:min-h-screen p-4 lg:p-6">
+            <!-- Mobile Close Button -->
+            <button id="mobile-close-btn" class="mobile-close-btn lg:hidden" onclick="closeMobileMenu()" aria-label="إغلاق">
+                <i class="fas fa-times"></i>
+            </button>
+            
             <div class="flex items-center justify-center mb-8">
                 <div class="text-center">
                     <div class="relative mx-auto mb-4 w-28 h-28">
@@ -2624,38 +2708,44 @@
             }, 3000);
         }
 
+        // Mobile menu state
+        let mobileMenuOpen = false;
+        let scrollPosition = 0;
+
         function toggleMobileMenu() {
+            if (mobileMenuOpen) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+
+        function openMobileMenu() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
             const menuBtn = document.getElementById('mobile-menu-btn');
 
-            const isOpening = !sidebar.classList.contains('open');
-            
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('open');
-            menuBtn.classList.toggle('active');
+            if (!sidebar || !overlay || !menuBtn) return;
 
-            // Lock/unlock body scroll on mobile only
-            if (window.innerWidth < 1024) {
-                if (isOpening) {
-                    document.body.style.overflow = 'hidden';
-                    document.body.style.position = 'fixed';
-                    document.body.style.width = '100%';
-                } else {
-                    document.body.style.overflow = '';
-                    document.body.style.position = '';
-                    document.body.style.width = '';
-                }
-            }
+            mobileMenuOpen = true;
+            
+            // Save scroll position and lock body
+            scrollPosition = window.pageYOffset;
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollPosition}px`;
+            document.body.style.width = '100%';
+            document.body.style.touchAction = 'none';
+            
+            sidebar.classList.add('open');
+            overlay.classList.add('open');
+            menuBtn.classList.add('active');
 
             // Update icon
             const icon = menuBtn.querySelector('i');
-            if (sidebar.classList.contains('open')) {
+            if (icon) {
                 icon.classList.remove('fa-bars');
                 icon.classList.add('fa-times');
-            } else {
-                icon.classList.remove('fa-times');
-                icon.classList.add('fa-bars');
             }
         }
 
@@ -2664,24 +2754,32 @@
             const overlay = document.getElementById('sidebar-overlay');
             const menuBtn = document.getElementById('mobile-menu-btn');
 
+            if (!sidebar || !overlay || !menuBtn) return;
+
+            mobileMenuOpen = false;
+
             sidebar.classList.remove('open');
             overlay.classList.remove('open');
             menuBtn.classList.remove('active');
 
-            // Unlock body scroll
+            // Unlock body scroll and restore position
             document.body.style.overflow = '';
             document.body.style.position = '';
+            document.body.style.top = '';
             document.body.style.width = '';
+            document.body.style.touchAction = '';
+            window.scrollTo(0, scrollPosition);
 
             const icon = menuBtn.querySelector('i');
-            icon.classList.remove('fa-times');
-            icon.classList.add('fa-bars');
+            if (icon) {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
         }
 
         // Handle resize events to close mobile menu when switching to desktop
         window.addEventListener('resize', function() {
-            const sidebar = document.getElementById('sidebar');
-            if (window.innerWidth >= 1024 && sidebar && sidebar.classList.contains('open')) {
+            if (window.innerWidth >= 1024 && mobileMenuOpen) {
                 closeMobileMenu();
             }
         });
@@ -2693,33 +2791,120 @@
                 event.stopPropagation();
             }
             
+            // Update tool visibility
             document.querySelectorAll('.tool-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-            document.getElementById(`tool-${tool}`).classList.remove('hidden');
-            document.getElementById(`nav-${tool}`).classList.add('active');
+            const toolElement = document.getElementById(`tool-${tool}`);
+            const navElement = document.getElementById(`nav-${tool}`);
+            
+            if (toolElement) toolElement.classList.remove('hidden');
+            if (navElement) navElement.classList.add('active');
 
             // Close mobile menu when tool is selected on mobile
-            if (window.innerWidth < 1024) {
+            if (window.innerWidth < 1024 && mobileMenuOpen) {
+                // Small delay for visual feedback
                 setTimeout(() => {
                     closeMobileMenu();
-                }, 50);
+                }, 100);
             }
         }
         
-        // Add touch event support for mobile nav items
+        // Initialize mobile touch handling
         document.addEventListener('DOMContentLoaded', function() {
-            const navItems = document.querySelectorAll('.nav-item');
+            // Setup nav items for touch
+            setupMobileNavigation();
+            
+            // Check if already entered
+            checkIfEntered();
+        });
+
+        function setupMobileNavigation() {
+            const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+            
             navItems.forEach(function(item) {
-                // Handle touch events
-                item.addEventListener('touchend', function(e) {
+                // Remove any existing listeners by cloning
+                const newItem = item.cloneNode(true);
+                item.parentNode.replaceChild(newItem, item);
+                
+                // Add click handler
+                newItem.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    // Trigger the click
-                    this.click();
+                    
+                    // Get tool name from onclick attribute or id
+                    const onclickAttr = this.getAttribute('onclick');
+                    if (onclickAttr) {
+                        const match = onclickAttr.match(/showTool\('([^']+)'/);
+                        if (match && match[1]) {
+                            showTool(match[1], e);
+                        }
+                    }
                 }, { passive: false });
+
+                // Add touch handler for better mobile response
+                newItem.addEventListener('touchstart', function(e) {
+                    this.style.transform = 'scale(0.97)';
+                    this.style.background = 'rgba(99, 102, 241, 0.3)';
+                }, { passive: true });
+
+                newItem.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    
+                    this.style.transform = '';
+                    this.style.background = '';
+                    
+                    // Get tool name from onclick attribute
+                    const onclickAttr = this.getAttribute('onclick');
+                    if (onclickAttr) {
+                        const match = onclickAttr.match(/showTool\('([^']+)'/);
+                        if (match && match[1]) {
+                            showTool(match[1], e);
+                        }
+                    }
+                }, { passive: false });
+
+                newItem.addEventListener('touchcancel', function() {
+                    this.style.transform = '';
+                    this.style.background = '';
+                }, { passive: true });
             });
-        });
+
+            // Setup overlay click
+            const overlay = document.getElementById('sidebar-overlay');
+            if (overlay) {
+                overlay.addEventListener('click', closeMobileMenu);
+                overlay.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    closeMobileMenu();
+                }, { passive: false });
+            }
+
+            // Setup close button
+            const closeBtn = document.getElementById('mobile-close-btn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeMobileMenu();
+                });
+                closeBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeMobileMenu();
+                }, { passive: false });
+            }
+
+            // Setup menu button
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            if (menuBtn) {
+                menuBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleMobileMenu();
+                });
+            }
+        }
 
         function setAnimeMode(mode) {
             const imageTab = document.getElementById('anime-tab-image');
@@ -4696,12 +4881,20 @@
         // Show auth container (welcome page)
         function showAuthContainer() {
             document.getElementById('auth-container').style.display = 'flex';
+            document.getElementById('main-app').style.display = 'none';
+            document.body.classList.remove('app-active');
         }
         
         // Hide auth container (enter the app)
         function hideAuthContainer() {
             document.getElementById('auth-container').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
+            document.body.classList.add('app-active');
+            
+            // Re-setup mobile navigation after main app is shown
+            setTimeout(function() {
+                setupMobileNavigation();
+            }, 100);
         }
         
         // Enter AI World - main entry button
