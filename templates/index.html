@@ -366,14 +366,23 @@
                 width: 85%;
                 max-width: 320px;
                 height: 100vh;
-                z-index: 99;
+                z-index: 9999;
                 transition: right 0.3s ease;
                 overflow-y: auto;
                 padding-top: 5rem;
+                pointer-events: none;
             }
 
             .sidebar-nav.open {
                 right: 0;
+                pointer-events: auto;
+            }
+
+            .sidebar-nav .nav-item {
+                position: relative;
+                z-index: 10000;
+                pointer-events: auto;
+                touch-action: manipulation;
             }
 
             .sidebar-overlay {
@@ -383,15 +392,17 @@
                 width: 100%;
                 height: 100%;
                 background: rgba(0, 0, 0, 0.7);
-                z-index: 98;
+                z-index: 9998;
                 opacity: 0;
                 visibility: hidden;
                 transition: all 0.3s ease;
+                pointer-events: none;
             }
 
             .sidebar-overlay.open {
                 opacity: 1;
                 visibility: visible;
+                pointer-events: auto;
             }
 
             .main-content {
@@ -1835,42 +1846,69 @@
         let processedResultIds = new Set();
         let lastFinalTranscripts = [];
         let lastResultTimestamp = 0;
-        const DUPLICATE_THRESHOLD_MS = 1500;
-        const MAX_HISTORY_SIZE = 10;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const DUPLICATE_THRESHOLD_MS = isMobile ? 3000 : 1500;
+        const PARTIAL_THRESHOLD_MS = isMobile ? 2000 : 750;
+        const MAX_HISTORY_SIZE = 20;
         let pendingUpdate = null;
+        let isRecognitionRestarting = false;
+        let lastAddedText = '';
+        let recognitionRestartCount = 0;
+        const MAX_RESTART_COUNT = 3;
+        let restartCooldownActive = false;
+        
+        function normalizeText(text) {
+            return text.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.,،؟!؛:]/g, '');
+        }
         
         function isDuplicateResult(transcript, resultIndex) {
             const now = Date.now();
-            const trimmedTranscript = transcript.trim().toLowerCase();
+            const normalizedTranscript = normalizeText(transcript);
             
-            if (!trimmedTranscript) return true;
+            if (!normalizedTranscript || normalizedTranscript.length < 2) return true;
             
-            const resultId = `${resultIndex}_${trimmedTranscript.substring(0, 50)}`;
+            if (normalizedTranscript === normalizeText(lastAddedText)) {
+                console.log('Exact last text duplicate blocked');
+                return true;
+            }
+            
+            const resultId = `${normalizedTranscript.substring(0, 100)}`;
             if (processedResultIds.has(resultId)) {
-                console.log('Result ID duplicate blocked:', resultId);
+                console.log('Result ID duplicate blocked:', resultId.substring(0, 30));
                 return true;
             }
             
             for (const prev of lastFinalTranscripts) {
-                if (trimmedTranscript === prev.text.toLowerCase()) {
+                const normalizedPrev = normalizeText(prev.text);
+                
+                if (normalizedTranscript === normalizedPrev) {
                     if ((now - prev.time) < DUPLICATE_THRESHOLD_MS) {
-                        console.log('Time-based duplicate blocked:', trimmedTranscript);
+                        console.log('Time-based duplicate blocked');
                         return true;
                     }
                 }
-                if (trimmedTranscript.includes(prev.text.toLowerCase()) || 
-                    prev.text.toLowerCase().includes(trimmedTranscript)) {
-                    if ((now - prev.time) < DUPLICATE_THRESHOLD_MS / 2) {
-                        console.log('Partial duplicate blocked:', trimmedTranscript);
+                
+                if (normalizedTranscript.length > 5 && normalizedPrev.length > 5) {
+                    if (normalizedTranscript.includes(normalizedPrev) || 
+                        normalizedPrev.includes(normalizedTranscript)) {
+                        if ((now - prev.time) < PARTIAL_THRESHOLD_MS) {
+                            console.log('Partial duplicate blocked');
+                            return true;
+                        }
+                    }
+                    
+                    const similarity = calculateSimilarity(normalizedTranscript, normalizedPrev);
+                    if (similarity > 0.85 && (now - prev.time) < DUPLICATE_THRESHOLD_MS) {
+                        console.log('High similarity duplicate blocked:', similarity);
                         return true;
                     }
                 }
             }
             
             processedResultIds.add(resultId);
-            if (processedResultIds.size > 100) {
+            if (processedResultIds.size > 200) {
                 const arr = Array.from(processedResultIds);
-                processedResultIds = new Set(arr.slice(-50));
+                processedResultIds = new Set(arr.slice(-100));
             }
             
             lastFinalTranscripts.push({ text: transcript.trim(), time: now });
@@ -1878,24 +1916,73 @@
                 lastFinalTranscripts.shift();
             }
             lastResultTimestamp = now;
+            lastAddedText = transcript.trim();
             
             return false;
+        }
+        
+        function calculateSimilarity(str1, str2) {
+            const words1 = str1.split(' ');
+            const words2 = str2.split(' ');
+            const set1 = new Set(words1);
+            const set2 = new Set(words2);
+            const intersection = [...set1].filter(x => set2.has(x)).length;
+            const union = new Set([...words1, ...words2]).size;
+            return union > 0 ? intersection / union : 0;
         }
         
         function resetDuplicateTracking() {
             processedResultIds.clear();
             lastFinalTranscripts = [];
             lastResultTimestamp = 0;
+            lastAddedText = '';
+            recognitionRestartCount = 0;
+            restartCooldownActive = false;
+            isRecognitionRestarting = false;
         }
         
         function debounceUpdate(textArea, content, delay = 150) {
+            const actualDelay = isMobile ? 250 : delay;
             if (pendingUpdate) clearTimeout(pendingUpdate);
             pendingUpdate = setTimeout(() => {
                 textArea.value = content;
                 updateWordCount();
                 textArea.scrollTop = textArea.scrollHeight;
                 pendingUpdate = null;
-            }, delay);
+            }, actualDelay);
+        }
+        
+        function safeRestartRecognition(recognitionObj, createNewFunc) {
+            if (isRecognitionRestarting || restartCooldownActive) {
+                console.log('Recognition restart skipped - already restarting or in cooldown');
+                return;
+            }
+            
+            recognitionRestartCount++;
+            if (recognitionRestartCount > MAX_RESTART_COUNT) {
+                console.log('Too many restarts, activating cooldown');
+                restartCooldownActive = true;
+                recognitionRestartCount = 0;
+                setTimeout(() => {
+                    restartCooldownActive = false;
+                    console.log('Cooldown ended');
+                }, isMobile ? 2000 : 1000);
+                return;
+            }
+            
+            isRecognitionRestarting = true;
+            const restartDelay = isMobile ? 500 : 100;
+            
+            setTimeout(() => {
+                isRecognitionRestarting = false;
+                if (recognitionObj && (isRecording || isContinuousRecording)) {
+                    try {
+                        recognitionObj.start();
+                    } catch (e) {
+                        if (createNewFunc) createNewFunc();
+                    }
+                }
+            }, restartDelay);
         }
 
         function uploadWithProgress(url, formData, progressBarId, progressTextId, timeoutMs = 1800000) {
@@ -2193,15 +2280,7 @@
             recognition.onerror = (event) => {
                 if (event.error === 'no-speech' || event.error === 'network' || event.error === 'aborted') {
                     if (isRecording) {
-                        setTimeout(() => {
-                            if (isRecording && recognition) {
-                                try {
-                                    recognition.start();
-                                } catch (e) {
-                                    createNewRecognition();
-                                }
-                            }
-                        }, 100);
+                        safeRestartRecognition(recognition, createNewRecognition);
                     }
                     return;
                 }
@@ -2220,16 +2299,8 @@
             };
 
             recognition.onend = () => {
-                if (isRecording) {
-                    setTimeout(() => {
-                        if (isRecording) {
-                            try {
-                                recognition.start();
-                            } catch (e) {
-                                createNewRecognition();
-                            }
-                        }
-                    }, 50);
+                if (isRecording && !isRecognitionRestarting) {
+                    safeRestartRecognition(recognition, createNewRecognition);
                 }
             };
 
@@ -2273,11 +2344,7 @@
             recognition.onerror = (event) => {
                 if (event.error === 'no-speech' || event.error === 'network' || event.error === 'aborted') {
                     if (isRecording) {
-                        setTimeout(() => {
-                            if (isRecording) {
-                                createNewRecognition();
-                            }
-                        }, 100);
+                        safeRestartRecognition(null, createNewRecognition);
                     }
                     return;
                 }
@@ -2288,23 +2355,15 @@
             };
 
             recognition.onend = () => {
-                if (isRecording) {
-                    setTimeout(() => {
-                        if (isRecording) {
-                            createNewRecognition();
-                        }
-                    }, 50);
+                if (isRecording && !isRecognitionRestarting) {
+                    safeRestartRecognition(null, createNewRecognition);
                 }
             };
 
             try {
                 recognition.start();
             } catch (e) {
-                setTimeout(() => {
-                    if (isRecording) {
-                        createNewRecognition();
-                    }
-                }, 500);
+                safeRestartRecognition(null, createNewRecognition);
             }
         }
 
@@ -2481,15 +2540,7 @@
             continuousRecognition.onerror = (event) => {
                 if (event.error === 'no-speech' || event.error === 'network' || event.error === 'aborted') {
                     if (isContinuousRecording) {
-                        setTimeout(() => {
-                            if (isContinuousRecording && continuousRecognition) {
-                                try {
-                                    continuousRecognition.start();
-                                } catch (e) {
-                                    createNewContinuousRecognition();
-                                }
-                            }
-                        }, 100);
+                        safeRestartRecognition(continuousRecognition, createNewContinuousRecognition);
                     }
                     return;
                 }
@@ -2508,16 +2559,8 @@
             };
 
             continuousRecognition.onend = () => {
-                if (isContinuousRecording) {
-                    setTimeout(() => {
-                        if (isContinuousRecording) {
-                            try {
-                                continuousRecognition.start();
-                            } catch (e) {
-                                createNewContinuousRecognition();
-                            }
-                        }
-                    }, 50);
+                if (isContinuousRecording && !isRecognitionRestarting) {
+                    safeRestartRecognition(continuousRecognition, createNewContinuousRecognition);
                 }
             };
 
@@ -2561,11 +2604,7 @@
             continuousRecognition.onerror = (event) => {
                 if (event.error === 'no-speech' || event.error === 'network' || event.error === 'aborted') {
                     if (isContinuousRecording) {
-                        setTimeout(() => {
-                            if (isContinuousRecording) {
-                                createNewContinuousRecognition();
-                            }
-                        }, 100);
+                        safeRestartRecognition(null, createNewContinuousRecognition);
                     }
                     return;
                 }
@@ -2576,23 +2615,15 @@
             };
 
             continuousRecognition.onend = () => {
-                if (isContinuousRecording) {
-                    setTimeout(() => {
-                        if (isContinuousRecording) {
-                            createNewContinuousRecognition();
-                        }
-                    }, 50);
+                if (isContinuousRecording && !isRecognitionRestarting) {
+                    safeRestartRecognition(null, createNewContinuousRecognition);
                 }
             };
 
             try {
                 continuousRecognition.start();
             } catch (e) {
-                setTimeout(() => {
-                    if (isContinuousRecording) {
-                        createNewContinuousRecognition();
-                    }
-                }, 500);
+                safeRestartRecognition(null, createNewContinuousRecognition);
             }
         }
 
