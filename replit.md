@@ -1,7 +1,7 @@
 # Multi-Tool Arabic Platform (منصة الأدوات الذكية)
 
 ## Overview
-A comprehensive web application with nine powerful tools, featuring a modern Arabic RTL interface with glassmorphism design.
+A comprehensive web application with ten powerful tools, featuring a modern Arabic RTL interface with glassmorphism design.
 
 ## Tools
 
@@ -99,6 +99,17 @@ A comprehensive web application with nine powerful tools, featuring a modern Ara
 - Copy, download, and clear transcribed text functionality
 - Extended timeout (2 hours) for large file processing
 
+### 10. DOCX Formatter (تنسيق ملفات Word)
+- Upload Word documents (.docx) for academic formatting
+- **Formatting applied:**
+  - Margins: 2.5 cm on all sides
+  - Font: Times New Roman, 14pt
+  - Line spacing: 1.5
+  - Paragraph alignment: Justified
+  - Paragraph spacing: 6pt after each paragraph
+- Downloads formatted file with "formatted_" prefix
+- Uses python-docx library
+
 ## Tech Stack
 - **Backend**: Python Flask
 - **Frontend**: HTML5, Tailwind CSS, JavaScript
@@ -121,6 +132,7 @@ A comprehensive web application with nine powerful tools, featuring a modern Ara
 - `POST /download-video` - Universal media downloader (accepts `format` param: 'video' for MP4, 'audio' for MP3)
 - `POST /convert-pdf` - PDF to Word converter (accepts `mode` param: 'original', 'ar', or 'en' for translation)
 - `POST /transcribe-video` - Video to text transcription (accepts `input_type`: 'file' or 'url', video file or url)
+- `POST /format-docx` - DOCX formatter (applies academic formatting and returns formatted file)
 
 ## Running the Application
 The server runs on port 5000 using gunicorn with auto-reload and 1800s timeout (30 minutes for large videos).
@@ -179,6 +191,7 @@ The server runs on port 5000 using gunicorn with auto-reload and 1800s timeout (
 - December 2025: **Smart Key Cooldown** - 1-hour cooldown for exhausted keys, prevents quota errors from repeated retries
 - December 2025: **Mobile Responsive Design** - Added floating menu toggle button for mobile screens, improved sidebar UX
 - December 2025: **GitHub Ready** - Added comprehensive README.md, cleaned up requirements.txt, updated .gitignore
+- December 2025: **DOCX Formatter** - NEW tool for academic Word document formatting (2.5cm margins, Times New Roman 14pt, 1.5 line spacing, justified alignment)
 
 ## Required API Keys
 To enable Gemini AI features (required for Video to Text, PDF OCR, and AI detection), add one or more of these secrets in the Replit Secrets tab:
