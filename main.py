@@ -2891,60 +2891,102 @@ def extract_formatting_from_ai(instructions=None, reference_image=None):
     """
     Use Gemini AI to understand formatting requirements from text or image.
     Returns a JSON-like dict with formatting specifications.
+    Enhanced version with better prompt engineering for accurate formatting extraction.
     """
     import json
     
     default_format = {
         "font_name": "Times New Roman",
+        "font_name_arabic": "Simplified Arabic",
         "font_size": 14,
         "line_spacing": 1.5,
         "alignment": "justify",
         "margins": {"top": 2.5, "bottom": 2.5, "left": 2.5, "right": 2.5},
+        "paragraph_spacing_before": 0,
         "paragraph_spacing_after": 6,
-        "first_line_indent": 0,
+        "first_line_indent": 1.27,
         "heading_font_size": 16,
-        "heading_bold": True
+        "heading_bold": True,
+        "heading_alignment": "center",
+        "rtl_direction": True
     }
     
-    prompt = """أنت خبير في تنسيق المستندات. قم بتحليل متطلبات التنسيق المطلوبة وأرجع مواصفات التنسيق بصيغة JSON فقط.
+    result = None
+    
+    prompt = """أنت خبير متخصص في تنسيق المستندات الأكاديمية والرسمية. مهمتك تحليل متطلبات التنسيق وإرجاع مواصفات دقيقة بصيغة JSON.
 
-المواصفات المطلوبة يجب أن تكون بالشكل التالي (أرجع JSON فقط بدون أي نص إضافي):
+قم بإرجاع JSON فقط بالضبط بهذا الشكل (بدون أي نص إضافي قبله أو بعده):
 {
-    "font_name": "اسم الخط (مثل: Times New Roman, Arial, Simplified Arabic)",
-    "font_size": رقم حجم الخط بالنقاط (مثل: 12, 14, 16),
-    "line_spacing": تباعد الأسطر (مثل: 1.0, 1.5, 2.0),
-    "alignment": "محاذاة النص: justify أو right أو left أو center",
-    "margins": {"top": رقم بالسم, "bottom": رقم بالسم, "left": رقم بالسم, "right": رقم بالسم},
-    "paragraph_spacing_after": رقم بالنقاط للمسافة بعد الفقرة,
-    "first_line_indent": رقم بالسم للمسافة البادئة للسطر الأول,
-    "heading_font_size": رقم حجم خط العناوين,
-    "heading_bold": true أو false للعناوين العريضة
+    "font_name": "Times New Roman",
+    "font_name_arabic": "Simplified Arabic",
+    "font_size": 14,
+    "line_spacing": 1.5,
+    "alignment": "justify",
+    "margins": {"top": 2.5, "bottom": 2.5, "left": 2.5, "right": 2.5},
+    "paragraph_spacing_before": 0,
+    "paragraph_spacing_after": 6,
+    "first_line_indent": 1.27,
+    "heading_font_size": 16,
+    "heading_bold": true,
+    "heading_alignment": "center",
+    "rtl_direction": true
 }
+
+ملاحظات مهمة:
+- font_name: الخط الإنجليزي (Times New Roman, Arial, Calibri)
+- font_name_arabic: الخط العربي (Simplified Arabic, Traditional Arabic, Arial)
+- font_size: حجم الخط بالنقاط (12, 14, 16)
+- line_spacing: تباعد الأسطر (1.0, 1.15, 1.5, 2.0)
+- alignment: محاذاة النص (justify, right, left, center)
+- margins: الهوامش بالسنتيمتر
+- first_line_indent: المسافة البادئة للسطر الأول بالسنتيمتر
+- heading_alignment: محاذاة العناوين (center, right, left)
+- rtl_direction: اتجاه النص من اليمين لليسار للعربية
 
 """
     
     if instructions:
-        prompt += f"\nوصف التنسيق المطلوب من المستخدم:\n{instructions}\n"
-    
-    if reference_image:
-        prompt += "\nقم بتحليل الصورة المرفقة واستخرج أسلوب التنسيق منها."
-        result = call_gemini_vision(reference_image, prompt)
+        prompt += f"\n\nوصف التنسيق المطلوب:\n{instructions}\n\nقم بتحليل هذا الوصف وأرجع JSON فقط بالمواصفات المناسبة."
     else:
-        result = call_gemini_text(prompt)
-    
-    if not result:
-        logging.warning("AI returned no result, using default format")
-        return default_format
+        prompt += "\n\nلم يتم تقديم تعليمات محددة. أرجع التنسيق الافتراضي للمستندات الأكاديمية العربية."
     
     try:
+        if reference_image:
+            prompt += "\n\nقم أيضاً بتحليل الصورة المرفقة واستخرج أسلوب التنسيق منها."
+            result = call_gemini_vision(reference_image, prompt)
+        else:
+            result = call_gemini_text(prompt)
+        
+        if not result:
+            logging.warning("AI returned no result, using default format")
+            return default_format
+        
         result_clean = result.strip()
-        if result_clean.startswith("```json"):
-            result_clean = result_clean[7:]
-        if result_clean.startswith("```"):
-            result_clean = result_clean[3:]
-        if result_clean.endswith("```"):
-            result_clean = result_clean[:-3]
-        result_clean = result_clean.strip()
+        
+        if "```json" in result_clean:
+            start = result_clean.find("```json") + 7
+            end = result_clean.find("```", start)
+            if end > start:
+                result_clean = result_clean[start:end].strip()
+        elif "```" in result_clean:
+            start = result_clean.find("```") + 3
+            end = result_clean.find("```", start)
+            if end > start:
+                result_clean = result_clean[start:end].strip()
+        
+        if result_clean.startswith("{"):
+            brace_count = 0
+            json_end = 0
+            for i, char in enumerate(result_clean):
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        json_end = i + 1
+                        break
+            if json_end > 0:
+                result_clean = result_clean[:json_end]
         
         format_spec = json.loads(result_clean)
         
@@ -2952,19 +2994,28 @@ def extract_formatting_from_ai(instructions=None, reference_image=None):
             if key not in format_spec:
                 format_spec[key] = default_format[key]
         
+        logging.info(f"Successfully extracted format spec: {format_spec}")
         return format_spec
+        
     except json.JSONDecodeError as e:
         logging.error(f"Failed to parse AI format response: {e}")
-        logging.error(f"Raw response: {result[:500]}")
+        logging.error(f"Raw response: {result[:500] if result else 'None'}")
+        return default_format
+    except Exception as e:
+        logging.error(f"Error in extract_formatting_from_ai: {e}")
         return default_format
 
 
 def apply_ai_format(doc: Document, format_spec: dict):
     """
     Apply AI-generated formatting specifications to a Word document.
+    Enhanced version that properly applies all formatting to every paragraph and run.
+    Supports documents up to 100+ pages.
     """
-    from docx.shared import RGBColor
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import RGBColor, Twips
+    from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
     
     alignment_map = {
         "justify": WD_ALIGN_PARAGRAPH.JUSTIFY,
@@ -2975,54 +3026,151 @@ def apply_ai_format(doc: Document, format_spec: dict):
     
     margins = format_spec.get("margins", {})
     for section in doc.sections:
-        section.top_margin = Cm(float(margins.get("top", 2.5)))
-        section.bottom_margin = Cm(float(margins.get("bottom", 2.5)))
-        section.left_margin = Cm(float(margins.get("left", 2.5)))
-        section.right_margin = Cm(float(margins.get("right", 2.5)))
+        try:
+            section.top_margin = Cm(float(margins.get("top", 2.5)))
+            section.bottom_margin = Cm(float(margins.get("bottom", 2.5)))
+            section.left_margin = Cm(float(margins.get("left", 2.5)))
+            section.right_margin = Cm(float(margins.get("right", 2.5)))
+        except Exception as e:
+            logging.warning(f"Could not set margins: {e}")
     
     font_name = format_spec.get("font_name", "Times New Roman")
+    font_name_arabic = format_spec.get("font_name_arabic", "Simplified Arabic")
     font_size = float(format_spec.get("font_size", 14))
-    
-    try:
-        normal_style = doc.styles["Normal"]
-        normal_style.font.name = font_name
-        normal_style.font.size = Pt(font_size)
-    except Exception:
-        pass
-    
     line_spacing = float(format_spec.get("line_spacing", 1.5))
-    alignment = alignment_map.get(format_spec.get("alignment", "justify"), WD_ALIGN_PARAGRAPH.JUSTIFY)
-    para_spacing = float(format_spec.get("paragraph_spacing_after", 6))
+    alignment_str = format_spec.get("alignment", "justify")
+    alignment = alignment_map.get(alignment_str, WD_ALIGN_PARAGRAPH.JUSTIFY)
+    para_spacing_before = float(format_spec.get("paragraph_spacing_before", 0))
+    para_spacing_after = float(format_spec.get("paragraph_spacing_after", 6))
     first_indent = float(format_spec.get("first_line_indent", 0))
     heading_size = float(format_spec.get("heading_font_size", 16))
     heading_bold = format_spec.get("heading_bold", True)
+    heading_alignment_str = format_spec.get("heading_alignment", "center")
+    heading_alignment = alignment_map.get(heading_alignment_str, WD_ALIGN_PARAGRAPH.CENTER)
+    rtl_direction = format_spec.get("rtl_direction", True)
     
-    for para in doc.paragraphs:
+    try:
+        for style_name in ["Normal", "Body Text", "Default Paragraph Font"]:
+            try:
+                style = doc.styles[style_name]
+                style.font.name = font_name
+                style.font.size = Pt(font_size)
+                style._element.rPr.rFonts.set(qn('w:eastAsia'), font_name_arabic)
+            except:
+                pass
+    except Exception as e:
+        logging.warning(f"Could not set document styles: {e}")
+    
+    def is_arabic(text):
+        """Check if text contains Arabic characters"""
+        arabic_range = range(0x0600, 0x06FF + 1)
+        return any(ord(char) in arabic_range for char in text)
+    
+    def is_heading(para):
+        """Determine if a paragraph is a heading"""
         text = para.text.strip()
         if not text:
-            continue
-        
-        is_heading = (
-            para.style.name.startswith("Heading") or 
-            (len(text) < 100 and not text.endswith(('.', '،', '؟', '!')))
-        )
-        
-        pf = para.paragraph_format
-        pf.line_spacing = line_spacing
-        pf.space_before = Pt(0)
-        pf.space_after = Pt(para_spacing)
-        pf.alignment = alignment
-        
-        if first_indent > 0:
-            pf.first_line_indent = Cm(first_indent)
-        
-        for run in para.runs:
-            if is_heading:
-                run.font.size = Pt(heading_size)
-                run.font.bold = heading_bold
+            return False
+        if para.style and para.style.name and para.style.name.startswith("Heading"):
+            return True
+        if len(text) < 80 and not text.endswith(('.', '،', '؟', '!', ':', ';')):
+            if para.runs and any(run.bold for run in para.runs if run.text.strip()):
+                return True
+        if len(text) < 50 and text.isupper():
+            return True
+        return False
+    
+    total_paragraphs = len(doc.paragraphs)
+    formatted_count = 0
+    
+    for idx, para in enumerate(doc.paragraphs):
+        try:
+            text = para.text.strip()
+            if not text:
+                continue
+            
+            formatted_count += 1
+            is_head = is_heading(para)
+            text_is_arabic = is_arabic(text)
+            
+            pf = para.paragraph_format
+            pf.line_spacing = line_spacing
+            pf.space_before = Pt(para_spacing_before)
+            pf.space_after = Pt(para_spacing_after)
+            
+            if is_head:
+                pf.alignment = heading_alignment
+                pf.first_line_indent = Cm(0)
             else:
-                run.font.size = Pt(font_size)
-            run.font.name = font_name
+                pf.alignment = alignment
+                if first_indent > 0:
+                    pf.first_line_indent = Cm(first_indent)
+            
+            if rtl_direction and text_is_arabic:
+                try:
+                    pPr = para._element.get_or_add_pPr()
+                    bidi = OxmlElement('w:bidi')
+                    bidi.set(qn('w:val'), '1')
+                    pPr.append(bidi)
+                except:
+                    pass
+            
+            current_font = font_name_arabic if text_is_arabic else font_name
+            current_size = heading_size if is_head else font_size
+            
+            if para.runs:
+                for run in para.runs:
+                    try:
+                        run.font.name = current_font
+                        run.font.size = Pt(current_size)
+                        
+                        run._element.rPr.rFonts.set(qn('w:ascii'), font_name)
+                        run._element.rPr.rFonts.set(qn('w:hAnsi'), font_name)
+                        run._element.rPr.rFonts.set(qn('w:cs'), font_name_arabic)
+                        run._element.rPr.rFonts.set(qn('w:eastAsia'), font_name_arabic)
+                        
+                        if is_head:
+                            run.font.bold = heading_bold
+                    except Exception as run_error:
+                        logging.debug(f"Could not format run: {run_error}")
+            else:
+                try:
+                    run = para.add_run(text)
+                    para.clear()
+                    para.add_run(text)
+                    for run in para.runs:
+                        run.font.name = current_font
+                        run.font.size = Pt(current_size)
+                        if is_head:
+                            run.font.bold = heading_bold
+                except:
+                    pass
+                    
+        except Exception as para_error:
+            logging.warning(f"Error formatting paragraph {idx}: {para_error}")
+            continue
+    
+    for table in doc.tables:
+        try:
+            for row in table.rows:
+                for cell in row.cells:
+                    for para in cell.paragraphs:
+                        text = para.text.strip()
+                        if not text:
+                            continue
+                        text_is_arabic = is_arabic(text)
+                        current_font = font_name_arabic if text_is_arabic else font_name
+                        
+                        for run in para.runs:
+                            try:
+                                run.font.name = current_font
+                                run.font.size = Pt(font_size)
+                            except:
+                                pass
+        except Exception as table_error:
+            logging.warning(f"Error formatting table: {table_error}")
+    
+    logging.info(f"Successfully formatted {formatted_count}/{total_paragraphs} paragraphs")
 
 
 def convert_pdf_to_docx_for_formatting(pdf_path, output_path):

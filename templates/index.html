@@ -513,7 +513,7 @@
             color: #e2e8f0;
         }
 
-        /* Auth Page Styles */
+        /* Auth Page Styles - Modern 3-Section Design */
         .auth-container {
             position: fixed;
             top: 0;
@@ -528,11 +528,13 @@
             background-image: url('/static/background.png');
             background-size: cover;
             background-position: center;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1rem;
         }
 
         .auth-video-bg {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -569,82 +571,299 @@
 
         .auth-container::after {
             content: '';
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: 
-                linear-gradient(135deg, rgba(5, 5, 16, 0.7) 0%, rgba(15, 23, 42, 0.6) 50%, rgba(5, 5, 16, 0.8) 100%),
-                radial-gradient(ellipse at 30% 20%, rgba(0, 191, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 70% 60%, rgba(138, 43, 226, 0.12) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, rgba(0, 100, 200, 0.1) 0%, transparent 60%);
+                linear-gradient(135deg, rgba(5, 5, 16, 0.5) 0%, rgba(15, 23, 42, 0.4) 50%, rgba(5, 5, 16, 0.5) 100%),
+                radial-gradient(ellipse at 30% 20%, rgba(0, 191, 255, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 60%, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(0, 100, 200, 0.08) 0%, transparent 60%);
             pointer-events: none;
             z-index: 1;
         }
 
-        .auth-box {
+        .auth-wrapper {
             position: relative;
             z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
             width: 100%;
-            max-width: 440px;
-            margin: 1rem;
-            background: rgba(10, 15, 30, 0.85);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(99, 102, 241, 0.25);
-            border-radius: 28px;
-            padding: 2.5rem;
-            box-shadow: 
-                0 25px 50px rgba(0, 0, 0, 0.5),
-                0 0 100px rgba(99, 102, 241, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            animation: authBoxFloat 6s ease-in-out infinite;
+            max-width: 420px;
+            padding: 1rem 0;
         }
 
-        @keyframes authBoxFloat {
+        /* Section 1: Logo with 3D Glass Effect */
+        .auth-logo-section {
+            position: relative;
+            width: 100%;
+            text-align: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4));
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 24px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 0 60px rgba(99, 102, 241, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            animation: logoSectionFloat 8s ease-in-out infinite;
+        }
+
+        @keyframes logoSectionFloat {
+            0%, 100% { transform: translateY(0) rotateX(0deg); }
+            50% { transform: translateY(-5px) rotateX(2deg); }
+        }
+
+        .auth-logo-section::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(138, 43, 226, 0.3), rgba(99, 102, 241, 0.3));
+            border-radius: 26px;
+            z-index: -1;
+            filter: blur(15px);
+            opacity: 0.5;
+            animation: glowPulse 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes glowPulse {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.7; }
+        }
+
+        /* Section 2: Auth Forms with Neon Floating Effect */
+        .auth-forms-section {
+            position: relative;
+            width: 100%;
+            padding: 1.5rem;
+            background: rgba(10, 15, 30, 0.7);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 24px;
+            box-shadow: 
+                0 0 30px rgba(99, 102, 241, 0.2),
+                0 0 60px rgba(138, 43, 226, 0.1),
+                0 25px 50px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            border: 1px solid transparent;
+            background-clip: padding-box;
+            animation: neonFloat 6s ease-in-out infinite;
+        }
+
+        .auth-forms-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            padding: 2px;
+            background: linear-gradient(135deg, 
+                rgba(0, 191, 255, 0.5), 
+                rgba(138, 43, 226, 0.5), 
+                rgba(99, 102, 241, 0.5),
+                rgba(0, 191, 255, 0.5));
+            background-size: 300% 300%;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            animation: neonBorder 4s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes neonBorder {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes neonFloat {
+            0%, 100% { 
+                transform: translateY(0);
+                box-shadow: 
+                    0 0 30px rgba(99, 102, 241, 0.2),
+                    0 0 60px rgba(138, 43, 226, 0.1),
+                    0 25px 50px rgba(0, 0, 0, 0.4);
+            }
+            50% { 
+                transform: translateY(-8px);
+                box-shadow: 
+                    0 0 40px rgba(99, 102, 241, 0.3),
+                    0 0 80px rgba(138, 43, 226, 0.2),
+                    0 35px 60px rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        /* Section 3: Tools Preview with Glass Effect */
+        .auth-tools-section {
+            position: relative;
+            width: 100%;
+            padding: 1.25rem;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 20px;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 0 20px rgba(99, 102, 241, 0.05);
+            animation: toolsFloat 7s ease-in-out infinite;
+        }
+
+        .auth-tools-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.05) 0%, 
+                transparent 50%, 
+                rgba(99, 102, 241, 0.05) 100%);
+            pointer-events: none;
+        }
+
+        @keyframes toolsFloat {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .tool-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .tool-item:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .tool-item i {
+            font-size: 0.875rem;
+        }
+
+        .tool-item span {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        /* Old auth-box for backwards compatibility */
+        .auth-box {
+            display: none;
         }
 
         .auth-logo-container {
             position: relative;
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 1.5rem;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
         }
 
         .auth-logo-glow {
             position: absolute;
-            inset: -10px;
-            background: linear-gradient(135deg, rgba(0, 191, 255, 0.4), rgba(138, 43, 226, 0.4), rgba(99, 102, 241, 0.4));
-            border-radius: 24px;
-            filter: blur(20px);
+            inset: -15px;
+            background: linear-gradient(135deg, rgba(0, 191, 255, 0.5), rgba(138, 43, 226, 0.5), rgba(99, 102, 241, 0.5));
+            border-radius: 50%;
+            filter: blur(25px);
             animation: logoGlow 3s ease-in-out infinite alternate;
         }
 
         @keyframes logoGlow {
-            0% { opacity: 0.5; transform: scale(0.95); }
-            100% { opacity: 1; transform: scale(1.05); }
+            0% { opacity: 0.4; transform: scale(0.9); }
+            100% { opacity: 0.8; transform: scale(1.1); }
         }
 
         .auth-logo-inner {
             position: relative;
             width: 100%;
             height: 100%;
-            border-radius: 20px;
-            border: 2px solid rgba(99, 102, 241, 0.4);
+            border-radius: 18px;
+            border: 2px solid rgba(99, 102, 241, 0.5);
             background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
             overflow: hidden;
             box-shadow: 
-                0 10px 40px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                0 10px 40px rgba(0, 0, 0, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.15),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+            transform: perspective(500px) rotateX(5deg);
         }
 
         .auth-logo-inner img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 640px) {
+            .auth-wrapper {
+                gap: 1rem;
+                padding: 0.5rem 0;
+            }
+
+            .auth-logo-section {
+                padding: 1rem;
+            }
+
+            .auth-logo-container {
+                width: 60px;
+                height: 60px;
+                margin-bottom: 0.75rem;
+            }
+
+            .auth-logo-section h1 {
+                font-size: 1.5rem !important;
+            }
+
+            .auth-logo-section h2 {
+                font-size: 1rem !important;
+            }
+
+            .auth-forms-section {
+                padding: 1.25rem;
+            }
+
+            .auth-tools-section {
+                padding: 1rem;
+            }
+
+            .tool-item {
+                padding: 0.4rem 0.6rem;
+            }
+
+            .tool-item span {
+                font-size: 0.7rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 0.5rem;
+            }
+
+            .auth-wrapper {
+                max-width: 100%;
+            }
+
+            .auth-logo-container {
+                width: 50px;
+                height: 50px;
+            }
         }
 
         .auth-input {
@@ -814,108 +1033,121 @@
             </iframe>
         </div>
 
-        <div class="auth-box">
-            <!-- Logo and Title -->
-            <div class="text-center mb-8">
+        <!-- New 3-Section Auth Wrapper -->
+        <div class="auth-wrapper">
+            
+            <!-- Section 1: Logo with 3D Glass Effect -->
+            <div class="auth-logo-section">
                 <div class="auth-logo-container">
                     <div class="auth-logo-glow"></div>
                     <div class="auth-logo-inner">
                         <img src="/static/arkan-logo-optimized.png" alt="ARKAN AI Logo" loading="eager">
                     </div>
                 </div>
-                <h1 class="text-3xl font-bold mb-2">
+                <h1 class="text-2xl md:text-3xl font-bold mb-1">
                     <span class="bg-gradient-to-r from-cyan-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">ARKAN</span>
                     <span class="text-white/90"> AI</span>
                 </h1>
-                <h2 class="text-xl font-semibold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent mb-3">
+                <h2 class="text-lg md:text-xl font-semibold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent mb-1">
                     أركان
                 </h2>
-                <p class="text-slate-400 text-sm">منصة الأدوات الذكية للمحتوى العربي</p>
+                <p class="text-slate-400 text-xs md:text-sm">منصة الأدوات الذكية للمحتوى العربي</p>
             </div>
 
-            <!-- Auth Tabs -->
-            <div class="flex justify-center mb-6 border-b border-slate-700">
-                <button id="login-tab" class="auth-tab active" onclick="showAuthTab('login')">
-                    تسجيل الدخول
-                </button>
-                <button id="register-tab" class="auth-tab" onclick="showAuthTab('register')">
-                    حساب جديد
-                </button>
+            <!-- Section 2: Auth Forms with Neon Floating Effect -->
+            <div class="auth-forms-section">
+                <!-- Auth Tabs -->
+                <div class="flex justify-center mb-5 border-b border-slate-700/50">
+                    <button id="login-tab" class="auth-tab active" onclick="showAuthTab('login')">
+                        تسجيل الدخول
+                    </button>
+                    <button id="register-tab" class="auth-tab" onclick="showAuthTab('register')">
+                        حساب جديد
+                    </button>
+                </div>
+
+                <!-- Error/Success Messages -->
+                <div id="auth-error" class="auth-error"></div>
+                <div id="auth-success" class="auth-success"></div>
+
+                <!-- Login Form -->
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="space-y-3">
+                        <div>
+                            <input type="email" id="login-email" class="auth-input" placeholder="البريد الإلكتروني" required dir="ltr" autocomplete="email">
+                        </div>
+                        <div>
+                            <input type="password" id="login-password" class="auth-input" placeholder="كلمة المرور" required dir="ltr" autocomplete="current-password">
+                        </div>
+                        <button type="submit" id="login-btn" class="auth-btn">
+                            <span id="login-btn-text">دخول</span>
+                            <span id="login-btn-loading" class="hidden">
+                                <i class="fas fa-spinner fa-spin ml-2"></i> جاري التحميل...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
+                    <div class="space-y-3">
+                        <div>
+                            <input type="text" id="register-name" class="auth-input" placeholder="الاسم الكامل" required autocomplete="name">
+                        </div>
+                        <div>
+                            <input type="email" id="register-email" class="auth-input" placeholder="البريد الإلكتروني" required dir="ltr" autocomplete="email">
+                        </div>
+                        <div>
+                            <input type="password" id="register-password" class="auth-input" placeholder="كلمة المرور (6 أحرف على الأقل)" required minlength="6" dir="ltr" autocomplete="new-password">
+                        </div>
+                        <div>
+                            <input type="password" id="register-confirm" class="auth-input" placeholder="تأكيد كلمة المرور" required dir="ltr" autocomplete="new-password">
+                        </div>
+                        <button type="submit" id="register-btn" class="auth-btn">
+                            <span id="register-btn-text">إنشاء حساب</span>
+                            <span id="register-btn-loading" class="hidden">
+                                <i class="fas fa-spinner fa-spin ml-2"></i> جاري التحميل...
+                            </span>
+                        </button>
+                    </div>
+                </form>
             </div>
 
-            <!-- Error/Success Messages -->
-            <div id="auth-error" class="auth-error"></div>
-            <div id="auth-success" class="auth-success"></div>
-
-            <!-- Login Form -->
-            <form id="login-form" onsubmit="handleLogin(event)">
-                <div class="space-y-4">
-                    <div>
-                        <input type="email" id="login-email" class="auth-input" placeholder="البريد الإلكتروني" required dir="ltr">
-                    </div>
-                    <div>
-                        <input type="password" id="login-password" class="auth-input" placeholder="كلمة المرور" required dir="ltr">
-                    </div>
-                    <button type="submit" id="login-btn" class="auth-btn">
-                        <span id="login-btn-text">دخول</span>
-                        <span id="login-btn-loading" class="hidden">
-                            <i class="fas fa-spinner fa-spin ml-2"></i> جاري التحميل...
-                        </span>
-                    </button>
-                </div>
-            </form>
-
-            <!-- Register Form -->
-            <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
-                <div class="space-y-4">
-                    <div>
-                        <input type="text" id="register-name" class="auth-input" placeholder="الاسم الكامل" required>
-                    </div>
-                    <div>
-                        <input type="email" id="register-email" class="auth-input" placeholder="البريد الإلكتروني" required dir="ltr">
-                    </div>
-                    <div>
-                        <input type="password" id="register-password" class="auth-input" placeholder="كلمة المرور (6 أحرف على الأقل)" required minlength="6" dir="ltr">
-                    </div>
-                    <div>
-                        <input type="password" id="register-confirm" class="auth-input" placeholder="تأكيد كلمة المرور" required dir="ltr">
-                    </div>
-                    <button type="submit" id="register-btn" class="auth-btn">
-                        <span id="register-btn-text">إنشاء حساب</span>
-                        <span id="register-btn-loading" class="hidden">
-                            <i class="fas fa-spinner fa-spin ml-2"></i> جاري التحميل...
-                        </span>
-                    </button>
-                </div>
-            </form>
-
-            <!-- Features Preview -->
-            <div class="mt-8 pt-6 border-t border-slate-700">
-                <p class="text-center text-slate-500 text-sm mb-4">الأدوات المتاحة بعد التسجيل:</p>
-                <div class="grid grid-cols-2 gap-2 text-xs text-slate-400">
-                    <div class="flex items-center gap-2">
+            <!-- Section 3: Tools Preview with Glass Effect -->
+            <div class="auth-tools-section">
+                <p class="text-center text-slate-400 text-xs mb-3">الأدوات المتاحة بعد التسجيل:</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="tool-item">
                         <i class="fas fa-microphone text-red-400"></i>
                         <span>تحويل الصوت لنص</span>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="tool-item">
                         <i class="fab fa-youtube text-red-500"></i>
                         <span>قص فيديو يوتيوب</span>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="tool-item">
                         <i class="fas fa-dragon text-purple-400"></i>
                         <span>كاشف الأنمي</span>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="tool-item">
                         <i class="fas fa-podcast text-green-400"></i>
                         <span>كاشف البودكاست</span>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="tool-item">
                         <i class="fas fa-file-audio text-blue-400"></i>
                         <span>تحويل ملف صوتي</span>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="tool-item">
                         <i class="fas fa-image text-cyan-400"></i>
                         <span>استخراج نص من صورة</span>
+                    </div>
+                    <div class="tool-item">
+                        <i class="fas fa-download text-indigo-400"></i>
+                        <span>تحميل الفيديوهات</span>
+                    </div>
+                    <div class="tool-item">
+                        <i class="fas fa-file-word text-blue-500"></i>
+                        <span>تنسيق الوورد</span>
                     </div>
                 </div>
             </div>
