@@ -211,6 +211,38 @@
             background: rgba(236, 72, 153, 0.05);
         }
 
+        .upload-progress-container {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            background: rgba(236, 72, 153, 0.15);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .upload-progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #ec4899, #a78bfa);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .upload-progress-text {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #ec4899;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(236, 72, 153, 0.4); }
+            50% { box-shadow: 0 0 15px rgba(236, 72, 153, 0.7); }
+        }
+
+        .upload-progress-bar.uploading {
+            animation: pulse-glow 1.5s ease-in-out infinite;
+        }
+
         .tab-btn {
             transition: all 0.3s ease;
         }
@@ -995,9 +1027,19 @@
                             تحويل إلى نص
                         </button>
 
+                        <div id="audio-progress-wrapper" class="hidden">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-gray-600 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الملف...</span>
+                                <span id="audio-progress-text" class="upload-progress-text">0%</span>
+                            </div>
+                            <div class="upload-progress-container">
+                                <div id="audio-progress-bar" class="upload-progress-bar"></div>
+                            </div>
+                        </div>
+
                         <div id="file-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4"></div>
-                            <p class="text-gray-500">جاري تحويل الملف... (قد يستغرق حتى 30 دقيقة للملفات الطويلة)</p>
+                            <p class="text-gray-500">جاري معالجة الملف بالذكاء الاصطناعي... (قد يستغرق حتى 30 دقيقة للملفات الطويلة)</p>
                         </div>
 
                         <div id="file-result" class="hidden">
@@ -1252,6 +1294,16 @@
                             </button>
                         </div>
 
+                        <div id="pdf-progress-wrapper" class="hidden">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-gray-600 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الملف...</span>
+                                <span id="pdf-progress-text" class="upload-progress-text">0%</span>
+                            </div>
+                            <div class="upload-progress-container">
+                                <div id="pdf-progress-bar" class="upload-progress-bar"></div>
+                            </div>
+                        </div>
+
                         <div id="pdf-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4" style="border-top-color: #e11d48;"></div>
                             <p id="pdf-loading-text" class="text-gray-500">جاري التحويل... قد يستغرق هذا بعض الوقت</p>
@@ -1371,6 +1423,16 @@
                             <i class="fas fa-closed-captioning"></i>
                             تحويل إلى نص
                         </button>
+
+                        <div id="video-progress-wrapper" class="hidden mt-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-gray-600 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الفيديو...</span>
+                                <span id="video-progress-text" class="upload-progress-text">0%</span>
+                            </div>
+                            <div class="upload-progress-container">
+                                <div id="video-progress-bar" class="upload-progress-bar"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- URL Mode -->
@@ -1544,6 +1606,73 @@
         function resetDuplicateTracking() {
             lastFinalTranscript = '';
             lastResultTimestamp = 0;
+        }
+
+        function uploadWithProgress(url, formData, progressBarId, progressTextId, timeoutMs = 1800000) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                const progressBar = document.getElementById(progressBarId);
+                const progressText = document.getElementById(progressTextId);
+                const progressContainer = progressBar?.parentElement?.parentElement;
+                
+                if (progressContainer) progressContainer.classList.remove('hidden');
+                if (progressBar) {
+                    progressBar.style.width = '0%';
+                    progressBar.classList.add('uploading');
+                }
+                if (progressText) progressText.textContent = '0%';
+                
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        if (progressBar) progressBar.style.width = percent + '%';
+                        if (progressText) progressText.textContent = percent + '%';
+                    }
+                };
+                
+                xhr.onload = () => {
+                    if (progressBar) progressBar.classList.remove('uploading');
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            resolve(data);
+                        } catch (e) {
+                            reject(new Error('حدث خطأ في الخادم. يرجى المحاولة مرة أخرى.'));
+                        }
+                    } else {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            reject(new Error(data.error || 'خطأ في العملية'));
+                        } catch (e) {
+                            reject(new Error('خطأ في الخادم'));
+                        }
+                    }
+                };
+                
+                xhr.onerror = () => {
+                    if (progressBar) progressBar.classList.remove('uploading');
+                    reject(new Error('خطأ في الاتصال بالخادم'));
+                };
+                
+                xhr.ontimeout = () => {
+                    if (progressBar) progressBar.classList.remove('uploading');
+                    reject(new Error('انتهت مهلة الخادم. يرجى المحاولة مرة أخرى.'));
+                };
+                
+                xhr.open('POST', url);
+                xhr.timeout = timeoutMs;
+                xhr.send(formData);
+            });
+        }
+
+        function hideProgress(progressBarId) {
+            const progressBar = document.getElementById(progressBarId);
+            const progressContainer = progressBar?.parentElement?.parentElement;
+            if (progressContainer) progressContainer.classList.add('hidden');
+            if (progressBar) {
+                progressBar.style.width = '0%';
+                progressBar.classList.remove('uploading');
+            }
         }
 
         function showToast(message, type = 'success') {
@@ -2776,37 +2905,33 @@
             const loadingDiv = document.getElementById('file-loading');
             const resultDiv = document.getElementById('file-result');
             const errorDiv = document.getElementById('file-error');
+            const progressWrapper = document.getElementById('audio-progress-wrapper');
 
             transcribeBtn.disabled = true;
-            loadingDiv.classList.remove('hidden');
             resultDiv.classList.add('hidden');
             errorDiv.classList.add('hidden');
+            progressWrapper.classList.remove('hidden');
 
             const formData = new FormData();
             formData.append('audio', uploadedAudioFile);
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1800000);
-
             try {
-                const response = await fetch('/transcribe-file', {
-                    method: 'POST',
-                    body: formData,
-                    signal: controller.signal
-                });
+                const data = await uploadWithProgress(
+                    '/transcribe-file',
+                    formData,
+                    'audio-progress-bar',
+                    'audio-progress-text',
+                    1800000
+                );
 
-                clearTimeout(timeoutId);
+                progressWrapper.classList.add('hidden');
+                loadingDiv.classList.remove('hidden');
 
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('حدث خطأ في الخادم. يرجى المحاولة مرة أخرى.');
+                if (data.error) {
+                    throw new Error(data.error);
                 }
 
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'خطأ في تحويل الملف');
-                }
+                loadingDiv.classList.add('hidden');
 
                 if (data.message) {
                     showToast(data.message, 'error');
@@ -2820,15 +2945,11 @@
                 }
 
             } catch (error) {
-                clearTimeout(timeoutId);
-                let errorMessage = error.message;
-                if (error.name === 'AbortError') {
-                    errorMessage = 'انتهت مهلة الخادم (30 دقيقة). الملف كبير جداً أو الخادم مشغول، يرجى المحاولة مرة أخرى.';
-                }
-                document.getElementById('file-error-text').textContent = errorMessage;
+                document.getElementById('file-error-text').textContent = error.message;
                 errorDiv.classList.remove('hidden');
             } finally {
                 transcribeBtn.disabled = false;
+                progressWrapper.classList.add('hidden');
                 loadingDiv.classList.add('hidden');
             }
         }
@@ -3092,6 +3213,7 @@
             const loadingDiv = document.getElementById('pdf-loading');
             const loadingText = document.getElementById('pdf-loading-text');
             const errorDiv = document.getElementById('pdf-error');
+            const progressWrapper = document.getElementById('pdf-progress-wrapper');
 
             originalBtn.disabled = true;
             arBtn.disabled = true;
@@ -3111,8 +3233,8 @@
                 loadingText.textContent = 'جاري التحويل والترجمة إلى الإنجليزية... قد يستغرق هذا بعض الوقت' + ocrNote;
             }
 
-            loadingDiv.classList.remove('hidden');
             errorDiv.classList.add('hidden');
+            progressWrapper.classList.remove('hidden');
 
             const formData = new FormData();
             formData.append('pdf', uploadedPdfFile);
@@ -3122,28 +3244,60 @@
             formData.append('extraction_method', ocrMode ? 'ocr' : 'standard');
 
             try {
-                let response;
-                try {
-                    response = await fetch('/convert-pdf', {
-                        method: 'POST',
-                        body: formData
-                    });
-                } catch (networkError) {
-                    throw new Error('فشل الاتصال بالخادم. تحقق من اتصالك بالإنترنت.');
-                }
+                const response = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    const progressBar = document.getElementById('pdf-progress-bar');
+                    const progressText = document.getElementById('pdf-progress-text');
+                    
+                    progressBar.style.width = '0%';
+                    progressBar.classList.add('uploading');
+                    progressText.textContent = '0%';
+                    
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            progressBar.style.width = percent + '%';
+                            progressText.textContent = percent + '%';
+                        }
+                    };
+                    
+                    xhr.onload = () => {
+                        progressBar.classList.remove('uploading');
+                        resolve(xhr);
+                    };
+                    
+                    xhr.onerror = () => {
+                        progressBar.classList.remove('uploading');
+                        reject(new Error('خطأ في الاتصال بالخادم'));
+                    };
+                    
+                    xhr.ontimeout = () => {
+                        progressBar.classList.remove('uploading');
+                        reject(new Error('انتهت مهلة الخادم. يرجى المحاولة مرة أخرى.'));
+                    };
+                    
+                    xhr.open('POST', '/convert-pdf');
+                    xhr.responseType = 'blob';
+                    xhr.timeout = 1800000;
+                    xhr.send(formData);
+                });
 
-                const contentType = response.headers.get('content-type');
+                progressWrapper.classList.add('hidden');
+                loadingDiv.classList.remove('hidden');
 
-                if (!response.ok) {
-                    if (contentType && contentType.includes('application/json')) {
-                        const data = await response.json();
-                        throw new Error(data.error || 'خطأ في تحويل الملف');
-                    } else {
+                if (response.status >= 400) {
+                    const errorText = await response.response.text();
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        throw new Error(errorData.error || 'خطأ في تحويل الملف');
+                    } catch (e) {
                         throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
                     }
                 }
 
-                const blob = await response.blob();
+                loadingDiv.classList.add('hidden');
+
+                const blob = response.response;
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = downloadUrl;
@@ -3171,6 +3325,7 @@
                 originalBtn.classList.remove('hidden');
                 arBtn.classList.remove('hidden');
                 enBtn.classList.remove('hidden');
+                progressWrapper.classList.add('hidden');
                 loadingDiv.classList.add('hidden');
             }
         }
@@ -3226,11 +3381,12 @@
             const loadingDiv = document.getElementById('video-loading');
             const resultDiv = document.getElementById('video-result');
             const errorDiv = document.getElementById('video-error');
+            const progressWrapper = document.getElementById('video-progress-wrapper');
 
             transcribeBtn.disabled = true;
-            loadingDiv.classList.remove('hidden');
             resultDiv.classList.add('hidden');
             errorDiv.classList.add('hidden');
+            progressWrapper.classList.remove('hidden');
 
             const formData = new FormData();
             formData.append('video', uploadedVideoFile);
@@ -3238,33 +3394,22 @@
             formData.append('language', document.getElementById('video-language').value);
 
             try {
-                let response;
-                try {
-                    response = await fetch('/transcribe-video', {
-                        method: 'POST',
-                        body: formData
-                    });
-                } catch (networkError) {
-                    throw new Error('فشل الاتصال بالخادم. تحقق من اتصالك بالإنترنت.');
+                const data = await uploadWithProgress(
+                    '/transcribe-video',
+                    formData,
+                    'video-progress-bar',
+                    'video-progress-text',
+                    1800000
+                );
+
+                progressWrapper.classList.add('hidden');
+                loadingDiv.classList.remove('hidden');
+
+                if (data.error) {
+                    throw new Error(data.error);
                 }
 
-                const contentType = response.headers.get('content-type');
-
-                if (!contentType || !contentType.includes('application/json')) {
-                    if (response.status === 504 || response.status === 502) {
-                        throw new Error('انتهت مهلة الخادم. الفيديو طويل جداً، جرب فيديو أقصر.');
-                    } else if (response.status >= 500) {
-                        throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
-                    } else {
-                        throw new Error('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
-                    }
-                }
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'خطأ في تحويل الفيديو');
-                }
+                loadingDiv.classList.add('hidden');
 
                 document.getElementById('video-transcribed-text').value = data.text;
                 updateVideoTextStats();
@@ -3279,6 +3424,7 @@
                 errorDiv.classList.remove('hidden');
             } finally {
                 transcribeBtn.disabled = false;
+                progressWrapper.classList.add('hidden');
                 loadingDiv.classList.add('hidden');
             }
         }
