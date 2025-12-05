@@ -11,7 +11,7 @@ The Multi-Tool Arabic Platform is a comprehensive web application offering ten p
 - **Deployment Configuration:** Set up autoscale deployment with proper timeout settings (1800s)
 - **Authentication Removed:** Replaced login/registration with simple "Enter AI World" button for direct access
 - **Global Video Background:** YouTube video now plays as background throughout the entire site
-- **Sidebar Navigation Fixes (New):**
+- **Sidebar Navigation Fixes:**
   - Fixed toggle button responsiveness by keeping inline `onclick` attribute as fallback
   - Removed DOM cloning that was causing event listener issues
   - Added capture phase event listeners for better event handling
@@ -20,7 +20,14 @@ The Multi-Tool Arabic Platform is a comprehensive web application offering ten p
   - Menu now properly opens/closes on click/touch
   - Sidebar stays open when clicking links on desktop
   - Sidebar closes after link click only on mobile view
-- **Status:** Application is fully functional with responsive sidebar navigation
+- **Background Sound & Mobile Optimization (Latest):**
+  - Enabled background video sound on welcome page (unmuted by default)
+  - Added floating sound toggle button (bottom-right) with pulsing animation
+  - Sound automatically mutes when entering the app
+  - Sound button hidden after entering the app
+  - Mobile performance optimization: Video hidden on screens <768px, replaced with gradient background
+  - Reduced video quality from HD720 to medium for better performance
+- **Status:** Application is fully functional with responsive sidebar navigation and optimized mobile experience
 
 ## User Preferences
 I prefer simple language and clear explanations. I want iterative development where I can provide feedback at each stage. Ask before making major changes to the project's architecture or core functionalities. Ensure the application maintains its Arabic RTL design and glassmorphism aesthetic. All new features should seamlessly integrate with the existing UI/UX. Do not make changes to the `replit.md` file without explicit instruction.

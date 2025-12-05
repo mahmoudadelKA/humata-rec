@@ -1072,19 +1072,97 @@
         .user-dropdown-item.logout:hover {
             background: rgba(239, 68, 68, 0.2);
         }
+
+        /* Sound Toggle Button */
+        .sound-toggle-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 20001;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(139, 92, 246, 0.9));
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.5), 0 0 60px rgba(139, 92, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: sound-pulse 2s ease-in-out infinite;
+        }
+
+        .sound-toggle-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.7), 0 0 80px rgba(139, 92, 246, 0.5);
+        }
+
+        .sound-toggle-btn:active {
+            transform: scale(0.95);
+        }
+
+        .sound-toggle-btn i {
+            color: white;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .sound-toggle-btn.muted {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9));
+            animation: none;
+        }
+
+        .sound-toggle-btn.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        @keyframes sound-pulse {
+            0%, 100% {
+                box-shadow: 0 8px 32px rgba(99, 102, 241, 0.5), 0 0 60px rgba(139, 92, 246, 0.3);
+            }
+            50% {
+                box-shadow: 0 12px 40px rgba(99, 102, 241, 0.8), 0 0 100px rgba(139, 92, 246, 0.6);
+            }
+        }
+
+        /* Hide video on mobile for better performance */
+        @media (max-width: 768px) {
+            .global-video-bg {
+                display: none !important;
+            }
+            body::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+                z-index: 0;
+            }
+        }
     </style>
 </head>
 
 <body class="text-slate-200">
     <!-- Global Video Background - Always visible -->
     <div id="global-video-bg" class="global-video-bg">
-        <iframe 
-            src="https://www.youtube.com/embed/wJJ1irx9tOA?autoplay=1&mute=1&loop=1&playlist=wJJ1irx9tOA&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd720&wmode=transparent"
+        <iframe id="youtube-bg-iframe"
+            src="https://www.youtube.com/embed/wJJ1irx9tOA?autoplay=1&mute=0&loop=1&playlist=wJJ1irx9tOA&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=medium&wmode=transparent"
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen>
         </iframe>
     </div>
+    
+    <!-- Sound Toggle Button -->
+    <button id="sound-toggle-btn" class="sound-toggle-btn" onclick="toggleBackgroundSound()" aria-label="تشغيل/إيقاف الصوت" title="تشغيل/إيقاف الصوت">
+        <i id="sound-icon" class="fas fa-volume-up"></i>
+    </button>
     
     <div id="toast-container" class="fixed top-4 left-4 z-50 space-y-2"></div>
 
@@ -4957,9 +5035,53 @@
             }, 100);
         }
         
+        // Background sound control
+        let backgroundSoundMuted = false;
+        
+        function toggleBackgroundSound() {
+            const soundBtn = document.getElementById('sound-toggle-btn');
+            const soundIcon = document.getElementById('sound-icon');
+            const iframe = document.getElementById('youtube-bg-iframe');
+            
+            if (!iframe) return;
+            
+            backgroundSoundMuted = !backgroundSoundMuted;
+            
+            // Update iframe src to toggle mute
+            const currentSrc = iframe.src;
+            const newSrc = currentSrc.replace(
+                backgroundSoundMuted ? 'mute=0' : 'mute=1',
+                backgroundSoundMuted ? 'mute=1' : 'mute=0'
+            );
+            iframe.src = newSrc;
+            
+            // Update button appearance
+            if (backgroundSoundMuted) {
+                soundBtn.classList.add('muted');
+                soundIcon.className = 'fas fa-volume-mute';
+            } else {
+                soundBtn.classList.remove('muted');
+                soundIcon.className = 'fas fa-volume-up';
+            }
+        }
+        
         // Enter AI World - main entry button
         function enterAIWorld() {
             localStorage.setItem('arkan_entered', 'true');
+            
+            // Mute background sound when entering app
+            const iframe = document.getElementById('youtube-bg-iframe');
+            if (iframe) {
+                const currentSrc = iframe.src;
+                iframe.src = currentSrc.replace('mute=0', 'mute=1');
+            }
+            
+            // Hide sound toggle button
+            const soundBtn = document.getElementById('sound-toggle-btn');
+            if (soundBtn) {
+                soundBtn.classList.add('hidden');
+            }
+            
             hideAuthContainer();
             showToast('مرحباً بك في عالم الـ AI! 🚀');
         }
@@ -4968,6 +5090,18 @@
         function checkIfEntered() {
             if (localStorage.getItem('arkan_entered') === 'true') {
                 hideAuthContainer();
+                
+                // Hide sound button and mute video if already entered
+                const soundBtn = document.getElementById('sound-toggle-btn');
+                if (soundBtn) {
+                    soundBtn.classList.add('hidden');
+                }
+                
+                const iframe = document.getElementById('youtube-bg-iframe');
+                if (iframe) {
+                    const currentSrc = iframe.src;
+                    iframe.src = currentSrc.replace('mute=0', 'mute=1');
+                }
             }
         }
         
