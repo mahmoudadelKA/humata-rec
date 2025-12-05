@@ -550,6 +550,102 @@
                 backdrop-filter: blur(2px) !important;
                 -webkit-backdrop-filter: blur(2px) !important;
             }
+
+            /* Mobile: Prevent horizontal scroll */
+            .main-content {
+                overflow-x: hidden;
+            }
+
+            body {
+                overflow-x: hidden;
+            }
+
+            /* Speech tool: Stack mic buttons vertically using helper class */
+            .speech-mic-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            /* Speech tool: Reduce mic button sizes */
+            .mic-button {
+                width: 100px !important;
+                height: 100px !important;
+            }
+
+            .mic-button i {
+                font-size: 2rem !important;
+            }
+
+            /* Music tabs: Allow wrapping */
+            .music-tabs-container {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .music-tabs-container .tab-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+
+            /* Smaller headings on mobile */
+            .tool-content h2 {
+                font-size: 1.25rem;
+            }
+
+            /* Prevent iOS zoom on inputs */
+            input[type="text"],
+            input[type="url"],
+            textarea,
+            select {
+                font-size: 16px;
+            }
+
+            /* Better touch targets */
+            .btn-primary,
+            button[type="submit"] {
+                min-height: 48px;
+            }
+        }
+
+        /* Extra small screens (under 360px) */
+        @media (max-width: 360px) {
+            .main-content {
+                padding: 4rem 0.5rem 1rem 0.5rem;
+            }
+
+            .mic-button {
+                width: 80px !important;
+                height: 80px !important;
+            }
+
+            .tool-content h2 {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Small screens (under 480px) */
+        @media (max-width: 480px) {
+            /* Music tabs stack vertically */
+            .music-tabs-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .music-tabs-container .tab-btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            /* File upload area adjustments */
+            .file-upload {
+                padding: 1.5rem;
+            }
+
+            /* Anime/podcast cards full width */
+            #tool-anime .anime-card,
+            #tool-podcast .podcast-card {
+                width: 100%;
+            }
         }
 
         /* Dark theme text colors */
@@ -1581,14 +1677,14 @@
                     </div>
 
                     <div class="flex flex-col items-center">
-                        <div class="flex gap-4 mb-6">
+                        <div class="speech-mic-controls flex gap-4 mb-6">
                             <button id="mic-btn" onclick="toggleRecording()"
-                                class="w-32 h-32 rounded-full glass soft-shadow transition-all duration-300 flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg">
+                                class="mic-button w-32 h-32 rounded-full glass soft-shadow transition-all duration-300 flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg">
                                 <i id="mic-icon" class="fas fa-microphone text-4xl text-slate-500 mb-2"></i>
                                 <span class="text-xs text-slate-400">تسجيل عادي</span>
                             </button>
                             <button id="continuous-btn" onclick="toggleContinuousRecording()"
-                                class="w-32 h-32 rounded-full glass soft-shadow transition-all duration-300 flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg bg-gradient-to-br from-orange-900/30 to-purple-900/30"
+                                class="mic-button w-32 h-32 rounded-full glass soft-shadow transition-all duration-300 flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg bg-gradient-to-br from-orange-900/30 to-purple-900/30"
                                 title="استماع مستمر للميكروفون - ضع الميكروفون قريباً من مصدر الصوت">
                                 <i id="continuous-icon"
                                     class="fas fa-broadcast-tower text-4xl text-orange-400 mb-2"></i>
@@ -2734,7 +2830,7 @@
                     </div>
 
                     <!-- Tabs for different input methods -->
-                    <div class="flex justify-center gap-2 mb-6">
+                    <div class="music-tabs-container flex justify-center gap-2 mb-6">
                         <button onclick="switchMusicTab('file')" id="music-tab-file" 
                             class="tab-btn active px-6 py-3 rounded-xl font-semibold transition-all">
                             <i class="fas fa-file-audio ml-2"></i>
