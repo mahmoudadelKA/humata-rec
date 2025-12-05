@@ -3330,29 +3330,38 @@ def get_audio():
         return jsonify({'error': 'No URL provided'}), 400
     
     try:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-                'outtmpl': os.path.join(temp_dir, '%(id)s'),
-                'quiet': True,
-                'no_warnings': True,
-            }
+        temp_dir = tempfile.gettempdir()
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '128',
+            }],
+            'outtmpl': os.path.join(temp_dir, 'arkan_audio_%(id)s'),
+            'quiet': True,
+            'no_warnings': True,
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            audio_file = os.path.join(temp_dir, f"arkan_audio_{info['id']}.mp3")
             
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                audio_file = os.path.join(temp_dir, f"{info['id']}.mp3")
+            if os.path.exists(audio_file):
+                @after_this_request
+                def cleanup(response):
+                    try:
+                        os.remove(audio_file)
+                    except:
+                        pass
+                    return response
                 
-                if os.path.exists(audio_file):
-                    return send_file(audio_file, mimetype='audio/mpeg', as_attachment=False)
-                else:
-                    return jsonify({'error': 'Failed to extract audio'}), 500
+                return send_file(audio_file, mimetype='audio/mpeg', as_attachment=False, download_name=f"audio_{info['id']}.mp3")
+            else:
+                return jsonify({'error': 'Failed to extract audio'}), 500
     
     except Exception as e:
+        logging.error(f"Audio extraction error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
