@@ -970,7 +970,7 @@
                             <i class="fas fa-file-audio ml-3 text-cyan-500"></i>
                             تحويل ملف صوتي إلى نص
                         </h2>
-                        <p class="text-gray-500">ارفع ملف صوتي وسنحوله إلى نص مكتوب</p>
+                        <p class="text-gray-500">ارفع ملف صوتي (حتى ساعتين) وسنحوله إلى نص مكتوب (حتى 15,000 كلمة)</p>
                     </div>
 
                     <div class="space-y-6">
@@ -997,7 +997,7 @@
 
                         <div id="file-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4"></div>
-                            <p class="text-gray-500">جاري تحويل الملف...</p>
+                            <p class="text-gray-500">جاري تحويل الملف... (قد يستغرق حتى 30 دقيقة للملفات الطويلة)</p>
                         </div>
 
                         <div id="file-result" class="hidden">
@@ -2785,15 +2785,21 @@
             const formData = new FormData();
             formData.append('audio', uploadedAudioFile);
 
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1800000);
+
             try {
                 const response = await fetch('/transcribe-file', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
+
+                clearTimeout(timeoutId);
 
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('انتهت مهلة الخادم. جرب ملفاً أقصر (أقل من دقيقتين) أو حاول مرة أخرى.');
+                    throw new Error('حدث خطأ في الخادم. يرجى المحاولة مرة أخرى.');
                 }
 
                 const data = await response.json();
@@ -2814,7 +2820,12 @@
                 }
 
             } catch (error) {
-                document.getElementById('file-error-text').textContent = error.message;
+                clearTimeout(timeoutId);
+                let errorMessage = error.message;
+                if (error.name === 'AbortError') {
+                    errorMessage = 'انتهت مهلة الخادم (30 دقيقة). الملف كبير جداً أو الخادم مشغول، يرجى المحاولة مرة أخرى.';
+                }
+                document.getElementById('file-error-text').textContent = errorMessage;
                 errorDiv.classList.remove('hidden');
             } finally {
                 transcribeBtn.disabled = false;
