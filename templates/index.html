@@ -15,54 +15,64 @@
         }
 
         body {
-            background: linear-gradient(-45deg, #e8f4fc, #fce4ec, #e3f2fd, #fff8e1);
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 25%, #0d1b2a 50%, #1a1a3a 75%, #0a0a1a 100%);
             background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
+            animation: gradientShift 20s ease infinite;
             min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body > * {
+            position: relative;
+            z-index: 1;
         }
 
         @keyframes gradientShift {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
         .glass-sidebar {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-left: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.08);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.5);
         }
 
         .soft-shadow {
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 40px rgba(99, 102, 241, 0.1);
         }
 
         @keyframes pulse-recording {
-
-            0%,
-            100% {
+            0%, 100% {
                 transform: scale(1);
                 box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
             }
-
             50% {
                 transform: scale(1.05);
                 box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
@@ -74,13 +84,10 @@
         }
 
         @keyframes pulse-continuous {
-
-            0%,
-            100% {
+            0%, 100% {
                 transform: scale(1);
                 box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.7);
             }
-
             50% {
                 transform: scale(1.05);
                 box-shadow: 0 0 0 20px rgba(251, 146, 60, 0);
@@ -93,15 +100,8 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .fade-in {
@@ -110,53 +110,54 @@
 
         .toast {
             animation: slideIn 0.3s ease-out forwards;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(99, 102, 241, 0.3);
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
         .nav-item {
             transition: all 0.3s ease;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid transparent;
         }
 
         .nav-item:hover {
-            background: rgba(236, 72, 153, 0.1);
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.3);
             transform: translateX(-5px);
         }
 
         .nav-item.active {
-            background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(167, 139, 250, 0.2));
-            border-color: rgba(236, 72, 153, 0.4);
-            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.2);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         input[type="text"],
         input[type="file"],
-        textarea {
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid rgba(236, 72, 153, 0.2);
-            color: #374151;
+        textarea,
+        select {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #e2e8f0;
+            transition: all 0.3s ease;
         }
 
         input[type="text"]:focus,
-        textarea:focus {
+        textarea:focus,
+        select:focus {
             outline: none;
-            border-color: rgba(236, 72, 153, 0.5);
-            box-shadow: 0 0 15px rgba(236, 72, 153, 0.15);
+            border-color: rgba(139, 92, 246, 0.6);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2), inset 0 0 10px rgba(139, 92, 246, 0.05);
         }
 
         input[type="text"]::placeholder,
         textarea::placeholder {
-            color: #9ca3af;
+            color: #64748b;
         }
 
         ::-webkit-scrollbar {
@@ -164,17 +165,17 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(15, 23, 42, 0.5);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #ec4899, #a78bfa);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             border-radius: 4px;
         }
 
         .loader {
-            border: 3px solid rgba(236, 72, 153, 0.2);
-            border-top: 3px solid #ec4899;
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top: 3px solid #8b5cf6;
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -182,47 +183,45 @@
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #ec4899, #a78bfa);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             transition: all 0.3s ease;
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(236, 72, 153, 0.35);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.2);
         }
 
         .file-upload {
-            border: 2px dashed rgba(236, 72, 153, 0.4);
+            border: 2px dashed rgba(99, 102, 241, 0.4);
+            background: rgba(15, 23, 42, 0.5);
             transition: all 0.3s ease;
         }
 
         .file-upload:hover {
-            border-color: rgba(236, 72, 153, 0.7);
-            background: rgba(236, 72, 153, 0.05);
+            border-color: rgba(139, 92, 246, 0.7);
+            background: rgba(99, 102, 241, 0.1);
         }
 
         .upload-progress-container {
             position: relative;
             width: 100%;
             height: 8px;
-            background: rgba(236, 72, 153, 0.15);
+            background: rgba(99, 102, 241, 0.15);
             border-radius: 10px;
             overflow: hidden;
         }
 
         .upload-progress-bar {
             height: 100%;
-            background: linear-gradient(135deg, #ec4899, #a78bfa);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             border-radius: 10px;
             transition: width 0.3s ease;
             width: 0%;
@@ -231,12 +230,12 @@
         .upload-progress-text {
             font-size: 0.875rem;
             font-weight: 600;
-            color: #ec4899;
+            color: #a78bfa;
         }
 
         @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 5px rgba(236, 72, 153, 0.4); }
-            50% { box-shadow: 0 0 15px rgba(236, 72, 153, 0.7); }
+            0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.7); }
         }
 
         .upload-progress-bar.uploading {
@@ -245,29 +244,45 @@
 
         .tab-btn {
             transition: all 0.3s ease;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #94a3b8;
+        }
+
+        .tab-btn:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.4);
         }
 
         .tab-btn.active {
-            background: linear-gradient(135deg, #ec4899, #a78bfa);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
         }
 
         .anime-card {
             transition: all 0.3s ease;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(99, 102, 241, 0.2);
         }
 
         .anime-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 30px rgba(99, 102, 241, 0.2);
+            border-color: rgba(139, 92, 246, 0.4);
         }
 
         .podcast-card {
             transition: all 0.3s ease;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(99, 102, 241, 0.2);
         }
 
         .podcast-card:hover {
             transform: scale(1.02);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 30px rgba(99, 102, 241, 0.2);
+            border-color: rgba(139, 92, 246, 0.4);
         }
 
         .badge {
@@ -277,6 +292,9 @@
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 600;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #a78bfa;
         }
 
         /* Mobile Menu Toggle Button */
@@ -288,8 +306,8 @@
             width: 48px;
             height: 48px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #ec4899, #a78bfa);
-            box-shadow: 0 4px 20px rgba(236, 72, 153, 0.4);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
             display: none;
             align-items: center;
             justify-content: center;
@@ -299,7 +317,7 @@
 
         .mobile-menu-btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 25px rgba(236, 72, 153, 0.5);
+            box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
         }
 
         .mobile-menu-btn:active {
@@ -345,7 +363,7 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background: rgba(0, 0, 0, 0.5);
+                background: rgba(0, 0, 0, 0.7);
                 z-index: 98;
                 opacity: 0;
                 visibility: hidden;
@@ -390,10 +408,79 @@
                 font-size: 0.875rem;
             }
         }
+
+        /* Dark theme text colors */
+        .text-slate-100 { color: #e2e8f0 !important; }
+        .text-slate-200 { color: #cbd5e1 !important; }
+        .text-slate-300 { color: #94a3b8 !important; }
+        .text-slate-400 { color: #64748b !important; }
+        .text-slate-500 { color: #475569 !important; }
+
+        /* Gradient text for headers */
+        .gradient-text {
+            background: linear-gradient(135deg, #a78bfa, #818cf8, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Neon glow effects */
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), 0 0 40px rgba(139, 92, 246, 0.2);
+        }
+
+        /* Button secondary style */
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Icon button colors for dark theme */
+        .icon-btn {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #94a3b8;
+            transition: all 0.3s ease;
+        }
+
+        .icon-btn:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(139, 92, 246, 0.4);
+            color: #a78bfa;
+        }
+
+        /* Result boxes */
+        .result-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+        }
+
+        /* Select dropdown styling */
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236366f1' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: left 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-left: 2.5rem;
+        }
+
+        select option {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
     </style>
 </head>
 
-<body class="text-gray-800">
+<body class="text-slate-200">
     <div id="toast-container" class="fixed top-4 left-4 z-50 space-y-2"></div>
 
     <!-- Mobile Menu Toggle Button -->
@@ -410,138 +497,138 @@
                 <div class="text-center">
                     <img src="/logo.png" alt="Logo" class="w-32 mx-auto mb-4 rounded-2xl soft-shadow">
                     <h1
-                        class="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+                        class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                         أدوات متعددة
                     </h1>
-                    <p class="text-gray-500 text-sm mt-1">منصة الأدوات الذكية</p>
+                    <p class="text-slate-400 text-sm mt-1">منصة الأدوات الذكية</p>
                 </div>
             </div>
 
             <div class="space-y-3">
                 <button onclick="showTool('speech')" id="nav-speech"
-                    class="nav-item active w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    class="nav-item active w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center shadow-lg">
                         <i class="fas fa-microphone text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">تحويل الصوت لنص مباشر</span>
-                        <span class="text-xs text-gray-400">Web Speech API</span>
+                        <span class="font-semibold block text-slate-200">تحويل الصوت لنص مباشر</span>
+                        <span class="text-xs text-slate-500">Web Speech API</span>
                     </div>
                 </button>
 
                 <button onclick="showTool('youtube')" id="nav-youtube"
-                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
                         <i class="fab fa-youtube text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">قص اليوتيوب</span>
-                        <span class="text-xs text-gray-400">yt-dlp & ffmpeg</span>
+                        <span class="font-semibold block text-slate-200">قص اليوتيوب</span>
+                        <span class="text-xs text-slate-500">yt-dlp & ffmpeg</span>
                     </div>
                 </button>
 
                 <button onclick="showTool('anime')" id="nav-anime"
-                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg">
                         <i class="fas fa-search text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">كاشف الأنمي</span>
-                        <span class="text-xs text-gray-400">trace.moe & Anilist</span>
+                        <span class="font-semibold block text-slate-200">كاشف الأنمي</span>
+                        <span class="text-xs text-slate-500">trace.moe & Anilist</span>
                     </div>
                 </button>
 
                 <button onclick="showTool('podcast')" id="nav-podcast"
-                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
                         <i class="fas fa-podcast text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">كاشف البودكاست</span>
-                        <span class="text-xs text-gray-400">iTunes Search API</span>
+                        <span class="font-semibold block text-slate-200">كاشف البودكاست</span>
+                        <span class="text-xs text-slate-500">iTunes Search API</span>
                     </div>
                 </button>
 
                 <button onclick="showTool('file')" id="nav-file"
-                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center shadow-lg">
                         <i class="fas fa-file-audio text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">تحويل ملف صوتي</span>
-                        <span class="text-xs text-gray-400">Speech Recognition</span>
+                        <span class="font-semibold block text-slate-200">تحويل ملف صوتي</span>
+                        <span class="text-xs text-slate-500">Speech Recognition</span>
                     </div>
                 </button>
 
                 <button onclick="showTool('ocr')" id="nav-ocr"
-                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
                         <i class="fas fa-image text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">استخراج النص من الصورة</span>
-                        <span class="text-xs text-gray-400">Tesseract OCR</span>
+                        <span class="font-semibold block text-slate-200">استخراج النص من الصورة</span>
+                        <span class="text-xs text-slate-500">Tesseract OCR</span>
                     </div>
                 </button>
 
                 <button onclick="showTool('downloader')" id="nav-downloader"
-                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-lg">
                         <i class="fas fa-download text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">تحميل فيديو من أي موقع</span>
-                        <span class="text-xs text-gray-400">Universal Downloader</span>
+                        <span class="font-semibold block text-slate-200">تحميل فيديو من أي موقع</span>
+                        <span class="text-xs text-slate-500">Universal Downloader</span>
                     </div>
                 </button>
 
                 <button onclick="showTool('pdfconverter')" id="nav-pdfconverter"
-                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-lg">
                         <i class="fas fa-file-pdf text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">محول PDF الذكي</span>
-                        <span class="text-xs text-gray-400">PDF to Word + Translation</span>
+                        <span class="font-semibold block text-slate-200">محول PDF الذكي</span>
+                        <span class="text-xs text-slate-500">PDF to Word + Translation</span>
                     </div>
                 </button>
 
                 <button onclick="showTool('videototext')" id="nav-videototext"
-                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg">
                         <i class="fas fa-video text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">تحويل الفيديو إلى نص</span>
-                        <span class="text-xs text-gray-400">Video to Text</span>
+                        <span class="font-semibold block text-slate-200">تحويل الفيديو إلى نص</span>
+                        <span class="text-xs text-slate-500">Video to Text</span>
                     </div>
                 </button>
 
                 <button onclick="showTool('docxformatter')" id="nav-docxformatter"
-                    class="nav-item w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4">
+                    class="nav-item w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4">
                     <div
                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
                         <i class="fas fa-wand-magic-sparkles text-white"></i>
                     </div>
                     <div class="text-right">
-                        <span class="font-semibold block text-gray-700">تنسيق ذكي للمستندات</span>
-                        <span class="text-xs text-gray-400">AI Document Formatter</span>
+                        <span class="font-semibold block text-slate-200">تنسيق ذكي للمستندات</span>
+                        <span class="text-xs text-slate-500">AI Document Formatter</span>
                     </div>
                 </button>
             </div>
 
-            <div class="mt-8 pt-6 border-t border-gray-200">
-                <div class="text-center text-gray-500 text-sm">
-                    <i class="fas fa-code ml-2 text-pink-400"></i>
+            <div class="mt-8 pt-6 border-t border-slate-700">
+                <div class="text-center text-slate-400 text-sm">
+                    <i class="fas fa-code ml-2 text-indigo-400"></i>
                     المبرمج محمود عادل
                 </div>
             </div>
@@ -552,47 +639,47 @@
             <div id="tool-speech" class="tool-content fade-in">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto">
                     <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
-                            <i class="fas fa-microphone-alt ml-3 text-pink-500"></i>
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
+                            <i class="fas fa-microphone-alt ml-3 text-indigo-400"></i>
                             تحويل الصوت إلى نص
                         </h2>
-                        <p class="text-gray-500">استخدم الميكروفون لتحويل كلامك إلى نص عربي</p>
+                        <p class="text-slate-400">استخدم الميكروفون لتحويل كلامك إلى نص عربي</p>
                     </div>
 
                     <div class="flex flex-col items-center">
                         <div class="flex gap-4 mb-6">
                             <button id="mic-btn" onclick="toggleRecording()"
                                 class="w-32 h-32 rounded-full glass soft-shadow transition-all duration-300 flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg">
-                                <i id="mic-icon" class="fas fa-microphone text-4xl text-gray-400 mb-2"></i>
-                                <span class="text-xs text-gray-500">تسجيل عادي</span>
+                                <i id="mic-icon" class="fas fa-microphone text-4xl text-slate-500 mb-2"></i>
+                                <span class="text-xs text-slate-400">تسجيل عادي</span>
                             </button>
                             <button id="continuous-btn" onclick="toggleContinuousRecording()"
-                                class="w-32 h-32 rounded-full glass soft-shadow transition-all duration-300 flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg bg-gradient-to-br from-orange-50 to-purple-50"
+                                class="w-32 h-32 rounded-full glass soft-shadow transition-all duration-300 flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg bg-gradient-to-br from-orange-900/30 to-purple-900/30"
                                 title="استماع مستمر للميكروفون - ضع الميكروفون قريباً من مصدر الصوت">
                                 <i id="continuous-icon"
                                     class="fas fa-broadcast-tower text-4xl text-orange-400 mb-2"></i>
                                 <span class="text-xs text-orange-600 font-medium">استماع مستمر</span>
                             </button>
                         </div>
-                        <p id="mic-status" class="text-gray-500 mb-6">اضغط على الميكروفون للبدء</p>
+                        <p id="mic-status" class="text-slate-400 mb-6">اضغط على الميكروفون للبدء</p>
 
                         <div class="w-full">
                             <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
-                                <label class="text-gray-600 font-medium">النص المُحوَّل:</label>
+                                <label class="text-slate-300 font-medium">النص المُحوَّل:</label>
                                 <div class="flex gap-2">
                                     <button onclick="clearTranscript()"
-                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-red-50">
+                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-red-900/30">
                                         <i class="fas fa-trash-alt text-red-500"></i>
                                         حذف النص
                                     </button>
                                     <button onclick="downloadTranscript()"
-                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-pink-50">
-                                        <i class="fas fa-download text-pink-500"></i>
+                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-purple-900/30">
+                                        <i class="fas fa-download text-indigo-400"></i>
                                         تحميل (.txt)
                                     </button>
                                     <button onclick="copyText()"
-                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-pink-50">
-                                        <i class="fas fa-copy text-pink-500"></i>
+                                        class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-purple-900/30">
+                                        <i class="fas fa-copy text-indigo-400"></i>
                                         نسخ النص
                                     </button>
                                 </div>
@@ -602,16 +689,16 @@
                                 placeholder="سيظهر النص هنا..."></textarea>
                             <div class="flex items-center justify-between mt-3 text-sm">
                                 <div class="flex items-center gap-4">
-                                    <span class="text-gray-500">
+                                    <span class="text-slate-400">
                                         <i class="fas fa-font ml-1"></i>
-                                        عدد الكلمات: <span id="word-count" class="text-pink-500 font-bold">0</span>
+                                        عدد الكلمات: <span id="word-count" class="text-indigo-400 font-bold">0</span>
                                     </span>
-                                    <span class="text-gray-500">
+                                    <span class="text-slate-400">
                                         <i class="fas fa-text-width ml-1"></i>
-                                        عدد الأحرف: <span id="char-count" class="text-pink-500 font-bold">0</span>
+                                        عدد الأحرف: <span id="char-count" class="text-indigo-400 font-bold">0</span>
                                     </span>
                                 </div>
-                                <span id="recording-time" class="text-gray-500 hidden">
+                                <span id="recording-time" class="text-slate-400 hidden">
                                     <i class="fas fa-clock ml-1 text-red-400"></i>
                                     <span id="elapsed-time">00:00:00</span>
                                 </span>
@@ -619,22 +706,22 @@
                         </div>
 
                         <div id="speech-error"
-                            class="hidden mt-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 w-full">
+                            class="hidden mt-4 p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600 w-full">
                             <i class="fas fa-exclamation-circle ml-2"></i>
                             <span id="speech-error-text"></span>
                         </div>
 
-                        <div class="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-100 w-full">
-                            <div class="text-gray-600 text-sm">
+                        <div class="mt-4 p-4 rounded-xl bg-indigo-900/30 border border-indigo-500/30 w-full">
+                            <div class="text-slate-300 text-sm">
                                 <p class="text-center mb-2">
                                     <i class="fas fa-info-circle ml-2 text-blue-400"></i>
                                     يدعم التسجيل المطول للمحاضرات (حتى ساعتين). التسجيل يستمر تلقائياً حتى تضغط إيقاف.
                                 </p>
-                                <div class="mt-3 pt-3 border-t border-blue-200">
-                                    <p class="font-bold text-gray-700 mb-2"><i
+                                <div class="mt-3 pt-3 border-t border-indigo-500/30">
+                                    <p class="font-bold text-slate-200 mb-2"><i
                                             class="fas fa-broadcast-tower ml-1 text-orange-400"></i> عن الاستماع
                                         المستمر:</p>
-                                    <ul class="list-disc list-inside space-y-1 text-gray-500">
+                                    <ul class="list-disc list-inside space-y-1 text-slate-400">
                                         <li>يستخدم ميكروفون الجهاز لالتقاط الصوت الخارجي</li>
                                         <li>لتحويل فيديو/صوت من اليوتيوب: ارفع الصوت وضع الميكروفون قريباً من السماعة
                                         </li>
@@ -652,16 +739,16 @@
             <div id="tool-youtube" class="tool-content hidden">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
                     <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
                             <i class="fab fa-youtube ml-3 text-red-500"></i>
                             قص فيديو يوتيوب
                         </h2>
-                        <p class="text-gray-500">قم بقص جزء معين من أي فيديو يوتيوب وتحميله</p>
+                        <p class="text-slate-400">قم بقص جزء معين من أي فيديو يوتيوب وتحميله</p>
                     </div>
 
                     <div class="space-y-6">
                         <div>
-                            <label class="block text-gray-600 font-medium mb-2">رابط الفيديو:</label>
+                            <label class="block text-slate-300 font-medium mb-2">رابط الفيديو:</label>
                             <div class="flex gap-3">
                                 <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=..."
                                     class="flex-1 rounded-xl p-4">
@@ -678,9 +765,9 @@
                                 <img id="video-thumbnail" src="" alt=""
                                     class="w-full sm:w-48 rounded-lg object-cover shadow-md">
                                 <div class="flex-1">
-                                    <h3 id="video-title" class="font-bold text-lg mb-2 text-gray-800"></h3>
-                                    <p id="video-channel" class="text-gray-500 mb-1"></p>
-                                    <p class="text-pink-500 font-medium">
+                                    <h3 id="video-title" class="font-bold text-lg mb-2 text-slate-100"></h3>
+                                    <p id="video-channel" class="text-slate-400 mb-1"></p>
+                                    <p class="text-indigo-400 font-medium">
                                         <i class="fas fa-clock ml-1"></i>
                                         المدة: <span id="video-duration"></span>
                                     </p>
@@ -690,12 +777,12 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-gray-600 font-medium mb-2">وقت البداية:</label>
+                                <label class="block text-slate-300 font-medium mb-2">وقت البداية:</label>
                                 <input type="text" id="start-time" placeholder="00:00"
                                     class="w-full rounded-xl p-4 text-center">
                             </div>
                             <div>
-                                <label class="block text-gray-600 font-medium mb-2">وقت النهاية:</label>
+                                <label class="block text-slate-300 font-medium mb-2">وقت النهاية:</label>
                                 <input type="text" id="end-time" placeholder="01:30"
                                     class="w-full rounded-xl p-4 text-center">
                             </div>
@@ -709,11 +796,11 @@
 
                         <div id="youtube-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4"></div>
-                            <p id="loading-text" class="text-gray-500">جاري المعالجة...</p>
+                            <p id="loading-text" class="text-slate-400">جاري المعالجة...</p>
                         </div>
 
                         <div id="youtube-error"
-                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                             <i class="fas fa-exclamation-circle ml-2"></i>
                             <span id="youtube-error-text"></span>
                         </div>
@@ -725,11 +812,11 @@
             <div id="tool-anime" class="tool-content hidden">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
                     <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
                             <i class="fas fa-search ml-3 text-purple-500"></i>
                             كاشف الأنمي
                         </h2>
-                        <p class="text-gray-500">ابحث عن الأنمي بالصورة أو بالاسم</p>
+                        <p class="text-slate-400">ابحث عن الأنمي بالصورة أو بالاسم</p>
                     </div>
 
                     <!-- Tab Selection -->
@@ -740,7 +827,7 @@
                             البحث بالصورة
                         </button>
                         <button id="anime-tab-name" onclick="setAnimeMode('name')"
-                            class="tab-btn flex-1 py-3 font-medium bg-white text-gray-600 hover:bg-purple-50">
+                            class="tab-btn flex-1 py-3 font-medium bg-slate-800/50 text-slate-300 hover:bg-purple-900/30">
                             <i class="fas fa-pen ml-2"></i>
                             البحث بالوصف
                         </button>
@@ -757,8 +844,8 @@
                             </div>
                             <div id="anime-upload-prompt">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-pink-400 mb-3"></i>
-                                <p class="text-gray-600 font-medium">اضغط لرفع صورة أو اسحبها هنا</p>
-                                <p class="text-gray-400 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
+                                <p class="text-slate-300 font-medium">اضغط لرفع صورة أو اسحبها هنا</p>
+                                <p class="text-slate-500 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
                             </div>
                         </div>
 
@@ -770,20 +857,20 @@
 
                         <div id="anime-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4"></div>
-                            <p class="text-gray-500">جاري البحث...</p>
+                            <p class="text-slate-400">جاري البحث...</p>
                         </div>
 
                         <div id="anime-result" class="hidden glass rounded-xl p-6">
-                            <h3 class="font-bold text-lg mb-4 text-gray-800 border-b border-gray-100 pb-2">نتيجة البحث
+                            <h3 class="font-bold text-lg mb-4 text-slate-100 border-b border-gray-100 pb-2">نتيجة البحث
                             </h3>
                             <div class="space-y-3">
-                                <p><span class="text-gray-500">اسم الأنمي:</span> <span id="result-name"
+                                <p><span class="text-slate-400">اسم الأنمي:</span> <span id="result-name"
                                         class="font-bold text-pink-600"></span></p>
-                                <p><span class="text-gray-500">الحلقة:</span> <span id="result-episode"
+                                <p><span class="text-slate-400">الحلقة:</span> <span id="result-episode"
                                         class="font-bold"></span></p>
-                                <p><span class="text-gray-500">التوقيت:</span> <span id="result-timestamp"
+                                <p><span class="text-slate-400">التوقيت:</span> <span id="result-timestamp"
                                         class="font-bold"></span></p>
-                                <p><span class="text-gray-500">نسبة التطابق:</span> <span id="result-similarity"
+                                <p><span class="text-slate-400">نسبة التطابق:</span> <span id="result-similarity"
                                         class="font-bold text-green-600"></span>%</p>
                             </div>
                             <div id="anime-preview-video" class="mt-4 hidden">
@@ -803,7 +890,7 @@
                         </div>
 
                         <div id="anime-error"
-                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                             <i class="fas fa-exclamation-circle ml-2"></i>
                             <span id="anime-error-text"></span>
                         </div>
@@ -812,7 +899,7 @@
                     <!-- Description Search Mode -->
                     <div id="anime-name-mode" class="hidden space-y-6">
                         <div>
-                            <label class="block text-gray-600 font-medium mb-2">وصف الأنمي:</label>
+                            <label class="block text-slate-300 font-medium mb-2">وصف الأنمي:</label>
                             <textarea id="anime-name-input"
                                 placeholder="اوصف الأنمي، الشخصيات، الأحداث، القوى الخاصة، أو أي تفاصيل تتذكرها...&#10;&#10;مثال: ولد يبحث عن كرات التنين السبعة ليحقق أمنيته&#10;مثال: شخص يستخدم دفتر لقتل المجرمين&#10;مثال: قراصنة يبحثون عن كنز ون بيس"
                                 class="w-full rounded-xl p-4 min-h-[120px] resize-y"></textarea>
@@ -826,7 +913,7 @@
 
                         <div id="anime-name-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4"></div>
-                            <p class="text-gray-500">جاري تحليل الوصف بالذكاء الاصطناعي...</p>
+                            <p class="text-slate-400">جاري تحليل الوصف بالذكاء الاصطناعي...</p>
                         </div>
 
                         <div id="anime-ai-suggestion"
@@ -835,18 +922,18 @@
                                 <i class="fas fa-robot text-purple-600"></i>
                                 <span class="font-bold text-purple-700">تحليل الذكاء الاصطناعي:</span>
                             </div>
-                            <p class="text-gray-700">الأنمي المتوقع: <span id="ai-anime-name"
+                            <p class="text-slate-200">الأنمي المتوقع: <span id="ai-anime-name"
                                     class="font-bold text-pink-600"></span></p>
-                            <p class="text-sm text-gray-500">درجة الثقة: <span id="ai-confidence"
+                            <p class="text-sm text-slate-400">درجة الثقة: <span id="ai-confidence"
                                     class="font-medium"></span></p>
                             <div id="ai-alternatives-container" class="hidden mt-2">
-                                <p class="text-sm text-gray-500">احتمالات أخرى: <span id="ai-alternatives"
-                                        class="text-gray-600"></span></p>
+                                <p class="text-sm text-slate-400">احتمالات أخرى: <span id="ai-alternatives"
+                                        class="text-slate-300"></span></p>
                             </div>
                         </div>
 
                         <div id="anime-name-results" class="hidden space-y-4">
-                            <h3 class="font-bold text-lg text-gray-800 border-b border-gray-100 pb-2">نتائج البحث</h3>
+                            <h3 class="font-bold text-lg text-slate-100 border-b border-gray-100 pb-2">نتائج البحث</h3>
                             <div id="anime-name-list" class="space-y-4"></div>
                         </div>
 
@@ -857,7 +944,7 @@
                         </div>
 
                         <div id="anime-name-error"
-                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                             <i class="fas fa-exclamation-circle ml-2"></i>
                             <span id="anime-name-error-text"></span>
                         </div>
@@ -869,15 +956,15 @@
             <div id="tool-podcast" class="tool-content hidden">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
                     <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
                             <i class="fas fa-podcast ml-3 text-green-500"></i>
                             كاشف البودكاست
                         </h2>
-                        <p class="text-gray-500">اكتشف البودكاست من صورة الغلاف أو مقطع صوتي</p>
+                        <p class="text-slate-400">اكتشف البودكاست من صورة الغلاف أو مقطع صوتي</p>
                     </div>
 
                     <!-- Tab Selection -->
-                    <div class="flex rounded-xl overflow-hidden border-2 border-green-200 mb-6">
+                    <div class="flex rounded-xl overflow-hidden border-2 border-green-500/30 mb-6">
                         <button id="podcast-tab-image" onclick="setPodcastMode('image')"
                             class="tab-btn active flex-1 py-3 font-medium"
                             style="background: linear-gradient(135deg, #22c55e, #10b981); color: white;">
@@ -885,7 +972,7 @@
                             من صورة
                         </button>
                         <button id="podcast-tab-audio" onclick="setPodcastMode('audio')"
-                            class="tab-btn flex-1 py-3 font-medium bg-white text-gray-600 hover:bg-green-50">
+                            class="tab-btn flex-1 py-3 font-medium bg-slate-800/50 text-slate-300 hover:bg-green-900/30">
                             <i class="fas fa-microphone ml-2"></i>
                             من مقطع صوتي
                         </button>
@@ -903,8 +990,8 @@
                             </div>
                             <div id="podcast-image-upload-prompt">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-green-400 mb-3"></i>
-                                <p class="text-gray-600 font-medium">ارفع صورة غلاف البودكاست أو لقطة شاشة</p>
-                                <p class="text-gray-400 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
+                                <p class="text-slate-300 font-medium">ارفع صورة غلاف البودكاست أو لقطة شاشة</p>
+                                <p class="text-slate-500 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
                             </div>
                         </div>
 
@@ -916,14 +1003,14 @@
 
                         <div id="podcast-image-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4" style="border-top-color: #22c55e;"></div>
-                            <p class="text-gray-500">جاري تحليل الصورة والبحث...</p>
+                            <p class="text-slate-400">جاري تحليل الصورة والبحث...</p>
                         </div>
 
                         <div id="podcast-image-result" class="hidden">
                             <div id="podcast-extracted-text"
                                 class="mb-4 p-3 rounded-lg bg-gray-50 border border-gray-200">
-                                <p class="text-gray-500 text-sm mb-1">النص المستخرج من الصورة:</p>
-                                <p id="podcast-ocr-text" class="text-gray-700 font-medium"></p>
+                                <p class="text-slate-400 text-sm mb-1">النص المستخرج من الصورة:</p>
+                                <p id="podcast-ocr-text" class="text-slate-200 font-medium"></p>
                             </div>
                             <div id="podcast-image-card" class="podcast-card glass rounded-xl p-6"></div>
                         </div>
@@ -935,7 +1022,7 @@
                         </div>
 
                         <div id="podcast-image-error"
-                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                             <i class="fas fa-exclamation-circle ml-2"></i>
                             <span id="podcast-image-error-text"></span>
                         </div>
@@ -949,12 +1036,12 @@
                                 onchange="handlePodcastAudioUpload(event)">
                             <div id="podcast-audio-file-info" class="hidden mb-4">
                                 <i class="fas fa-file-audio text-4xl text-green-500 mb-2"></i>
-                                <p id="podcast-audio-file-name" class="text-gray-700 font-medium"></p>
+                                <p id="podcast-audio-file-name" class="text-slate-200 font-medium"></p>
                             </div>
                             <div id="podcast-audio-upload-prompt">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-green-400 mb-3"></i>
-                                <p class="text-gray-600 font-medium">ارفع مقطع صوتي من البودكاست</p>
-                                <p class="text-gray-400 text-sm mt-1">MP3, WAV, OGG, M4A, FLAC</p>
+                                <p class="text-slate-300 font-medium">ارفع مقطع صوتي من البودكاست</p>
+                                <p class="text-slate-500 text-sm mt-1">MP3, WAV, OGG, M4A, FLAC</p>
                             </div>
                         </div>
 
@@ -966,14 +1053,14 @@
 
                         <div id="podcast-audio-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4" style="border-top-color: #22c55e;"></div>
-                            <p class="text-gray-500">جاري تحليل الصوت والبحث...</p>
+                            <p class="text-slate-400">جاري تحليل الصوت والبحث...</p>
                         </div>
 
                         <div id="podcast-audio-result" class="hidden">
                             <div id="podcast-transcribed-text"
                                 class="mb-4 p-3 rounded-lg bg-gray-50 border border-gray-200">
-                                <p class="text-gray-500 text-sm mb-1">النص المستخرج من الصوت:</p>
-                                <p id="podcast-speech-text" class="text-gray-700 font-medium"></p>
+                                <p class="text-slate-400 text-sm mb-1">النص المستخرج من الصوت:</p>
+                                <p id="podcast-speech-text" class="text-slate-200 font-medium"></p>
                             </div>
                             <div class="mb-3">
                                 <span class="badge bg-blue-100 text-blue-700">
@@ -991,13 +1078,13 @@
                         </div>
 
                         <div id="podcast-audio-error"
-                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                             <i class="fas fa-exclamation-circle ml-2"></i>
                             <span id="podcast-audio-error-text"></span>
                         </div>
 
-                        <div class="p-4 rounded-xl bg-green-50 border border-green-100">
-                            <p class="text-gray-600 text-sm text-center">
+                        <div class="p-4 rounded-xl bg-green-900/30 border border-green-100">
+                            <p class="text-slate-300 text-sm text-center">
                                 <i class="fas fa-info-circle ml-2 text-green-400"></i>
                                 يتم تحليل أول 60 ثانية من المقطع الصوتي للحصول على أفضل النتائج
                             </p>
@@ -1010,11 +1097,11 @@
             <div id="tool-file" class="tool-content hidden">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
                     <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
                             <i class="fas fa-file-audio ml-3 text-cyan-500"></i>
                             تحويل ملف صوتي إلى نص
                         </h2>
-                        <p class="text-gray-500">ارفع ملف صوتي (حتى ساعتين) وسنحوله إلى نص مكتوب (حتى 15,000 كلمة)</p>
+                        <p class="text-slate-400">ارفع ملف صوتي (حتى ساعتين) وسنحوله إلى نص مكتوب (حتى 15,000 كلمة)</p>
                     </div>
 
                     <div class="space-y-6">
@@ -1024,12 +1111,12 @@
                                 onchange="handleAudioUpload(event)">
                             <div id="audio-file-info" class="hidden mb-4">
                                 <i class="fas fa-file-audio text-4xl text-cyan-500 mb-2"></i>
-                                <p id="audio-file-name" class="text-gray-700 font-medium"></p>
+                                <p id="audio-file-name" class="text-slate-200 font-medium"></p>
                             </div>
                             <div id="audio-upload-prompt">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-cyan-400 mb-3"></i>
-                                <p class="text-gray-600 font-medium">اضغط لرفع ملف صوتي</p>
-                                <p class="text-gray-400 text-sm mt-1">MP3, WAV, OGG, M4A, FLAC, AAC, WMA</p>
+                                <p class="text-slate-300 font-medium">اضغط لرفع ملف صوتي</p>
+                                <p class="text-slate-500 text-sm mt-1">MP3, WAV, OGG, M4A, FLAC, AAC, WMA</p>
                             </div>
                         </div>
 
@@ -1041,7 +1128,7 @@
 
                         <div id="audio-progress-wrapper" class="hidden">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-gray-600 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الملف...</span>
+                                <span class="text-slate-300 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الملف...</span>
                                 <span id="audio-progress-text" class="upload-progress-text">0%</span>
                             </div>
                             <div class="upload-progress-container">
@@ -1051,12 +1138,12 @@
 
                         <div id="file-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4"></div>
-                            <p class="text-gray-500">جاري معالجة الملف بالذكاء الاصطناعي... (قد يستغرق حتى 30 دقيقة للملفات الطويلة)</p>
+                            <p class="text-slate-400">جاري معالجة الملف بالذكاء الاصطناعي... (قد يستغرق حتى 30 دقيقة للملفات الطويلة)</p>
                         </div>
 
                         <div id="file-result" class="hidden">
                             <div class="flex items-center justify-between mb-3">
-                                <label class="text-gray-600 font-medium">النص المستخرج:</label>
+                                <label class="text-slate-300 font-medium">النص المستخرج:</label>
                                 <div class="flex gap-2">
                                     <button onclick="downloadFileTranscript()"
                                         class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-cyan-50">
@@ -1075,7 +1162,7 @@
                                 placeholder="سيظهر النص هنا..."></textarea>
                         </div>
 
-                        <div id="file-error" class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                        <div id="file-error" class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                             <i class="fas fa-exclamation-circle ml-2"></i>
                             <span id="file-error-text"></span>
                         </div>
@@ -1087,11 +1174,11 @@
             <div id="tool-ocr" class="tool-content hidden">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
                     <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
                             <i class="fas fa-image ml-3 text-orange-500"></i>
                             استخراج النص من الصورة
                         </h2>
-                        <p class="text-gray-500">ارفع صورة تحتوي على نص وسنستخرجه لك</p>
+                        <p class="text-slate-400">ارفع صورة تحتوي على نص وسنستخرجه لك</p>
                     </div>
 
                     <div class="space-y-6">
@@ -1104,8 +1191,8 @@
                             </div>
                             <div id="ocr-upload-prompt">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-orange-400 mb-3"></i>
-                                <p class="text-gray-600 font-medium">اضغط لرفع صورة تحتوي على نص</p>
-                                <p class="text-gray-400 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
+                                <p class="text-slate-300 font-medium">اضغط لرفع صورة تحتوي على نص</p>
+                                <p class="text-slate-500 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
                             </div>
                         </div>
 
@@ -1117,12 +1204,12 @@
 
                         <div id="ocr-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4"></div>
-                            <p class="text-gray-500">جاري استخراج النص...</p>
+                            <p class="text-slate-400">جاري استخراج النص...</p>
                         </div>
 
                         <div id="ocr-result" class="hidden">
                             <div class="flex items-center justify-between mb-3">
-                                <label class="text-gray-600 font-medium">النص المستخرج:</label>
+                                <label class="text-slate-300 font-medium">النص المستخرج:</label>
                                 <div class="flex gap-2">
                                     <button onclick="downloadOcrText()"
                                         class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-orange-50">
@@ -1142,7 +1229,7 @@
                                 placeholder="سيظهر النص هنا..."></textarea>
                         </div>
 
-                        <div id="ocr-error" class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                        <div id="ocr-error" class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                             <i class="fas fa-exclamation-circle ml-2"></i>
                             <span id="ocr-error-text"></span>
                         </div>
@@ -1154,17 +1241,17 @@
             <div id="tool-downloader" class="tool-content hidden">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
                     <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
                             <i class="fas fa-download ml-3 text-teal-500"></i>
                             تحميل فيديو من أي موقع
                         </h2>
-                        <p class="text-gray-500">قم بتحميل أي فيديو من يوتيوب، تيك توك، فيسبوك، انستغرام، تويتر والمزيد
+                        <p class="text-slate-400">قم بتحميل أي فيديو من يوتيوب، تيك توك، فيسبوك، انستغرام، تويتر والمزيد
                         </p>
                     </div>
 
                     <div class="space-y-6">
                         <div>
-                            <label class="block text-gray-600 font-medium mb-2">رابط الفيديو:</label>
+                            <label class="block text-slate-300 font-medium mb-2">رابط الفيديو:</label>
                             <input type="text" id="downloader-url"
                                 placeholder="https://www.youtube.com/watch?v=... أو أي رابط فيديو آخر"
                                 class="w-full rounded-xl p-4">
@@ -1185,18 +1272,18 @@
 
                         <div id="downloader-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4" style="border-top-color: #14b8a6;"></div>
-                            <p id="downloader-loading-text" class="text-gray-500">جاري التحميل والتحويل... قد يستغرق هذا
+                            <p id="downloader-loading-text" class="text-slate-400">جاري التحميل والتحويل... قد يستغرق هذا
                                 بعض الوقت</p>
                         </div>
 
                         <div id="downloader-error"
-                            class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                            class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                             <i class="fas fa-exclamation-circle ml-2"></i>
                             <span id="downloader-error-text"></span>
                         </div>
 
                         <div class="p-4 rounded-xl bg-teal-50 border border-teal-100">
-                            <h4 class="font-medium text-gray-700 mb-2">
+                            <h4 class="font-medium text-slate-200 mb-2">
                                 <i class="fas fa-globe ml-2 text-teal-500"></i>
                                 المواقع المدعومة:
                             </h4>
@@ -1222,7 +1309,7 @@
                                     <i class="fab fa-twitter ml-1"></i>
                                     Twitter/X
                                 </span>
-                                <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600">
+                                <span class="px-3 py-1 rounded-full bg-gray-100 text-slate-300">
                                     <i class="fas fa-ellipsis-h ml-1"></i>
                                     والمزيد
                                 </span>
@@ -1230,7 +1317,7 @@
                         </div>
 
                         <div class="p-4 rounded-xl bg-amber-50 border border-amber-100">
-                            <p class="text-gray-600 text-sm text-center">
+                            <p class="text-slate-300 text-sm text-center">
                                 <i class="fas fa-info-circle ml-2 text-amber-400"></i>
                                 الحد الأقصى: مدة ساعة واحدة وحجم 500 ميجابايت. الفيديو يُحوَّل إلى MP4 والصوت إلى MP3.
                             </p>
@@ -1243,11 +1330,11 @@
             <div id="tool-pdfconverter" class="tool-content hidden">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
                     <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
                             <i class="fas fa-file-pdf ml-3 text-rose-500"></i>
                             محول PDF الذكي
                         </h2>
-                        <p class="text-gray-500">حول ملفات PDF إلى Word مع خيارات الترجمة للعربية والإنجليزية</p>
+                        <p class="text-slate-400">حول ملفات PDF إلى Word مع خيارات الترجمة للعربية والإنجليزية</p>
                     </div>
 
                     <div class="space-y-6">
@@ -1258,13 +1345,13 @@
                             <div id="pdf-preview-container" class="hidden mb-4">
                                 <div class="flex items-center justify-center gap-3 text-rose-500">
                                     <i class="fas fa-file-pdf text-5xl"></i>
-                                    <span id="pdf-filename" class="font-medium text-lg text-gray-700"></span>
+                                    <span id="pdf-filename" class="font-medium text-lg text-slate-200"></span>
                                 </div>
                             </div>
                             <div id="pdf-upload-prompt">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-rose-400 mb-3"></i>
-                                <p class="text-gray-600 font-medium">اضغط لرفع ملف PDF أو اسحبه هنا</p>
-                                <p class="text-gray-400 text-sm mt-1">PDF فقط</p>
+                                <p class="text-slate-300 font-medium">اضغط لرفع ملف PDF أو اسحبه هنا</p>
+                                <p class="text-slate-500 text-sm mt-1">PDF فقط</p>
                             </div>
                         </div>
 
@@ -1274,15 +1361,15 @@
                                 <div class="flex items-center gap-3">
                                     <span class="text-2xl">🔤</span>
                                     <div>
-                                        <span class="font-medium text-gray-700">وضع النص العربي المحسّن (OCR)</span>
-                                        <p class="text-xs text-gray-500 mt-1">يستخدم الذكاء الاصطناعي لاستخراج النص
+                                        <span class="font-medium text-slate-200">وضع النص العربي المحسّن (OCR)</span>
+                                        <p class="text-xs text-slate-400 mt-1">يستخدم الذكاء الاصطناعي لاستخراج النص
                                             العربي بدقة عالية</p>
                                     </div>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="pdf-ocr-mode" class="sr-only peer" checked>
                                     <div
-                                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+                                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-slate-800/50 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
                                     </div>
                                 </label>
                             </div>
@@ -1308,7 +1395,7 @@
 
                         <div id="pdf-progress-wrapper" class="hidden">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-gray-600 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الملف...</span>
+                                <span class="text-slate-300 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الملف...</span>
                                 <span id="pdf-progress-text" class="upload-progress-text">0%</span>
                             </div>
                             <div class="upload-progress-container">
@@ -1318,20 +1405,20 @@
 
                         <div id="pdf-loading" class="hidden text-center py-8">
                             <div class="loader mx-auto mb-4" style="border-top-color: #e11d48;"></div>
-                            <p id="pdf-loading-text" class="text-gray-500">جاري التحويل... قد يستغرق هذا بعض الوقت</p>
+                            <p id="pdf-loading-text" class="text-slate-400">جاري التحويل... قد يستغرق هذا بعض الوقت</p>
                         </div>
 
-                        <div id="pdf-error" class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                        <div id="pdf-error" class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                             <i class="fas fa-exclamation-circle ml-2"></i>
                             <span id="pdf-error-text"></span>
                         </div>
 
                         <div class="p-4 rounded-xl bg-rose-50 border border-rose-100">
-                            <h4 class="font-medium text-gray-700 mb-2">
+                            <h4 class="font-medium text-slate-200 mb-2">
                                 <i class="fas fa-magic ml-2 text-rose-500"></i>
                                 خيارات التحويل:
                             </h4>
-                            <div class="space-y-2 text-sm text-gray-600">
+                            <div class="space-y-2 text-sm text-slate-300">
                                 <div class="flex items-center gap-2">
                                     <span class="text-lg">📄</span>
                                     <span><strong>تحويل فقط:</strong> يحافظ على اللغة الأصلية للملف</span>
@@ -1348,7 +1435,7 @@
                         </div>
 
                         <div class="p-4 rounded-xl bg-amber-50 border border-amber-100">
-                            <p class="text-gray-600 text-sm text-center">
+                            <p class="text-slate-300 text-sm text-center">
                                 <i class="fas fa-info-circle ml-2 text-amber-400"></i>
                                 عند تفعيل وضع النص العربي المحسّن، يتم استخدام الذكاء الاصطناعي لاستخراج النص العربي
                                 بدقة عالية دون تشوه أو تكسير في الحروف.
@@ -1362,16 +1449,16 @@
             <div id="tool-videototext" class="tool-content hidden">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
                     <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
                             <i class="fas fa-video ml-3 text-indigo-500"></i>
                             تحويل الفيديو إلى نص
                         </h2>
-                        <p class="text-gray-500">استخرج النص من أي فيديو باستخدام الذكاء الاصطناعي</p>
+                        <p class="text-slate-400">استخرج النص من أي فيديو باستخدام الذكاء الاصطناعي</p>
                     </div>
 
                     <!-- Language Selection -->
                     <div class="mb-6">
-                        <label class="block text-gray-600 font-medium mb-2">
+                        <label class="block text-slate-300 font-medium mb-2">
                             <i class="fas fa-language ml-2 text-indigo-500"></i>
                             لغة الفيديو:
                         </label>
@@ -1393,7 +1480,7 @@
                             <option value="zh">🇨🇳 中文</option>
                             <option value="auto">🌐 تلقائي (كشف تلقائي)</option>
                         </select>
-                        <p class="text-gray-400 text-xs mt-1">اختر لغة الفيديو للحصول على نتائج أدق</p>
+                        <p class="text-slate-500 text-xs mt-1">اختر لغة الفيديو للحصول على نتائج أدق</p>
                     </div>
 
                     <!-- Tab Selection -->
@@ -1405,7 +1492,7 @@
                             رفع فيديو
                         </button>
                         <button id="video-tab-url" onclick="setVideoMode('url')"
-                            class="tab-btn flex-1 py-3 font-medium bg-white text-gray-600 hover:bg-indigo-50">
+                            class="tab-btn flex-1 py-3 font-medium bg-slate-800/50 text-slate-300 hover:bg-indigo-50">
                             <i class="fas fa-link ml-2"></i>
                             رابط فيديو
                         </button>
@@ -1420,13 +1507,13 @@
                             <div id="video-preview-container" class="hidden mb-4">
                                 <div class="flex items-center justify-center gap-3 text-indigo-500">
                                     <i class="fas fa-file-video text-5xl"></i>
-                                    <span id="video-filename" class="font-medium text-lg text-gray-700"></span>
+                                    <span id="video-filename" class="font-medium text-lg text-slate-200"></span>
                                 </div>
                             </div>
                             <div id="video-upload-prompt">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-indigo-400 mb-3"></i>
-                                <p class="text-gray-600 font-medium">اضغط لرفع ملف فيديو أو اسحبه هنا</p>
-                                <p class="text-gray-400 text-sm mt-1">MP4, MOV, AVI, MKV, WEBM, FLV, WMV, M4V</p>
+                                <p class="text-slate-300 font-medium">اضغط لرفع ملف فيديو أو اسحبه هنا</p>
+                                <p class="text-slate-500 text-sm mt-1">MP4, MOV, AVI, MKV, WEBM, FLV, WMV, M4V</p>
                             </div>
                         </div>
 
@@ -1438,7 +1525,7 @@
 
                         <div id="video-progress-wrapper" class="hidden mt-4">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-gray-600 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الفيديو...</span>
+                                <span class="text-slate-300 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الفيديو...</span>
                                 <span id="video-progress-text" class="upload-progress-text">0%</span>
                             </div>
                             <div class="upload-progress-container">
@@ -1450,7 +1537,7 @@
                     <!-- URL Mode -->
                     <div id="video-url-mode" class="hidden space-y-6">
                         <div>
-                            <label class="block text-gray-600 font-medium mb-2">رابط الفيديو:</label>
+                            <label class="block text-slate-300 font-medium mb-2">رابط الفيديو:</label>
                             <input type="text" id="video-url-input"
                                 placeholder="https://www.youtube.com/watch?v=... أو رابط TikTok، Facebook، إلخ"
                                 class="w-full rounded-xl p-4">
@@ -1466,16 +1553,16 @@
                     <!-- Common Elements -->
                     <div id="video-loading" class="hidden text-center py-8 mt-6">
                         <div class="loader mx-auto mb-4" style="border-top-color: #6366f1;"></div>
-                        <p id="video-loading-text" class="text-gray-500">جاري معالجة الفيديو واستخراج النص... قد يستغرق
+                        <p id="video-loading-text" class="text-slate-400">جاري معالجة الفيديو واستخراج النص... قد يستغرق
                             هذا بعض الوقت للفيديوهات الطويلة</p>
                     </div>
 
                     <div id="video-result" class="hidden mt-6">
                         <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
-                            <label class="text-gray-600 font-medium">النص المُستخرج:</label>
+                            <label class="text-slate-300 font-medium">النص المُستخرج:</label>
                             <div class="flex gap-2">
                                 <button onclick="clearVideoText()"
-                                    class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-red-50">
+                                    class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-red-900/30">
                                     <i class="fas fa-trash-alt text-red-500"></i>
                                     حذف
                                 </button>
@@ -1495,11 +1582,11 @@
                             class="w-full rounded-xl p-4 resize-none text-base leading-relaxed"
                             style="max-height: 400px; overflow-y: auto;" placeholder="سيظهر النص هنا..."></textarea>
                         <div class="flex items-center gap-4 mt-3 text-sm">
-                            <span class="text-gray-500">
+                            <span class="text-slate-400">
                                 <i class="fas fa-font ml-1"></i>
                                 عدد الكلمات: <span id="video-word-count" class="text-indigo-500 font-bold">0</span>
                             </span>
-                            <span class="text-gray-500">
+                            <span class="text-slate-400">
                                 <i class="fas fa-text-width ml-1"></i>
                                 عدد الأحرف: <span id="video-char-count" class="text-indigo-500 font-bold">0</span>
                             </span>
@@ -1507,13 +1594,13 @@
                     </div>
 
                     <div id="video-error"
-                        class="hidden mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                        class="hidden mt-6 p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                         <i class="fas fa-exclamation-circle ml-2"></i>
                         <span id="video-error-text"></span>
                     </div>
 
                     <div class="mt-6 p-4 rounded-xl bg-indigo-50 border border-indigo-100">
-                        <h4 class="font-medium text-gray-700 mb-2">
+                        <h4 class="font-medium text-slate-200 mb-2">
                             <i class="fas fa-info-circle ml-2 text-indigo-500"></i>
                             المنصات المدعومة:
                         </h4>
@@ -1539,7 +1626,7 @@
                                 <i class="fab fa-twitter ml-1"></i>
                                 Twitter/X
                             </span>
-                            <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600">
+                            <span class="px-3 py-1 rounded-full bg-gray-100 text-slate-300">
                                 <i class="fas fa-ellipsis-h ml-1"></i>
                                 والمزيد
                             </span>
@@ -1547,7 +1634,7 @@
                     </div>
 
                     <div class="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-100">
-                        <p class="text-gray-600 text-sm text-center">
+                        <p class="text-slate-300 text-sm text-center">
                             <i class="fas fa-lightbulb ml-2 text-amber-400"></i>
                             يدعم الفيديوهات الطويلة حتى عدة ساعات.
                         </p>
@@ -1559,19 +1646,19 @@
             <div id="tool-docxformatter" class="tool-content hidden">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
                     <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-gray-800">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100">
                             <i class="fas fa-wand-magic-sparkles ml-3 text-blue-500"></i>
                             تنسيق المستندات بالذكاء الاصطناعي
                         </h2>
-                        <p class="text-gray-500">ارفع ملف Word أو PDF وحدد التنسيق المطلوب بوصفك أو بملف مرجعي</p>
+                        <p class="text-slate-400">ارفع ملف Word أو PDF وحدد التنسيق المطلوب بوصفك أو بملف مرجعي</p>
                     </div>
 
-                    <div class="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
-                        <h3 class="font-bold text-gray-700 mb-2">
+                    <div class="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-indigo-500/30">
+                        <h3 class="font-bold text-slate-200 mb-2">
                             <i class="fas fa-robot ml-2 text-purple-500"></i>
                             كيف تعمل الأداة:
                         </h3>
-                        <ul class="text-gray-600 text-sm space-y-1 mr-6">
+                        <ul class="text-slate-300 text-sm space-y-1 mr-6">
                             <li><i class="fas fa-upload text-blue-500 ml-2"></i>ارفع ملف Word أو PDF للتنسيق</li>
                             <li><i class="fas fa-pen text-green-500 ml-2"></i>اكتب وصفاً للتنسيق المطلوب (مثال: تنسيق بحث جامعي)</li>
                             <li><i class="fas fa-image text-orange-500 ml-2"></i>أو ارفع صورة/ملف مرجعي لنسخ التنسيق منه</li>
@@ -1586,18 +1673,18 @@
                                 onchange="handleDocxFileUpload(event)">
                             <div id="docx-upload-icon">
                                 <i class="fas fa-cloud-upload-alt text-5xl text-blue-300 mb-3"></i>
-                                <p class="text-gray-600 font-medium">ارفع الملف المراد تنسيقه</p>
-                                <p class="text-gray-400 text-sm mt-1">يدعم ملفات Word (.docx) و PDF</p>
+                                <p class="text-slate-300 font-medium">ارفع الملف المراد تنسيقه</p>
+                                <p class="text-slate-500 text-sm mt-1">يدعم ملفات Word (.docx) و PDF</p>
                             </div>
                             <div id="docx-file-info" class="hidden">
                                 <i class="fas fa-file-alt text-5xl text-blue-500 mb-3"></i>
-                                <p id="docx-file-name" class="text-gray-700 font-medium"></p>
-                                <p class="text-gray-400 text-sm mt-1">اضغط لاختيار ملف آخر</p>
+                                <p id="docx-file-name" class="text-slate-200 font-medium"></p>
+                                <p class="text-slate-500 text-sm mt-1">اضغط لاختيار ملف آخر</p>
                             </div>
                         </div>
 
                         <div class="mb-4">
-                            <label class="block text-gray-700 font-medium mb-2">
+                            <label class="block text-slate-200 font-medium mb-2">
                                 <i class="fas fa-pen-fancy ml-2 text-purple-500"></i>
                                 وصف التنسيق المطلوب:
                             </label>
@@ -1607,7 +1694,7 @@
                         </div>
 
                         <div class="mb-6">
-                            <label class="block text-gray-700 font-medium mb-2">
+                            <label class="block text-slate-200 font-medium mb-2">
                                 <i class="fas fa-copy ml-2 text-orange-500"></i>
                                 أو ارفع ملف مرجعي لنسخ التنسيق منه (اختياري):
                             </label>
@@ -1618,19 +1705,19 @@
                                     onchange="handleReferenceFileUpload(event)">
                                 <div id="ref-upload-icon">
                                     <i class="fas fa-image text-3xl text-orange-300 mb-2"></i>
-                                    <p class="text-gray-500 text-sm">ارفع صورة أو ملف Word أو PDF كمرجع</p>
+                                    <p class="text-slate-400 text-sm">ارفع صورة أو ملف Word أو PDF كمرجع</p>
                                 </div>
                                 <div id="ref-file-info" class="hidden">
                                     <i class="fas fa-check-circle text-3xl text-green-500 mb-2"></i>
-                                    <p id="ref-file-name" class="text-gray-700 text-sm font-medium"></p>
+                                    <p id="ref-file-name" class="text-slate-200 text-sm font-medium"></p>
                                 </div>
                             </div>
                         </div>
 
                         <div id="docx-progress-box" class="hidden mb-6">
-                            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                            <div class="bg-slate-800/50 rounded-2xl p-6 shadow-lg border border-gray-100">
                                 <div class="flex items-center justify-between mb-4">
-                                    <span class="text-gray-700 font-bold">
+                                    <span class="text-slate-200 font-bold">
                                         <i class="fas fa-cog fa-spin ml-2 text-purple-500"></i>
                                         جارٍ المعالجة
                                     </span>
@@ -1640,7 +1727,7 @@
                                 <div class="space-y-4">
                                     <div>
                                         <div class="flex justify-between text-sm mb-1">
-                                            <span class="text-gray-600">
+                                            <span class="text-slate-300">
                                                 <i class="fas fa-cloud-upload-alt ml-1 text-blue-400"></i>
                                                 رفع الملف
                                             </span>
@@ -1653,7 +1740,7 @@
                                     
                                     <div>
                                         <div class="flex justify-between text-sm mb-1">
-                                            <span class="text-gray-600">
+                                            <span class="text-slate-300">
                                                 <i class="fas fa-wand-magic-sparkles ml-1 text-purple-400"></i>
                                                 تحليل وتنسيق
                                             </span>
@@ -1665,7 +1752,7 @@
                                     </div>
                                 </div>
                                 
-                                <p id="docx-status-text" class="text-center text-gray-500 text-sm mt-4">جارٍ رفع الملف...</p>
+                                <p id="docx-status-text" class="text-center text-slate-400 text-sm mt-4">جارٍ رفع الملف...</p>
                             </div>
                         </div>
 
@@ -1676,12 +1763,12 @@
                         </button>
                     </form>
 
-                    <div id="docx-error" class="hidden mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
+                    <div id="docx-error" class="hidden mt-6 p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
                         <i class="fas fa-exclamation-circle ml-2"></i>
                         <span id="docx-error-text"></span>
                     </div>
 
-                    <div id="docx-success" class="hidden mt-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-600">
+                    <div id="docx-success" class="hidden mt-6 p-4 rounded-xl bg-green-900/30 border border-green-500/30 text-green-600">
                         <i class="fas fa-check-circle ml-2"></i>
                         <span>تم تنسيق الملف بنجاح وجارٍ التحميل...</span>
                     </div>
@@ -1692,10 +1779,10 @@
 
     <footer class="glass-sidebar py-6 text-center mt-auto">
         <div class="container mx-auto px-4">
-            <p class="text-gray-500 text-sm">
+            <p class="text-slate-400 text-sm">
                 &copy; <span id="current-year"></span> جميع الحقوق محفوظة
             </p>
-            <p class="text-gray-400 text-sm mt-2">
+            <p class="text-slate-500 text-sm mt-2">
                 صُنع بـ <i class="fas fa-heart text-pink-400 mx-1"></i> بواسطة المبرمج محمود عادل
             </p>
         </div>
@@ -1893,14 +1980,14 @@
             if (mode === 'image') {
                 imageTab.classList.add('active');
                 nameTab.classList.remove('active');
-                nameTab.classList.add('bg-white', 'text-gray-600');
+                nameTab.classList.add('bg-slate-800/50', 'text-slate-300');
                 imageMode.classList.remove('hidden');
                 nameMode.classList.add('hidden');
             } else {
                 nameTab.classList.add('active');
-                nameTab.classList.remove('bg-white', 'text-gray-600');
+                nameTab.classList.remove('bg-slate-800/50', 'text-slate-300');
                 imageTab.classList.remove('active');
-                imageTab.classList.add('bg-white', 'text-gray-600');
+                imageTab.classList.add('bg-slate-800/50', 'text-slate-300');
                 nameMode.classList.remove('hidden');
                 imageMode.classList.add('hidden');
             }
@@ -2016,7 +2103,7 @@
                 isRecording = true;
                 micBtn.classList.add('recording');
                 micBtn.style.background = 'rgba(239, 68, 68, 0.2)';
-                micIcon.classList.remove('text-gray-400');
+                micIcon.classList.remove('text-slate-500');
                 micIcon.classList.add('text-red-500');
                 micStatus.textContent = 'جاري التسجيل... تحدث الآن';
                 hideSpeechError();
@@ -2186,7 +2273,7 @@
 
             micBtn.classList.remove('recording');
             micBtn.style.background = '';
-            micIcon.classList.add('text-gray-400');
+            micIcon.classList.add('text-slate-500');
             micIcon.classList.remove('text-red-500');
             micStatus.textContent = 'اضغط على الميكروفون للبدء';
 
@@ -2311,7 +2398,7 @@
                 continuousBtn.classList.add('recording-continuous');
                 continuousIcon.classList.remove('text-orange-400');
                 continuousIcon.classList.add('text-purple-600');
-                micStatus.innerHTML = '<span class="text-purple-600 font-bold">🎙️ الاستماع المستمر نشط...</span><br><span class="text-gray-500 text-sm">💡 نصيحة: ارفع صوت المقطع وضع الميكروفون قريباً جداً من السماعة<br>⚠️ ملاحظة: هذه الميزة تستخدم ميكروفون الجهاز فقط ولا تلتقط صوت النظام مباشرة</span>';
+                micStatus.innerHTML = '<span class="text-purple-600 font-bold">🎙️ الاستماع المستمر نشط...</span><br><span class="text-slate-400 text-sm">💡 نصيحة: ارفع صوت المقطع وضع الميكروفون قريباً جداً من السماعة<br>⚠️ ملاحظة: هذه الميزة تستخدم ميكروفون الجهاز فقط ولا تلتقط صوت النظام مباشرة</span>';
                 hideSpeechError();
 
                 if (!recordingTimer) {
@@ -2747,9 +2834,9 @@
                         card.innerHTML = `
                             <img src="${anime.cover}" alt="${anime.name}" class="w-24 h-36 object-cover rounded-lg shadow-md">
                             <div class="flex-1">
-                                <h4 class="font-bold text-lg text-gray-800 mb-1">${anime.name}</h4>
-                                ${anime.name_native ? `<p class="text-gray-500 text-sm mb-2">${anime.name_native}</p>` : ''}
-                                <p class="text-gray-600 text-sm mb-2 line-clamp-3">${anime.description}</p>
+                                <h4 class="font-bold text-lg text-slate-100 mb-1">${anime.name}</h4>
+                                ${anime.name_native ? `<p class="text-slate-400 text-sm mb-2">${anime.name_native}</p>` : ''}
+                                <p class="text-slate-300 text-sm mb-2 line-clamp-3">${anime.description}</p>
                                 <div class="flex flex-wrap gap-2 text-xs">
                                     <span class="badge bg-purple-100 text-purple-700">
                                         <i class="fas fa-tv ml-1"></i>
@@ -2766,7 +2853,7 @@
                                 </div>
                                 ${anime.genres.length > 0 ? `
                                     <div class="flex flex-wrap gap-1 mt-2">
-                                        ${anime.genres.slice(0, 3).map(g => `<span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">${g}</span>`).join('')}
+                                        ${anime.genres.slice(0, 3).map(g => `<span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-slate-300">${g}</span>`).join('')}
                                     </div>
                                 ` : ''}
                             </div>
@@ -2861,8 +2948,8 @@
                         <div class="flex gap-4 items-start">
                             <img src="${podcast.artwork}" alt="${podcast.name}" class="w-24 h-24 object-cover rounded-lg shadow-md">
                             <div class="flex-1">
-                                <h4 class="font-bold text-lg text-gray-800 mb-1">${podcast.name}</h4>
-                                <p class="text-gray-500 text-sm mb-2">${podcast.artist}</p>
+                                <h4 class="font-bold text-lg text-slate-100 mb-1">${podcast.name}</h4>
+                                <p class="text-slate-400 text-sm mb-2">${podcast.artist}</p>
                                 <div class="flex flex-wrap gap-2 text-xs mb-3">
                                     <span class="badge bg-green-100 text-green-700">
                                         <i class="fas fa-check-circle ml-1"></i>
@@ -2878,8 +2965,8 @@
                                     </span>
                                 </div>
                                 <div class="flex flex-wrap gap-2 mt-3">
-                                    ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
-                                    ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
+                                    ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-900/300 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
+                                    ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-900/300 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
                                     ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
                                     ${podcast.itunes_url ? `<a href="${podcast.itunes_url}" target="_blank" class="px-3 py-2 rounded-lg bg-purple-500 text-white text-sm hover:bg-purple-600 transition-all flex items-center gap-2"><i class="fab fa-itunes"></i>iTunes</a>` : ''}
                                 </div>
@@ -2894,8 +2981,8 @@
                     let linksHtml = '';
                     if (links.youtube || links.spotify || links.soundcloud) {
                         linksHtml = `<div class="flex flex-wrap gap-2 mt-3">
-                            ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
-                            ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
+                            ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-900/300 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
+                            ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-900/300 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
                             ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
                         </div>`;
                     }
@@ -2980,10 +3067,10 @@
                             <img src="${podcast.artwork}" alt="${podcast.name}" class="w-20 h-20 object-cover rounded-lg shadow-md">
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <h4 class="font-bold text-gray-800">${podcast.name}</h4>
+                                    <h4 class="font-bold text-slate-100">${podcast.name}</h4>
                                     ${index === 0 ? '<span class="badge bg-yellow-100 text-yellow-700 text-xs">أفضل تطابق</span>' : ''}
                                 </div>
-                                <p class="text-gray-500 text-sm mb-2">${podcast.artist}</p>
+                                <p class="text-slate-400 text-sm mb-2">${podcast.artist}</p>
                                 <div class="flex flex-wrap gap-2 text-xs mb-2">
                                     <span class="badge bg-purple-100 text-purple-700">
                                         <i class="fas fa-tag ml-1"></i>
@@ -2995,8 +3082,8 @@
                                     </span>
                                 </div>
                                 <div class="flex flex-wrap gap-2 mt-2">
-                                    ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-2 py-1 rounded-lg bg-red-500 text-white text-xs hover:bg-red-600 transition-all flex items-center gap-1"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
-                                    ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-2 py-1 rounded-lg bg-green-500 text-white text-xs hover:bg-green-600 transition-all flex items-center gap-1"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
+                                    ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-2 py-1 rounded-lg bg-red-900/300 text-white text-xs hover:bg-red-600 transition-all flex items-center gap-1"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
+                                    ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-2 py-1 rounded-lg bg-green-900/300 text-white text-xs hover:bg-green-600 transition-all flex items-center gap-1"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
                                     ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-2 py-1 rounded-lg bg-orange-500 text-white text-xs hover:bg-orange-600 transition-all flex items-center gap-1"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
                                     ${podcast.itunes_url ? `<a href="${podcast.itunes_url}" target="_blank" class="px-2 py-1 rounded-lg bg-purple-500 text-white text-xs hover:bg-purple-600 transition-all flex items-center gap-1"><i class="fab fa-itunes"></i>iTunes</a>` : ''}
                                 </div>
@@ -3012,8 +3099,8 @@
                     let linksHtml = '';
                     if (links.youtube || links.spotify || links.soundcloud) {
                         linksHtml = `<div class="flex flex-wrap gap-2 mt-3">
-                            ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
-                            ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
+                            ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-900/300 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
+                            ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-900/300 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
                             ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
                         </div>`;
                     }
