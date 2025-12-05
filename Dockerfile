@@ -1,6 +1,5 @@
 # 1. استخدام صورة بايثون الرسمية الخفيفة
-FROM FROM python:3.11.7-slim
-
+FROM python:3.11-slim
 # 2. إعداد متغيرات البيئة
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
