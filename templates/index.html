@@ -726,6 +726,14 @@
             background: rgba(5, 5, 16, 0.5);
         }
 
+        /* Mobile Background - Jerusalem Image */
+        @media (max-width: 768px) {
+            .global-video-bg {
+                background-image: url('/static/background-sunset.jpg');
+                background-attachment: scroll;
+            }
+        }
+
         .auth-container::after {
             content: '';
             position: fixed;
@@ -5214,57 +5222,17 @@
             backgroundAudio.volume = 0.3;
             backgroundAudio.loop = true;
             
-            // Use reliable ambient audio sources
-            const audioSources = [
-                '/static/background-audio.mp3',
-                'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3',
-                'https://cdn.pixabay.com/audio/2024/11/29/audio_02f4bd3a68.mp3'
-            ];
+            // سورة النازعات بصوت القارئ إسلام صبحي - من آية "أأنتم أشد خلقا أم السماء بناها" إلى نهاية السورة
+            backgroundAudio.src = '/static/naziat-verse27.mp3';
+            backgroundAudio.load();
             
-            let currentSourceIndex = 0;
+            backgroundAudio.oncanplaythrough = function() {
+                console.log('Quran recitation loaded: Surah An-Naziat by Islam Sobhi');
+            };
             
-            function tryLoadAudio() {
-                if (currentSourceIndex >= audioSources.length) {
-                    console.log('All audio sources failed');
-                    return;
-                }
-                
-                backgroundAudio.src = audioSources[currentSourceIndex];
-                backgroundAudio.crossOrigin = 'anonymous';
-                backgroundAudio.load();
-                
-                backgroundAudio.oncanplaythrough = function() {
-                    console.log('Audio loaded successfully from:', audioSources[currentSourceIndex]);
-                };
-                
-                backgroundAudio.onerror = function() {
-                    console.log('Audio source failed:', audioSources[currentSourceIndex]);
-                    currentSourceIndex++;
-                    tryLoadAudio();
-                };
-            }
-            
-            // Try to fetch from YouTube first (new URL)
-            fetch('/get-audio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=ejVy3xV3YRI' })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Server error');
-                return response.blob();
-            })
-            .then(blob => {
-                if (blob.size < 1000) throw new Error('Empty audio');
-                const audioUrl = URL.createObjectURL(blob);
-                backgroundAudio.src = audioUrl;
-                backgroundAudio.load();
-                console.log('Audio loaded from YouTube successfully');
-            })
-            .catch(err => {
-                console.log('YouTube audio failed, using fallback:', err.message);
-                tryLoadAudio();
-            });
+            backgroundAudio.onerror = function() {
+                console.log('Failed to load Quran recitation');
+            };
             
             // Play on user interaction
             document.addEventListener('click', function() {
