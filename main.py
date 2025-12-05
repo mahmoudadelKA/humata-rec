@@ -15,6 +15,18 @@ from PIL import Image
 from fuzzywuzzy import fuzz
 import google.generativeai as genai
 
+import os
+
+# --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
+# هذا يحمي حسابك بدلاً من رفع الملف على GitHub
+if os.environ.get('COOKIE_CONTENT'):
+    with open('cookies.txt', 'w') as f:
+        f.write(os.environ.get('COOKIE_CONTENT'))
+    print("✅ Cookies file created successfully from environment variables.")
+else:
+    print("⚠️ Warning: COOKIE_CONTENT not found in environment variables.")
+# -------------------------------------------------------
+
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
