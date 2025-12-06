@@ -23,9 +23,10 @@ import os
 
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
 # هذا يحمي حسابك بدلاً من رفع الملف على GitHub
-if os.environ.get('COOKIE_CONTENT'):
+cookie_content = os.environ.get('COOKIE_CONTENT')
+if cookie_content:
     with open('cookies.txt', 'w') as f:
-        f.write(os.environ.get('COOKIE_CONTENT'))
+        f.write(cookie_content)
     print("✅ Cookies file created successfully from environment variables.")
 else:
     print("⚠️ Warning: COOKIE_CONTENT not found in environment variables.")
@@ -1448,9 +1449,10 @@ def transcribe_file():
                         )
                     except sr.UnknownValueError:
                         try:
-                            chunk_text = recognizer.recognize_google(
-                                chunk_audio, language='ar-SA')
-                            transcribed_texts.append(chunk_text)
+                            if chunk_audio:
+                                chunk_text = recognizer.recognize_google(
+                                    chunk_audio, language='ar-SA')
+                                transcribed_texts.append(chunk_text)
                             logging.info(
                                 f"Chunk {i+1}/{num_chunks} transcribed with fallback"
                             )
@@ -1762,6 +1764,13 @@ def search_podcast_by_image():
 
         if temp_image and os.path.exists(temp_image):
             os.remove(temp_image)
+
+        if not best_match:
+            return jsonify({
+                'found': False,
+                'message': 'لم يتم العثور على بودكاست مطابق',
+                'search_links': smart_links
+            })
 
         podcast_name = best_match.get('collectionName', 'غير معروف')
         final_smart_links = generate_podcast_search_links(podcast_name)
