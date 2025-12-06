@@ -28,5 +28,7 @@ COPY . .
 EXPOSE 7860
 
 # 8. أمر التشغيل - يربط على $PORT اللي Hugging Face بيبعته (أو 7860 لو مش موجود)
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "3600", "--workers", "1", "--threads", "2", "main:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --timeout 1800 --workers 2 --threads 4 main:app"]
+
+
 
