@@ -320,20 +320,23 @@
         }
         
         .tool-card {
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 1.25rem;
-            padding: 1.75rem;
+            background: rgba(10, 15, 30, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 1rem;
+            padding: 1.25rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
             position: relative;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
         }
         
         .tool-card::before {
@@ -342,67 +345,77 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent);
+            height: 2px;
+            background: var(--card-glow-color, linear-gradient(90deg, transparent, #00bfff, transparent));
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.25s ease;
         }
         
-        .tool-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(212, 175, 55, 0.4);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(212, 175, 55, 0.15);
+        .tool-card:hover, .tool-card:active {
+            transform: translateY(-4px) scale(1.02);
+            border-color: var(--card-border-color, rgba(0, 191, 255, 0.5));
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px var(--card-glow-shadow, rgba(0, 191, 255, 0.2));
         }
         
-        .tool-card:hover::before {
+        .tool-card:hover::before, .tool-card:active::before {
             opacity: 1;
         }
         
         .tool-card-icon {
-            width: 72px;
-            height: 72px;
-            border-radius: 1rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 0.875rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1rem;
             position: relative;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            background: rgba(15, 20, 40, 0.9);
+            border: 1px solid var(--icon-border-color, rgba(0, 191, 255, 0.3));
+            box-shadow: 0 0 15px var(--icon-glow, rgba(0, 191, 255, 0.15)), inset 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.25s ease;
         }
         
-        .tool-card-icon::after {
-            content: '';
-            position: absolute;
-            inset: -4px;
-            border-radius: 1.25rem;
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: -1;
-        }
-        
-        .tool-card:hover .tool-card-icon::after {
-            opacity: 1;
+        .tool-card:hover .tool-card-icon, .tool-card:active .tool-card-icon {
+            box-shadow: 0 0 25px var(--icon-glow, rgba(0, 191, 255, 0.4)), inset 0 0 15px rgba(0, 0, 0, 0.2);
+            transform: scale(1.08);
         }
         
         .tool-card-icon svg {
-            width: 40px;
-            height: 40px;
-            filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.7));
+            width: 32px;
+            height: 32px;
+            filter: drop-shadow(0 0 6px var(--icon-glow, rgba(0, 191, 255, 0.8)));
+            transition: filter 0.25s ease;
+        }
+        
+        .tool-card:hover .tool-card-icon svg, .tool-card:active .tool-card-icon svg {
+            filter: drop-shadow(0 0 10px var(--icon-glow, rgba(0, 191, 255, 1))) drop-shadow(0 0 20px var(--icon-glow, rgba(0, 191, 255, 0.6)));
         }
         
         .tool-card-title {
-            font-size: 1.15rem;
+            font-size: 1rem;
             font-weight: 700;
             color: #e2e8f0;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.35rem;
         }
         
         .tool-card-desc {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #64748b;
-            line-height: 1.5;
+            line-height: 1.4;
         }
+        
+        /* Neon color variants for each card */
+        .tool-card[data-color="cyan"] { --card-glow-color: linear-gradient(90deg, transparent, #00bfff, transparent); --card-border-color: rgba(0, 191, 255, 0.5); --card-glow-shadow: rgba(0, 191, 255, 0.2); --icon-border-color: rgba(0, 191, 255, 0.3); --icon-glow: rgba(0, 191, 255, 0.5); }
+        .tool-card[data-color="pink"] { --card-glow-color: linear-gradient(90deg, transparent, #ec4899, transparent); --card-border-color: rgba(236, 72, 153, 0.5); --card-glow-shadow: rgba(236, 72, 153, 0.2); --icon-border-color: rgba(236, 72, 153, 0.3); --icon-glow: rgba(236, 72, 153, 0.5); }
+        .tool-card[data-color="yellow"] { --card-glow-color: linear-gradient(90deg, transparent, #fbbf24, transparent); --card-border-color: rgba(251, 191, 36, 0.5); --card-glow-shadow: rgba(251, 191, 36, 0.2); --icon-border-color: rgba(251, 191, 36, 0.3); --icon-glow: rgba(251, 191, 36, 0.5); }
+        .tool-card[data-color="green"] { --card-glow-color: linear-gradient(90deg, transparent, #10b981, transparent); --card-border-color: rgba(16, 185, 129, 0.5); --card-glow-shadow: rgba(16, 185, 129, 0.2); --icon-border-color: rgba(16, 185, 129, 0.3); --icon-glow: rgba(16, 185, 129, 0.5); }
+        .tool-card[data-color="purple"] { --card-glow-color: linear-gradient(90deg, transparent, #a855f7, transparent); --card-border-color: rgba(168, 85, 247, 0.5); --card-glow-shadow: rgba(168, 85, 247, 0.2); --icon-border-color: rgba(168, 85, 247, 0.3); --icon-glow: rgba(168, 85, 247, 0.5); }
+        .tool-card[data-color="orange"] { --card-glow-color: linear-gradient(90deg, transparent, #f97316, transparent); --card-border-color: rgba(249, 115, 22, 0.5); --card-glow-shadow: rgba(249, 115, 22, 0.2); --icon-border-color: rgba(249, 115, 22, 0.3); --icon-glow: rgba(249, 115, 22, 0.5); }
+        .tool-card[data-color="red"] { --card-glow-color: linear-gradient(90deg, transparent, #ef4444, transparent); --card-border-color: rgba(239, 68, 68, 0.5); --card-glow-shadow: rgba(239, 68, 68, 0.2); --icon-border-color: rgba(239, 68, 68, 0.3); --icon-glow: rgba(239, 68, 68, 0.5); }
+        .tool-card[data-color="teal"] { --card-glow-color: linear-gradient(90deg, transparent, #14b8a6, transparent); --card-border-color: rgba(20, 184, 166, 0.5); --card-glow-shadow: rgba(20, 184, 166, 0.2); --icon-border-color: rgba(20, 184, 166, 0.3); --icon-glow: rgba(20, 184, 166, 0.5); }
+        .tool-card[data-color="blue"] { --card-glow-color: linear-gradient(90deg, transparent, #3b82f6, transparent); --card-border-color: rgba(59, 130, 246, 0.5); --card-glow-shadow: rgba(59, 130, 246, 0.2); --icon-border-color: rgba(59, 130, 246, 0.3); --icon-glow: rgba(59, 130, 246, 0.5); }
+        .tool-card[data-color="indigo"] { --card-glow-color: linear-gradient(90deg, transparent, #6366f1, transparent); --card-border-color: rgba(99, 102, 241, 0.5); --card-glow-shadow: rgba(99, 102, 241, 0.2); --icon-border-color: rgba(99, 102, 241, 0.3); --icon-glow: rgba(99, 102, 241, 0.5); }
         
         .tools-hub-back-btn {
             position: fixed;
@@ -6494,13 +6507,16 @@
             document.getElementById('main-app').style.display = 'flex';
             document.body.classList.add('app-active');
             
-            // Switch to the selected tool
-            switchTool(toolName);
+            // Switch to the selected tool - FIX: use showTool instead of switchTool
+            showTool(toolName, null);
+            
+            // Scroll to top of the page
+            window.scrollTo(0, 0);
             
             // Re-setup mobile navigation after tool view is shown
             setTimeout(function() {
-                setupMobileNavigation();
-                setupMobileMenuButton();
+                if (typeof setupMobileNavigation === 'function') setupMobileNavigation();
+                if (typeof setupMobileMenuButton === 'function') setupMobileMenuButton();
             }, 100);
         }
         
