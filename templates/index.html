@@ -13,7 +13,6 @@
     <link rel="preload" href="/static/images/pharaoh-bg.jpg" as="image" type="image/jpeg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
 
@@ -70,12 +69,6 @@
             -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(99, 102, 241, 0.2);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        }
-
-        .glass-sidebar {
-            background: rgba(15, 23, 42, 0.95);
-            border-left: 1px solid rgba(99, 102, 241, 0.3);
-            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.5);
         }
 
         .soft-shadow {
@@ -171,9 +164,9 @@
             flex-shrink: 0;
         }
 
-        .nav-item .nav-icon-container i {
-            font-size: 1.25rem;
-            color: white;
+        .nav-item .nav-icon-container .icon-pharaonic svg {
+            width: 1.25rem;
+            height: 1.25rem;
         }
 
         /* ========== UNIFIED PHARAONIC ICON SYSTEM ========== */
@@ -261,6 +254,292 @@
             }
         }
 
+        /* ========== TOOL VIEW FULL WIDTH (No Sidebar) ========== */
+        
+        #tool-view {
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+        
+        #main-app {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .main-content {
+            width: 100%;
+            max-width: 100%;
+            padding: 1rem;
+        }
+        
+        @media (min-width: 1024px) {
+            .main-content {
+                padding: 2rem;
+            }
+        }
+
+        /* ========== TOOLS HUB STYLES ========== */
+        
+        #tools-hub {
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .tools-hub-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .tools-hub-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFD700, #FFA500, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.75rem;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+        
+        .tools-hub-subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        
+        .tools-hub-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            width: 100%;
+            padding: 0 1rem;
+        }
+        
+        .tool-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 1.25rem;
+            padding: 1.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(212, 175, 55, 0.4);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(212, 175, 55, 0.15);
+        }
+        
+        .tool-card:hover::before {
+            opacity: 1;
+        }
+        
+        .tool-card-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.25rem;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .tool-card-icon::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 1.25rem;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+        
+        .tool-card:hover .tool-card-icon::after {
+            opacity: 1;
+        }
+        
+        .tool-card-icon svg {
+            width: 40px;
+            height: 40px;
+            filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.7));
+        }
+        
+        .tool-card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tool-card-desc {
+            font-size: 0.85rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+        
+        .tools-hub-back-btn {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.875rem 2rem;
+            border-radius: 2rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+        
+        .tools-hub-back-btn:hover {
+            transform: translateX(-50%) translateY(-3px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.6);
+        }
+        
+        /* Back to Tools button for individual tool pages */
+        .back-to-tools-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(255, 215, 0, 0.1));
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            color: #FFD700;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-to-tools-btn:hover {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(255, 215, 0, 0.2));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+        }
+        
+        .back-to-tools-btn svg {
+            width: 20px;
+            height: 20px;
+            filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.6));
+        }
+        
+        /* Tools Hub Responsive */
+        @media (max-width: 768px) {
+            #tools-hub {
+                padding: 1.5rem 1rem;
+            }
+            
+            .tools-hub-title {
+                font-size: 1.75rem;
+            }
+            
+            .tools-hub-subtitle {
+                font-size: 0.95rem;
+            }
+            
+            .tools-hub-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+                padding: 0;
+            }
+            
+            .tool-card {
+                padding: 1.25rem 1rem;
+            }
+            
+            .tool-card-icon {
+                width: 56px;
+                height: 56px;
+                margin-bottom: 1rem;
+            }
+            
+            .tool-card-icon svg {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .tool-card-title {
+                font-size: 0.95rem;
+            }
+            
+            .tool-card-desc {
+                font-size: 0.75rem;
+                display: none;
+            }
+            
+            .tools-hub-back-btn {
+                bottom: 1.5rem;
+                padding: 0.75rem 1.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .back-to-tools-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .tools-hub-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            
+            .tool-card {
+                padding: 1rem 0.75rem;
+            }
+            
+            .tool-card-icon {
+                width: 48px;
+                height: 48px;
+                margin-bottom: 0.75rem;
+            }
+            
+            .tool-card-icon svg {
+                width: 24px;
+                height: 24px;
+            }
+            
+            .tool-card-title {
+                font-size: 0.85rem;
+            }
+        }
+
         /* Egyptian/Pharaonic Icons for Desktop */
         @media (min-width: 1024px) {
             .nav-item .nav-icon-container {
@@ -289,27 +568,21 @@
                 box-shadow: 0 0 15px rgba(212, 175, 55, 0.5), 0 0 30px rgba(212, 175, 55, 0.2);
             }
 
-            /* Pharaonic SVG icons - shown on desktop only */
+            /* Pharaonic SVG icons - shown on all screen sizes */
             .nav-item .pharaonic-icon {
                 display: block;
                 width: 28px;
                 height: 28px;
                 filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.6));
             }
-
-            .nav-item .fa-icon-mobile {
-                display: none !important;
-            }
         }
 
-        /* Mobile/Tablet: Show regular icons */
+        /* Mobile/Tablet: Keep pharaonic icons visible with adjusted sizing */
         @media (max-width: 1023px) {
             .nav-item .pharaonic-icon {
-                display: none !important;
-            }
-
-            .nav-item .fa-icon-mobile {
-                display: block !important;
+                display: block;
+                width: 24px;
+                height: 24px;
             }
         }
 
@@ -473,233 +746,6 @@
             color: #a78bfa;
         }
 
-        /* Mobile Menu Toggle Button - Enhanced for all devices */
-        .mobile-menu-btn {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 10001;
-            width: 52px;
-            height: 52px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-            -webkit-appearance: none;
-            appearance: none;
-            padding: 0;
-            font-family: inherit;
-        }
-
-        .mobile-menu-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 25px rgba(99, 102, 241, 0.6);
-        }
-
-        .mobile-menu-btn:active,
-        .mobile-menu-btn:focus {
-            transform: scale(0.92);
-            outline: none;
-        }
-
-        .mobile-menu-btn i {
-            color: white;
-            font-size: 1.35rem;
-            transition: transform 0.3s ease;
-            pointer-events: none;
-            display: block;
-        }
-
-        .mobile-menu-btn.active i {
-            transform: rotate(90deg);
-        }
-
-        /* Mobile Sidebar Overlay */
-        .sidebar-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            height: 100dvh;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            z-index: 9998;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-
-        .sidebar-overlay.open {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto !important;
-        }
-
-        /* Mobile Sidebar Styles */
-        @media (max-width: 1023px) {
-            .mobile-menu-btn {
-                display: flex !important;
-            }
-
-            .sidebar-nav {
-                position: fixed !important;
-                top: 0 !important;
-                right: -100% !important;
-                left: auto !important;
-                width: 85% !important;
-                max-width: 340px !important;
-                height: 100vh !important;
-                height: 100dvh !important;
-                z-index: 9999 !important;
-                transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-                overflow-y: scroll !important;
-                overflow-x: hidden !important;
-                -webkit-overflow-scrolling: touch !important;
-                overscroll-behavior: contain !important;
-                padding-top: 80px !important;
-                padding-bottom: 140px !important;
-                transform: translateZ(0);
-                will-change: right;
-                touch-action: pan-y !important;
-            }
-
-            .sidebar-nav.open {
-                right: 0 !important;
-                pointer-events: auto !important;
-            }
-
-            /* Mobile nav items - improved touch targets */
-            .sidebar-nav .nav-item {
-                position: relative;
-                z-index: 10000;
-                cursor: pointer;
-                -webkit-tap-highlight-color: transparent;
-                user-select: none;
-                -webkit-user-select: none;
-                pointer-events: auto !important;
-                min-height: 68px;
-                padding: 0.875rem 1rem !important;
-                margin-bottom: 0.625rem;
-                display: flex !important;
-                align-items: center !important;
-                gap: 0.875rem !important;
-                touch-action: pan-y !important;
-                border-radius: 14px !important;
-            }
-
-            /* Visual feedback class for tapping */
-            .sidebar-nav .nav-item.tapping {
-                transform: scale(0.97);
-                background: rgba(99, 102, 241, 0.35) !important;
-                transition: transform 0.1s ease, background 0.1s ease;
-            }
-
-            .sidebar-nav .nav-item.active {
-                background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.4)) !important;
-            }
-
-            /* Icon container on mobile */
-            .sidebar-nav .nav-item .nav-icon-container {
-                width: 42px;
-                height: 42px;
-                min-width: 42px;
-                border-radius: 10px;
-            }
-
-            .sidebar-nav .nav-item .nav-icon-container i {
-                font-size: 1.15rem;
-            }
-
-            /* Text area improvements */
-            .sidebar-nav .nav-item .text-right {
-                flex: 1;
-                min-width: 0;
-            }
-
-            .sidebar-nav .nav-item .text-right span.font-semibold {
-                font-size: 0.95rem;
-                line-height: 1.3;
-            }
-
-            .sidebar-nav .nav-item .text-right span.text-xs {
-                font-size: 0.7rem;
-                opacity: 0.7;
-            }
-
-            .sidebar-nav .space-y-3 {
-                padding-bottom: 120px;
-            }
-
-            /* Close button for sidebar */
-            .mobile-close-btn {
-                position: absolute;
-                top: 1rem;
-                left: 1rem;
-                width: 48px;
-                height: 48px;
-                border-radius: 12px;
-                background: rgba(239, 68, 68, 0.2);
-                border: 1px solid rgba(239, 68, 68, 0.4);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                z-index: 10001;
-                -webkit-tap-highlight-color: transparent;
-                touch-action: manipulation;
-            }
-
-            .mobile-close-btn i {
-                color: #fca5a5;
-                font-size: 1.35rem;
-                pointer-events: none;
-            }
-
-            .mobile-close-btn:active {
-                transform: scale(0.9);
-                background: rgba(239, 68, 68, 0.4);
-            }
-
-            .main-content {
-                padding-top: 5rem;
-                min-height: 100vh;
-            }
-
-            /* Hide logo section on mobile sidebar for more space */
-            .sidebar-nav > .flex.items-center.justify-center {
-                display: none !important;
-            }
-        }
-
-        /* Very small screens */
-        @media (max-width: 480px) {
-            .sidebar-nav {
-                width: 92% !important;
-                max-width: none !important;
-            }
-
-            .mobile-menu-btn {
-                width: 48px;
-                height: 48px;
-                top: 0.75rem;
-                right: 0.75rem;
-            }
-
-            .main-content {
-                padding: 4.5rem 0.75rem 1rem 0.75rem;
-            }
-        }
-
         /* Responsive improvements */
         @media (max-width: 640px) {
             .glass {
@@ -746,12 +792,6 @@
                 background: rgba(99, 102, 241, 0.2);
             }
 
-            /* Performance: Reduce blur effects on mobile */
-            .sidebar-overlay {
-                backdrop-filter: blur(2px) !important;
-                -webkit-backdrop-filter: blur(2px) !important;
-            }
-
             /* Mobile: Prevent horizontal scroll */
             .main-content {
                 overflow-x: hidden;
@@ -773,8 +813,9 @@
                 height: 100px !important;
             }
 
-            .mic-button i {
-                font-size: 2rem !important;
+            .mic-button .icon-pharaonic svg {
+                width: 2rem !important;
+                height: 2rem !important;
             }
 
             /* Music tabs: Allow wrapping */
@@ -829,8 +870,9 @@
                 height: 90px;
             }
 
-            .mic-button i {
-                font-size: 1.75rem;
+            .mic-button .icon-pharaonic svg {
+                width: 1.75rem;
+                height: 1.75rem;
                 margin-bottom: 0.25rem;
             }
 
@@ -898,8 +940,9 @@
                 height: 75px;
             }
 
-            .mic-button i {
-                font-size: 1.5rem;
+            .mic-button .icon-pharaonic svg {
+                width: 1.5rem;
+                height: 1.5rem;
             }
 
             .mic-button span {
@@ -1189,10 +1232,6 @@
             
             .pharaonic-tools {
                 max-width: 100%;
-            }
-            
-            .sidebar-nav {
-                max-width: 100vw;
             }
         }
 
@@ -2172,9 +2211,9 @@
             <!-- Section 2: Pharaonic Enter Button -->
             <div class="auth-forms-section" style="background: transparent; border: none; box-shadow: none;">
                 <button onclick="openPharaonicGate()" class="pharaonic-enter-btn w-full flex items-center justify-center gap-3">
-                    <i class="fas fa-ankh"></i>
+                    <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 4V60M22 20H42M18 36H46" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="12" r="6" stroke="#FFD700" stroke-width="2.5" fill="none"/></svg></span>
                     <span>افتح بوابة الفراعنة</span>
-                    <i class="fas fa-door-open"></i>
+                    <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="48" height="48" rx="4" stroke="#FFD700" stroke-width="2.5" fill="none"/><path d="M24 8V56" stroke="#FFD700" stroke-width="2.5"/><path d="M24 32H48" stroke="#FFD700" stroke-width="2.5"/><circle cx="42" cy="32" r="3" fill="#FFD700"/></svg></span>
                 </button>
             </div>
 
@@ -2183,35 +2222,35 @@
                 <p class="pharaonic-tools-title">كنوز الأدوات الذكية:</p>
                 <div class="grid grid-cols-2 gap-2">
                     <div class="pharaonic-tool-item">
-                        <i class="fas fa-microphone"></i>
+                        <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 8C28 8 26 12 26 18V34C26 40 28 44 32 44C36 44 38 40 38 34V18C38 12 36 8 32 8Z" stroke="#FFD700" stroke-width="2.5" fill="none"/><path d="M20 30V34C20 42 25 48 32 48C39 48 44 42 44 34V30" stroke="#FFD700" stroke-width="2.5" fill="none"/><path d="M32 48V56M26 56H38" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                         <span>تحويل الصوت لنص</span>
                     </div>
                     <div class="pharaonic-tool-item">
-                        <i class="fab fa-youtube"></i>
+                        <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="12" width="48" height="36" rx="4" stroke="#FFD700" stroke-width="2.5" fill="none"/><path d="M28 24L40 30L28 36V24Z" fill="#FFD700"/></svg></span>
                         <span>قص فيديو يوتيوب</span>
                     </div>
                     <div class="pharaonic-tool-item">
-                        <i class="fas fa-dragon"></i>
+                        <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="32" cy="28" rx="20" ry="16" stroke="#FFD700" stroke-width="2.5" fill="none"/><circle cx="24" cy="24" r="4" fill="#FFD700"/><circle cx="40" cy="24" r="4" fill="#FFD700"/><path d="M24 36C24 44 28 50 32 50C36 50 40 44 40 36" stroke="#FFD700" stroke-width="2.5" fill="none"/></svg></span>
                         <span>كاشف الأنمي</span>
                     </div>
                     <div class="pharaonic-tool-item">
-                        <i class="fas fa-podcast"></i>
+                        <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="24" stroke="#FFD700" stroke-width="2.5" fill="none"/><path d="M32 16V32L44 44" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round"/><circle cx="20" cy="20" r="4" fill="#FFD700"/><circle cx="44" cy="20" r="4" fill="#FFD700"/></svg></span>
                         <span>كاشف البودكاست</span>
                     </div>
                     <div class="pharaonic-tool-item">
-                        <i class="fas fa-file-audio"></i>
+                        <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 8H40L52 20V56H16V8Z" stroke="#FFD700" stroke-width="2.5" fill="none"/><path d="M40 8V20H52" stroke="#FFD700" stroke-width="2.5"/><path d="M24 32H44M24 40H40" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/><circle cx="32" cy="48" r="4" fill="#FFD700"/></svg></span>
                         <span>تحويل ملف صوتي</span>
                     </div>
                     <div class="pharaonic-tool-item">
-                        <i class="fas fa-image"></i>
+                        <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="12" width="48" height="40" rx="4" stroke="#FFD700" stroke-width="2.5" fill="none"/><circle cx="24" cy="28" r="6" fill="#FFD700"/><path d="M8 44L24 32L36 40L56 24" stroke="#FFD700" stroke-width="2.5" fill="none"/></svg></span>
                         <span>استخراج نص من صورة</span>
                     </div>
                     <div class="pharaonic-tool-item">
-                        <i class="fas fa-download"></i>
+                        <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 8V40M32 40L20 28M32 40L44 28" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 48H52V56H12V48Z" stroke="#FFD700" stroke-width="2.5" fill="none"/></svg></span>
                         <span>تحميل الفيديوهات</span>
                     </div>
                     <div class="pharaonic-tool-item">
-                        <i class="fas fa-file-word"></i>
+                        <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8H36L48 20V56H12V8Z" stroke="#FFD700" stroke-width="2.5" fill="none"/><path d="M36 8V20H48" stroke="#FFD700" stroke-width="2.5"/><path d="M20 28H40M20 36H40M20 44H32" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/></svg></span>
                         <span>تنسيق الوورد</span>
                     </div>
                 </div>
@@ -2219,246 +2258,186 @@
         </div>
     </div>
 
-    <div id="main-app" class="flex flex-col lg:flex-row min-h-screen" style="display: none;">
-        <!-- Mobile Menu Toggle Button - onclick removed, handled via JavaScript -->
-        <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="القائمة">
-            <i class="fas fa-bars"></i>
+    <!-- Tools Hub - Grid of all tools -->
+    <div id="tools-hub" style="display: none;">
+        <div class="tools-hub-header">
+            <div class="relative mx-auto mb-6 w-24 h-24">
+                <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-yellow-500/30 via-amber-500/20 to-orange-500/30 blur-xl"></div>
+                <div class="absolute inset-0 rounded-2xl border border-yellow-400/30 bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-sm overflow-hidden">
+                    <img src="/static/arkan-logo-optimized.png" alt="ARKAN AI Logo" class="w-full h-full object-cover" loading="eager">
+                </div>
+            </div>
+            <h1 class="tools-hub-title">كنوز الأدوات الذكية</h1>
+            <p class="tools-hub-subtitle">اختر أداتك من كنوز الفراعنة</p>
+        </div>
+        
+        <div class="tools-hub-grid">
+            <!-- Speech to Text -->
+            <div class="tool-card" onclick="openToolFromHub('speech')">
+                <div class="tool-card-icon bg-gradient-to-br from-red-400 to-pink-500">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M32 4C28 4 25 8 25 14V32C25 38 28 42 32 42C36 42 39 38 39 32V14C39 8 36 4 32 4Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <path d="M18 28V32C18 42 24 50 32 50C40 50 46 42 46 32V28" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <path d="M32 50V58M26 58H38" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round"/>
+                        <circle cx="32" cy="14" r="3" fill="#FFD700"/>
+                    </svg>
+                </div>
+                <h3 class="tool-card-title">تحويل الصوت لنص</h3>
+                <p class="tool-card-desc">تحويل كلامك إلى نص عربي مباشرة</p>
+            </div>
+            
+            <!-- YouTube Clipper -->
+            <div class="tool-card" onclick="openToolFromHub('youtube')">
+                <div class="tool-card-icon bg-gradient-to-br from-red-500 to-red-600">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 16L32 4L56 16V48L32 60L8 48V16Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <polygon points="26,22 26,42 42,32" fill="#FFD700"/>
+                        <path d="M32 4V12M8 16L16 20M56 16L48 20" stroke="#FFD700" stroke-width="1.5"/>
+                    </svg>
+                </div>
+                <h3 class="tool-card-title">قص اليوتيوب</h3>
+                <p class="tool-card-desc">قص مقاطع من فيديوهات يوتيوب</p>
+            </div>
+            
+            <!-- Anime Detector -->
+            <div class="tool-card" onclick="openToolFromHub('anime')">
+                <div class="tool-card-icon bg-gradient-to-br from-purple-500 to-indigo-500">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="32" cy="28" rx="20" ry="16" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <circle cx="32" cy="28" r="8" stroke="#FFD700" stroke-width="2" fill="none"/>
+                        <circle cx="32" cy="28" r="3" fill="#FFD700"/>
+                        <path d="M12 28C12 28 20 20 32 20C44 20 52 28 52 28" stroke="#FFD700" stroke-width="1.5"/>
+                        <path d="M26 44L32 52L38 44" stroke="#FFD700" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h3 class="tool-card-title">كاشف الأنمي</h3>
+                <p class="tool-card-desc">اكتشف مصدر مشاهد الأنمي</p>
+            </div>
+            
+            <!-- Podcast Detector -->
+            <div class="tool-card" onclick="openToolFromHub('podcast')">
+                <div class="tool-card-icon bg-gradient-to-br from-green-500 to-emerald-600">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="32" cy="20" r="12" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <path d="M32 32V52" stroke="#FFD700" stroke-width="2.5"/>
+                        <path d="M24 52H40" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round"/>
+                        <circle cx="32" cy="20" r="4" fill="#FFD700"/>
+                        <path d="M12 24C8 28 8 36 12 40M52 24C56 28 56 36 52 40" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3 class="tool-card-title">كاشف البودكاست</h3>
+                <p class="tool-card-desc">تعرف على البودكاست من الصورة</p>
+            </div>
+            
+            <!-- Audio File Converter -->
+            <div class="tool-card" onclick="openToolFromHub('file')">
+                <div class="tool-card-icon bg-gradient-to-br from-blue-400 to-cyan-500">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 8H40L52 20V56H16V8Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <path d="M40 8V20H52" stroke="#FFD700" stroke-width="2.5"/>
+                        <path d="M28 32V44M28 44L24 40M28 44L32 40" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="36" cy="38" r="6" stroke="#FFD700" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <h3 class="tool-card-title">تحويل ملف صوتي</h3>
+                <p class="tool-card-desc">تحويل الملفات الصوتية إلى نص</p>
+            </div>
+            
+            <!-- OCR -->
+            <div class="tool-card" onclick="openToolFromHub('ocr')">
+                <div class="tool-card-icon bg-gradient-to-br from-amber-400 to-orange-500">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="8" y="12" width="48" height="40" rx="4" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <circle cx="24" cy="28" r="6" stroke="#FFD700" stroke-width="2" fill="none"/>
+                        <path d="M8 44L20 32L32 44L44 28L56 40" stroke="#FFD700" stroke-width="2" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3 class="tool-card-title">استخراج النص من الصورة</h3>
+                <p class="tool-card-desc">استخراج النصوص من الصور</p>
+            </div>
+            
+            <!-- Video Downloader -->
+            <div class="tool-card" onclick="openToolFromHub('downloader')">
+                <div class="tool-card-icon bg-gradient-to-br from-teal-500 to-cyan-600">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M32 8V40M32 40L20 28M32 40L44 28" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 44V52H52V44" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="32" cy="8" r="3" fill="#FFD700"/>
+                    </svg>
+                </div>
+                <h3 class="tool-card-title">تحميل الفيديوهات</h3>
+                <p class="tool-card-desc">تحميل فيديو من أي موقع</p>
+            </div>
+            
+            <!-- PDF Converter -->
+            <div class="tool-card" onclick="openToolFromHub('pdfconverter')">
+                <div class="tool-card-icon bg-gradient-to-br from-rose-500 to-red-600">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 8H36L48 20V56H12V8Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <path d="M36 8V20H48" stroke="#FFD700" stroke-width="2.5"/>
+                        <path d="M20 32H40M20 40H36M20 48H32" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="52" cy="44" r="8" stroke="#FFD700" stroke-width="2" fill="none"/>
+                        <path d="M52 40V48M48 44H56" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3 class="tool-card-title">محول PDF الذكي</h3>
+                <p class="tool-card-desc">تحويل PDF إلى Word مع الترجمة</p>
+            </div>
+            
+            <!-- Video to Text -->
+            <div class="tool-card" onclick="openToolFromHub('videototext')">
+                <div class="tool-card-icon bg-gradient-to-br from-indigo-500 to-violet-600">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="8" y="16" width="36" height="32" rx="4" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <path d="M44 28L56 20V44L44 36" stroke="#FFD700" stroke-width="2.5" stroke-linejoin="round"/>
+                        <path d="M16 28H32M16 36H28" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="22" cy="24" r="2" fill="#FFD700"/>
+                    </svg>
+                </div>
+                <h3 class="tool-card-title">تحويل الفيديو إلى نص</h3>
+                <p class="tool-card-desc">تفريغ محتوى الفيديو إلى نص</p>
+            </div>
+            
+            <!-- Document Formatter -->
+            <div class="tool-card" onclick="openToolFromHub('docxformatter')">
+                <div class="tool-card-icon bg-gradient-to-br from-blue-500 to-purple-600">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 56L24 40L40 56" stroke="#FFD700" stroke-width="2.5" stroke-linejoin="round"/>
+                        <path d="M24 40V8" stroke="#FFD700" stroke-width="2.5"/>
+                        <circle cx="24" cy="8" r="4" stroke="#FFD700" stroke-width="2" fill="none"/>
+                        <path d="M44 16L48 8L52 16L60 20L52 24L48 32L44 24L36 20L44 16Z" fill="#FFD700"/>
+                        <circle cx="54" cy="40" r="6" stroke="#FFD700" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <h3 class="tool-card-title">تنسيق ذكي للمستندات</h3>
+                <p class="tool-card-desc">تنسيق المستندات بالذكاء الاصطناعي</p>
+            </div>
+        </div>
+        
+        <!-- Back to Welcome Button -->
+        <button onclick="returnToWelcome()" class="tools-hub-back-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span>العودة للترحيب</span>
+        </button>
+    </div>
+
+    <!-- Individual Tool View (contains main-app with tool content) -->
+    <div id="tool-view" style="display: none;">
+        <!-- Back to Tools Button -->
+        <button onclick="backToToolsHub()" class="back-to-tools-btn">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M32 8L8 24V56H24V40H40V56H56V24L32 8Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                <path d="M32 8V4M24 12L20 8M40 12L44 8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>العودة للأدوات</span>
         </button>
 
-        <!-- Mobile Sidebar Overlay - onclick removed, handled via JavaScript -->
-        <div id="sidebar-overlay" class="sidebar-overlay"></div>
-        <nav id="sidebar" class="sidebar-nav lg:w-72 w-full glass-sidebar lg:min-h-screen p-4 lg:p-6">
-            <!-- Mobile Close Button - onclick removed, handled via JavaScript -->
-            <button id="mobile-close-btn" class="mobile-close-btn lg:hidden" aria-label="إغلاق">
-                <i class="fas fa-times"></i>
-            </button>
-            
-            <div class="flex items-center justify-center mb-8">
-                <div class="text-center">
-                    <div class="relative mx-auto mb-4 w-28 h-28">
-                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/30 via-purple-500/20 to-blue-500/30 blur-xl"></div>
-                        <div class="absolute inset-0 rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-sm overflow-hidden">
-                            <img src="/static/arkan-logo-optimized.png" alt="ARKAN AI Logo" class="w-full h-full object-cover" loading="eager">
-                        </div>
-                        <div class="absolute -inset-1 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-blue-500/20 blur-sm -z-10"></div>
-                    </div>
-                    <h1 class="text-xl font-bold mb-1">
-                        <span class="bg-gradient-to-r from-cyan-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">ARKAN</span>
-                        <span class="text-white/80"> AI</span>
-                    </h1>
-                    <p class="text-lg font-semibold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">أركان</p>
-                    <p class="text-slate-400 text-xs mt-1">منصة الأدوات الذكية</p>
-                    
-                    <!-- Return to Welcome Button -->
-                    <button onclick="returnToWelcome()" class="return-welcome-btn mt-4 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 mx-auto">
-                        <i class="fas fa-home"></i>
-                        <span>العودة للترحيب</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- User Menu - Hidden since no auth -->
-            <div id="user-menu" class="user-menu mb-6 hidden">
-            </div>
-
-            <div class="space-y-3">
-                <button data-tool="speech" id="nav-speech"
-                    class="nav-item active w-full rounded-xl transition-all duration-300">
-                    <div class="nav-icon-container bg-gradient-to-br from-red-400 to-pink-500 shadow-lg">
-                        <i class="fas fa-microphone fa-icon-mobile text-white"></i>
-                        <svg class="pharaonic-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M32 4C28 4 25 8 25 14V32C25 38 28 42 32 42C36 42 39 38 39 32V14C39 8 36 4 32 4Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                            <path d="M18 28V32C18 42 24 50 32 50C40 50 46 42 46 32V28" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                            <path d="M32 50V58M26 58H38" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round"/>
-                            <circle cx="32" cy="14" r="3" fill="#FFD700"/>
-                            <path d="M28 8L32 4L36 8" stroke="#FFD700" stroke-width="1.5" fill="none"/>
-                        </svg>
-                    </div>
-                    <div class="text-right flex-1">
-                        <span class="font-semibold block text-slate-200">تحويل الصوت لنص مباشر</span>
-                        <span class="text-xs text-slate-500">Web Speech API</span>
-                    </div>
-                </button>
-
-                <button data-tool="youtube" id="nav-youtube"
-                    class="nav-item w-full rounded-xl transition-all duration-300">
-                    <div class="nav-icon-container bg-gradient-to-br from-red-500 to-red-600 shadow-lg">
-                        <i class="fab fa-youtube fa-icon-mobile text-white"></i>
-                        <svg class="pharaonic-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 16L32 4L56 16V48L32 60L8 48V16Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                            <polygon points="26,22 26,42 42,32" fill="#FFD700"/>
-                            <path d="M32 4V12M8 16L16 20M56 16L48 20" stroke="#FFD700" stroke-width="1.5"/>
-                        </svg>
-                    </div>
-                    <div class="text-right flex-1">
-                        <span class="font-semibold block text-slate-200">قص اليوتيوب</span>
-                        <span class="text-xs text-slate-500">yt-dlp & ffmpeg</span>
-                    </div>
-                </button>
-
-                <button data-tool="anime" id="nav-anime"
-                    class="nav-item w-full rounded-xl transition-all duration-300">
-                    <div class="nav-icon-container bg-gradient-to-br from-purple-500 to-indigo-500 shadow-lg">
-                        <i class="fas fa-search fa-icon-mobile text-white"></i>
-                        <svg class="pharaonic-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <ellipse cx="32" cy="28" rx="20" ry="16" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                            <circle cx="32" cy="28" r="8" stroke="#FFD700" stroke-width="2" fill="none"/>
-                            <circle cx="32" cy="28" r="3" fill="#FFD700"/>
-                            <path d="M12 28C12 28 20 20 32 20C44 20 52 28 52 28" stroke="#FFD700" stroke-width="1.5"/>
-                            <path d="M8 32L4 36M56 32L60 36" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
-                            <path d="M26 44L32 52L38 44" stroke="#FFD700" stroke-width="2"/>
-                        </svg>
-                    </div>
-                    <div class="text-right flex-1">
-                        <span class="font-semibold block text-slate-200">كاشف الأنمي</span>
-                        <span class="text-xs text-slate-500">trace.moe & Anilist</span>
-                    </div>
-                </button>
-
-                <button data-tool="podcast" id="nav-podcast"
-                    class="nav-item w-full rounded-xl transition-all duration-300">
-                    <div class="nav-icon-container bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
-                        <i class="fas fa-podcast fa-icon-mobile text-white"></i>
-                        <svg class="pharaonic-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="32" cy="20" r="12" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                            <path d="M32 32V52" stroke="#FFD700" stroke-width="2.5"/>
-                            <path d="M24 52H40" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round"/>
-                            <path d="M16 20C16 20 20 8 32 8C44 8 48 20 48 20" stroke="#FFD700" stroke-width="1.5"/>
-                            <circle cx="32" cy="20" r="4" fill="#FFD700"/>
-                            <path d="M12 24C8 28 8 36 12 40M52 24C56 28 56 36 52 40" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="text-right flex-1">
-                        <span class="font-semibold block text-slate-200">كاشف البودكاست</span>
-                        <span class="text-xs text-slate-500">iTunes Search API</span>
-                    </div>
-                </button>
-
-                <button data-tool="file" id="nav-file"
-                    class="nav-item w-full rounded-xl transition-all duration-300">
-                    <div class="nav-icon-container bg-gradient-to-br from-blue-400 to-cyan-500 shadow-lg">
-                        <i class="fas fa-file-audio fa-icon-mobile text-white"></i>
-                        <svg class="pharaonic-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16 8H40L52 20V56H16V8Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                            <path d="M40 8V20H52" stroke="#FFD700" stroke-width="2.5"/>
-                            <path d="M28 32V44M28 44L24 40M28 44L32 40" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <circle cx="36" cy="38" r="6" stroke="#FFD700" stroke-width="2" fill="none"/>
-                            <path d="M22 28H42" stroke="#FFD700" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="text-right flex-1">
-                        <span class="font-semibold block text-slate-200">تحويل ملف صوتي</span>
-                        <span class="text-xs text-slate-500">Speech Recognition</span>
-                    </div>
-                </button>
-
-                <button data-tool="ocr" id="nav-ocr"
-                    class="nav-item w-full rounded-xl transition-all duration-300">
-                    <div class="nav-icon-container bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg">
-                        <i class="fas fa-image fa-icon-mobile text-white"></i>
-                        <svg class="pharaonic-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="8" y="12" width="48" height="40" rx="4" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                            <circle cx="24" cy="28" r="6" stroke="#FFD700" stroke-width="2" fill="none"/>
-                            <path d="M8 44L20 32L32 44L44 28L56 40" stroke="#FFD700" stroke-width="2" stroke-linejoin="round"/>
-                            <path d="M24 22V18M18 28H14M30 28H34M24 34V38" stroke="#FFD700" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="text-right flex-1">
-                        <span class="font-semibold block text-slate-200">استخراج النص من الصورة</span>
-                        <span class="text-xs text-slate-500">Tesseract OCR</span>
-                    </div>
-                </button>
-
-                <button data-tool="downloader" id="nav-downloader"
-                    class="nav-item w-full rounded-xl transition-all duration-300">
-                    <div class="nav-icon-container bg-gradient-to-br from-teal-500 to-cyan-600 shadow-lg">
-                        <i class="fas fa-download fa-icon-mobile text-white"></i>
-                        <svg class="pharaonic-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M32 8V40M32 40L20 28M32 40L44 28" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M12 44V52H52V44" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M20 56H44" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
-                            <circle cx="32" cy="8" r="3" fill="#FFD700"/>
-                        </svg>
-                    </div>
-                    <div class="text-right flex-1">
-                        <span class="font-semibold block text-slate-200">تحميل فيديو من أي موقع</span>
-                        <span class="text-xs text-slate-500">Universal Downloader</span>
-                    </div>
-                </button>
-
-                <button data-tool="pdfconverter" id="nav-pdfconverter"
-                    class="nav-item w-full rounded-xl transition-all duration-300">
-                    <div class="nav-icon-container bg-gradient-to-br from-rose-500 to-red-600 shadow-lg">
-                        <i class="fas fa-file-pdf fa-icon-mobile text-white"></i>
-                        <svg class="pharaonic-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 8H36L48 20V56H12V8Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                            <path d="M36 8V20H48" stroke="#FFD700" stroke-width="2.5"/>
-                            <path d="M20 32H40M20 40H36M20 48H32" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
-                            <circle cx="52" cy="44" r="8" stroke="#FFD700" stroke-width="2" fill="none"/>
-                            <path d="M52 40V48M48 44H56" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="text-right flex-1">
-                        <span class="font-semibold block text-slate-200">محول PDF الذكي</span>
-                        <span class="text-xs text-slate-500">PDF to Word + Translation</span>
-                    </div>
-                </button>
-
-                <button data-tool="videototext" id="nav-videototext"
-                    class="nav-item w-full rounded-xl transition-all duration-300">
-                    <div class="nav-icon-container bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg">
-                        <i class="fas fa-video fa-icon-mobile text-white"></i>
-                        <svg class="pharaonic-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="8" y="16" width="36" height="32" rx="4" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                            <path d="M44 28L56 20V44L44 36" stroke="#FFD700" stroke-width="2.5" stroke-linejoin="round"/>
-                            <path d="M16 28H32M16 36H28" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>
-                            <circle cx="22" cy="24" r="2" fill="#FFD700"/>
-                        </svg>
-                    </div>
-                    <div class="text-right flex-1">
-                        <span class="font-semibold block text-slate-200">تحويل الفيديو إلى نص</span>
-                        <span class="text-xs text-slate-500">Video to Text</span>
-                    </div>
-                </button>
-
-                <button data-tool="docxformatter" id="nav-docxformatter"
-                    class="nav-item w-full rounded-xl transition-all duration-300">
-                    <div class="nav-icon-container bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-                        <i class="fas fa-wand-magic-sparkles fa-icon-mobile text-white"></i>
-                        <svg class="pharaonic-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 56L24 40L40 56" stroke="#FFD700" stroke-width="2.5" stroke-linejoin="round"/>
-                            <path d="M24 40V8" stroke="#FFD700" stroke-width="2.5"/>
-                            <circle cx="24" cy="8" r="4" stroke="#FFD700" stroke-width="2" fill="none"/>
-                            <path d="M44 16L48 8L52 16L60 20L52 24L48 32L44 24L36 20L44 16Z" fill="#FFD700"/>
-                            <circle cx="54" cy="40" r="6" stroke="#FFD700" stroke-width="2" fill="none"/>
-                            <path d="M54 36V44M50 40H58" stroke="#FFD700" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="text-right flex-1">
-                        <span class="font-semibold block text-slate-200">تنسيق ذكي للمستندات</span>
-                        <span class="text-xs text-slate-500">AI Document Formatter</span>
-                    </div>
-                </button>
-
-            </div>
-
-            <!-- Bottom Controls -->
-            <div class="mt-8 pt-6 border-t border-slate-700 space-y-3">
-                <!-- Return to Home Button in Sidebar -->
-                <button onclick="returnToWelcome()" class="w-full p-3 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-semibold transition-all duration-300 flex items-center justify-center gap-2">
-                    <i class="fas fa-home"></i>
-                    <span>العودة للرئيسية</span>
-                </button>
-                
-                <!-- Footer -->
-                <div class="text-center text-slate-400 text-sm pt-4 border-t border-slate-700">
-                    <i class="fas fa-code ml-2 text-indigo-400"></i>
-                    المبرمج محمود عادل
-                </div>
-            </div>
-        </nav>
-
-        <main class="main-content flex-1 p-4 lg:p-8">
+    <div id="main-app" class="flex flex-col min-h-screen">
+        <!-- Sidebar removed - navigation now via Tools Hub -->
+        
+        <main class="main-content flex-1 p-4 lg:p-8 w-full">
             <!-- Speech to Text Tool -->
             <div id="tool-speech" class="tool-content fade-in">
                 <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto">
@@ -2557,16 +2536,16 @@
                             <div class="flex items-center justify-between mt-3 text-sm">
                                 <div class="flex items-center gap-4">
                                     <span class="text-slate-400">
-                                        <i class="fas fa-font ml-1"></i>
+                                        <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><path d="M16 16H48M16 32H40M16 48H48" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/></svg></span>
                                         عدد الكلمات: <span id="word-count" class="text-indigo-400 font-bold">0</span>
                                     </span>
                                     <span class="text-slate-400">
-                                        <i class="fas fa-text-width ml-1"></i>
+                                        <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><path d="M12 20H52M12 32H44M12 44H52" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/></svg></span>
                                         عدد الأحرف: <span id="char-count" class="text-indigo-400 font-bold">0</span>
                                     </span>
                                 </div>
                                 <span id="recording-time" class="text-slate-400 hidden">
-                                    <i class="fas fa-clock ml-1 text-red-400"></i>
+                                    <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><circle cx="32" cy="32" r="24" stroke="#f87171" stroke-width="2.5" fill="none"/><path d="M32 16V32L44 40" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                                     <span id="elapsed-time">00:00:00</span>
                                 </span>
                             </div>
@@ -2574,19 +2553,18 @@
 
                         <div id="speech-error"
                             class="hidden mt-4 p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600 w-full">
-                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#dc2626" stroke-width="2.5" fill="none"/><path d="M32 20V36M32 44V44.01" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="speech-error-text"></span>
                         </div>
 
                         <div class="mt-4 p-4 rounded-xl bg-indigo-900/30 border border-indigo-500/30 w-full">
                             <div class="text-slate-300 text-sm">
                                 <p class="text-center mb-2">
-                                    <i class="fas fa-info-circle ml-2 text-blue-400"></i>
+                                    <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#60a5fa" stroke-width="2.5" fill="none"/><path d="M32 20V38M32 44V44.01" stroke="#60a5fa" stroke-width="3" stroke-linecap="round"/></svg></span>
                                     يدعم التسجيل المطول للمحاضرات (حتى ساعتين). التسجيل يستمر تلقائياً حتى تضغط إيقاف.
                                 </p>
                                 <div class="mt-3 pt-3 border-t border-indigo-500/30">
-                                    <p class="font-bold text-slate-200 mb-2"><i
-                                            class="fas fa-broadcast-tower ml-1 text-orange-400"></i> عن الاستماع
+                                    <p class="font-bold text-slate-200 mb-2"><span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><path d="M32 8V20M32 44V56" stroke="#fb923c" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="32" r="12" stroke="#fb923c" stroke-width="2.5" fill="none"/><path d="M8 32H20M44 32H56" stroke="#fb923c" stroke-width="2.5" stroke-linecap="round"/></svg></span> عن الاستماع
                                         المستمر:</p>
                                     <ul class="list-disc list-inside space-y-1 text-slate-400">
                                         <li>يستخدم ميكروفون الجهاز لالتقاط الصوت الخارجي</li>
@@ -2627,7 +2605,7 @@
                                     class="flex-1 rounded-xl p-4">
                                 <button onclick="fetchVideoInfo()" id="fetch-btn"
                                     class="px-6 py-4 rounded-xl btn-primary text-white font-medium flex items-center gap-2">
-                                    <i class="fas fa-info-circle"></i>
+                                    <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px"><circle cx="32" cy="32" r="24" stroke="#fff" stroke-width="2.5" fill="none"/><path d="M32 24V40M32 44V44.01" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></span>
                                     جلب المعلومات
                                 </button>
                             </div>
@@ -2641,7 +2619,7 @@
                                     <h3 id="video-title" class="font-bold text-lg mb-2 text-slate-100"></h3>
                                     <p id="video-channel" class="text-slate-400 mb-1"></p>
                                     <p class="text-indigo-400 font-medium">
-                                        <i class="fas fa-clock ml-1"></i>
+                                        <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><circle cx="32" cy="32" r="24" stroke="#818cf8" stroke-width="2.5" fill="none"/><path d="M32 16V32L44 40" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                                         المدة: <span id="video-duration"></span>
                                     </p>
                                 </div>
@@ -2652,7 +2630,7 @@
                         <div id="quality-options" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-slate-300 font-medium mb-2">
-                                    <i class="fas fa-video ml-1 text-indigo-400"></i>
+                                    <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><rect x="8" y="16" width="36" height="32" rx="4" stroke="#818cf8" stroke-width="2.5" fill="none"/><path d="M44 28L56 20V44L44 36" stroke="#818cf8" stroke-width="2.5" fill="none"/></svg></span>
                                     جودة الفيديو:
                                 </label>
                                 <select id="video-quality" class="w-full rounded-xl p-4">
@@ -2664,7 +2642,7 @@
                             </div>
                             <div>
                                 <label class="block text-slate-300 font-medium mb-2">
-                                    <i class="fas fa-download ml-1 text-green-400"></i>
+                                    <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><path d="M32 8V40M32 40L20 28M32 40L44 28" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 48H52" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                                     نوع التحميل:
                                 </label>
                                 <select id="download-type" class="w-full rounded-xl p-4">
@@ -2689,7 +2667,7 @@
 
                         <button onclick="downloadClip()" id="download-btn"
                             class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg flex items-center justify-center gap-3">
-                            <i class="fas fa-download"></i>
+                            <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px"><path d="M32 8V40M32 40L20 28M32 40L44 28" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 48H52" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                             تحميل المقطع
                         </button>
 
@@ -2700,7 +2678,7 @@
 
                         <div id="youtube-error"
                             class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#dc2626" stroke-width="2.5" fill="none"/><path d="M32 20V36M32 44V44.01" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="youtube-error-text"></span>
                         </div>
                     </div>
@@ -2731,12 +2709,12 @@
                     <div class="flex rounded-xl overflow-hidden border-2 border-purple-200 mb-6">
                         <button id="anime-tab-image" onclick="setAnimeMode('image')"
                             class="tab-btn active flex-1 py-3 font-medium">
-                            <i class="fas fa-image ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><rect x="8" y="12" width="48" height="40" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="24" cy="28" r="6" fill="currentColor"/><path d="M8 44L24 32L36 40L56 24" stroke="currentColor" stroke-width="2.5" fill="none"/></svg></span>
                             البحث بالصورة
                         </button>
                         <button id="anime-tab-name" onclick="setAnimeMode('name')"
                             class="tab-btn flex-1 py-3 font-medium bg-slate-800/50 text-slate-300 hover:bg-purple-900/30">
-                            <i class="fas fa-pen ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><path d="M12 52L20 20L32 48L44 20L52 52" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
                             البحث بالوصف
                         </button>
                     </div>
@@ -2751,7 +2729,7 @@
                                 <img id="anime-preview" src="" alt="" class="max-h-64 mx-auto rounded-lg shadow-md">
                             </div>
                             <div id="anime-upload-prompt">
-                                <i class="fas fa-cloud-upload-alt text-4xl text-pink-400 mb-3"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-3"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px"><path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="#f472b6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 44V52H52V44" stroke="#f472b6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
                                 <p class="text-slate-300 font-medium">اضغط لرفع صورة أو اسحبها هنا</p>
                                 <p class="text-slate-500 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
                             </div>
@@ -2759,7 +2737,7 @@
 
                         <button onclick="searchAnime()" id="search-anime-btn"
                             class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg flex items-center justify-center gap-3">
-                            <i class="fas fa-search"></i>
+                            <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px"><circle cx="28" cy="28" r="16" stroke="#fff" stroke-width="2.5" fill="none"/><path d="M40 40L52 52" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></span>
                             البحث عن الأنمي
                         </button>
 
@@ -2788,18 +2766,18 @@
 
                         <div id="anime-not-found"
                             class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400">
-                            <i class="fas fa-info-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#fbbf24" stroke-width="2.5" fill="none"/><path d="M32 20V38M32 44V44.01" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="not-found-text"></span>
                             <a href="https://lens.google.com/" target="_blank"
                                 class="block mt-2 text-purple-600 hover:underline">
-                                <i class="fas fa-external-link-alt ml-1"></i>
+                                <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><path d="M32 12V8H52V28H48M12 36V56H32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M52 8L28 32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                                 جرب البحث في Google Lens
                             </a>
                         </div>
 
                         <div id="anime-error"
                             class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#dc2626" stroke-width="2.5" fill="none"/><path d="M32 20V36M32 44V44.01" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="anime-error-text"></span>
                         </div>
                     </div>
@@ -2815,7 +2793,7 @@
 
                         <button onclick="searchAnimeByName()" id="search-anime-name-btn"
                             class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg flex items-center justify-center gap-3">
-                            <i class="fas fa-magic"></i>
+                            <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px"><path d="M32 8L8 24V48L32 56L56 48V24L32 8Z" stroke="#fff" stroke-width="2.5" fill="none"/><path d="M32 24V40M24 32H40" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="32" r="8" stroke="#fff" stroke-width="2" fill="none"/></svg></span>
                             تحليل وبحث بالذكاء الاصطناعي
                         </button>
 
@@ -2827,7 +2805,7 @@
                         <div id="anime-ai-suggestion"
                             class="hidden p-4 rounded-xl bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30 mb-4">
                             <div class="flex items-center gap-2 mb-2">
-                                <i class="fas fa-robot text-purple-400"></i>
+                                <span class="icon-pharaonic icon-sm inline-flex"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px"><rect x="16" y="12" width="32" height="40" rx="4" stroke="#a855f7" stroke-width="2.5" fill="none"/><circle cx="28" cy="24" r="4" fill="#a855f7"/><circle cx="36" cy="24" r="4" fill="#a855f7"/><path d="M24 36H40M28 44H36" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/></svg></span>
                                 <span class="font-bold text-purple-300">تحليل الذكاء الاصطناعي:</span>
                             </div>
                             <p class="text-slate-200">الأنمي المتوقع: <span id="ai-anime-name"
@@ -2847,13 +2825,13 @@
 
                         <div id="anime-name-not-found"
                             class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400">
-                            <i class="fas fa-info-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#fbbf24" stroke-width="2.5" fill="none"/><path d="M32 20V38M32 44V44.01" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="anime-name-not-found-text"></span>
                         </div>
 
                         <div id="anime-name-error"
                             class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#dc2626" stroke-width="2.5" fill="none"/><path d="M32 20V36M32 44V44.01" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="anime-name-error-text"></span>
                         </div>
                     </div>
@@ -2885,12 +2863,12 @@
                         <button id="podcast-tab-image" onclick="setPodcastMode('image')"
                             class="tab-btn active flex-1 py-3 font-medium"
                             style="background: linear-gradient(135deg, #22c55e, #10b981); color: white;">
-                            <i class="fas fa-image ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><rect x="8" y="12" width="48" height="40" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="24" cy="28" r="6" fill="currentColor"/><path d="M8 44L24 32L36 40L56 24" stroke="currentColor" stroke-width="2.5" fill="none"/></svg></span>
                             من صورة
                         </button>
                         <button id="podcast-tab-audio" onclick="setPodcastMode('audio')"
                             class="tab-btn flex-1 py-3 font-medium bg-slate-800/50 text-slate-300 hover:bg-green-900/30">
-                            <i class="fas fa-microphone ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><path d="M32 8C28 8 26 12 26 18V34C26 40 28 44 32 44C36 44 38 40 38 34V18C38 12 36 8 32 8Z" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M20 30V34C20 42 25 48 32 48C39 48 44 42 44 34V30" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M32 48V56" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                             من مقطع صوتي
                         </button>
                     </div>
@@ -2906,7 +2884,7 @@
                                     class="max-h-64 mx-auto rounded-lg shadow-md">
                             </div>
                             <div id="podcast-image-upload-prompt">
-                                <i class="fas fa-cloud-upload-alt text-4xl text-green-400 mb-3"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-3"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px"><path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 44V52H52V44" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
                                 <p class="text-slate-300 font-medium">ارفع صورة غلاف البودكاست أو لقطة شاشة</p>
                                 <p class="text-slate-500 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
                             </div>
@@ -2914,7 +2892,7 @@
 
                         <button onclick="searchPodcastByImage()" id="search-podcast-image-btn"
                             class="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
-                            <i class="fas fa-search"></i>
+                            <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px"><circle cx="28" cy="28" r="16" stroke="#fff" stroke-width="2.5" fill="none"/><path d="M40 40L52 52" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></span>
                             البحث عن البودكاست
                         </button>
 
@@ -2933,14 +2911,14 @@
                         </div>
 
                         <div id="podcast-image-not-found"
-                            class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400"
-                            <i class="fas fa-info-circle ml-2"></i>
+                            class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400">
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#fbbf24" stroke-width="2.5" fill="none"/><path d="M32 20V38M32 44V44.01" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="podcast-image-not-found-text"></span>
                         </div>
 
                         <div id="podcast-image-error"
                             class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#dc2626" stroke-width="2.5" fill="none"/><path d="M32 20V36M32 44V44.01" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="podcast-image-error-text"></span>
                         </div>
                     </div>
@@ -2952,11 +2930,11 @@
                             <input type="file" id="podcast-audio" accept="audio/*" class="hidden"
                                 onchange="handlePodcastAudioUpload(event)">
                             <div id="podcast-audio-file-info" class="hidden mb-4">
-                                <i class="fas fa-file-audio text-4xl text-green-500 mb-2"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px"><path d="M16 8H40L52 20V56H16V8Z" stroke="#22c55e" stroke-width="2.5" fill="none"/><path d="M40 8V20H52" stroke="#22c55e" stroke-width="2.5"/><circle cx="32" cy="38" r="8" stroke="#22c55e" stroke-width="2" fill="none"/><path d="M32 30V38L38 42" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/></svg></span>
                                 <p id="podcast-audio-file-name" class="text-slate-200 font-medium"></p>
                             </div>
                             <div id="podcast-audio-upload-prompt">
-                                <i class="fas fa-cloud-upload-alt text-4xl text-green-400 mb-3"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-3"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px"><path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 44V52H52V44" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
                                 <p class="text-slate-300 font-medium">ارفع مقطع صوتي من البودكاست</p>
                                 <p class="text-slate-500 text-sm mt-1">MP3, WAV, OGG, M4A, FLAC</p>
                             </div>
@@ -2964,7 +2942,7 @@
 
                         <button onclick="searchPodcastByAudio()" id="search-podcast-audio-btn"
                             class="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
-                            <i class="fas fa-search"></i>
+                            <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px"><circle cx="28" cy="28" r="16" stroke="#fff" stroke-width="2.5" fill="none"/><path d="M40 40L52 52" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></span>
                             البحث عن البودكاست
                         </button>
 
@@ -2981,7 +2959,7 @@
                             </div>
                             <div class="mb-3">
                                 <span class="badge bg-blue-900/30 text-cyan-400 border border-cyan-500/30">
-                                    <i class="fas fa-lightbulb ml-1"></i>
+                                    <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><path d="M32 8V20L40 24L32 28V40" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 40C40 40 48 32 48 24C48 16 40 8 32 8C24 8 16 16 16 24" stroke="#22d3ee" stroke-width="2.5" fill="none"/><path d="M28 48H36M32 40V48" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                                     أفضل تطابق بناءً على الكلمات المفتاحية
                                 </span>
                             </div>
@@ -2989,20 +2967,20 @@
                         </div>
 
                         <div id="podcast-audio-not-found"
-                            class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400"
-                            <i class="fas fa-info-circle ml-2"></i>
+                            class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400">
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#fbbf24" stroke-width="2.5" fill="none"/><path d="M32 20V38M32 44V44.01" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="podcast-audio-not-found-text"></span>
                         </div>
 
                         <div id="podcast-audio-error"
                             class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#dc2626" stroke-width="2.5" fill="none"/><path d="M32 20V36M32 44V44.01" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="podcast-audio-error-text"></span>
                         </div>
 
                         <div class="p-4 rounded-xl bg-green-900/30 border border-green-100">
                             <p class="text-slate-300 text-sm text-center">
-                                <i class="fas fa-info-circle ml-2 text-green-400"></i>
+                                <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#4ade80" stroke-width="2.5" fill="none"/><path d="M32 20V38M32 44V44.01" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/></svg></span>
                                 يتم تحليل أول 60 ثانية من المقطع الصوتي للحصول على أفضل النتائج
                             </p>
                         </div>
@@ -3035,11 +3013,11 @@
                             <input type="file" id="audio-file" accept="audio/*" class="hidden"
                                 onchange="handleAudioUpload(event)">
                             <div id="audio-file-info" class="hidden mb-4">
-                                <i class="fas fa-file-audio text-4xl text-cyan-500 mb-2"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px"><path d="M16 8H40L52 20V56H16V8Z" stroke="#06b6d4" stroke-width="2.5" fill="none"/><path d="M40 8V20H52" stroke="#06b6d4" stroke-width="2.5"/><circle cx="32" cy="38" r="8" stroke="#06b6d4" stroke-width="2" fill="none"/><path d="M32 30V38L38 42" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"/></svg></span>
                                 <p id="audio-file-name" class="text-slate-200 font-medium"></p>
                             </div>
                             <div id="audio-upload-prompt">
-                                <i class="fas fa-cloud-upload-alt text-4xl text-cyan-400 mb-3"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-3"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px"><path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 44V52H52V44" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
                                 <p class="text-slate-300 font-medium">اضغط لرفع ملف صوتي</p>
                                 <p class="text-slate-500 text-sm mt-1">MP3, WAV, OGG, M4A, FLAC, AAC, WMA</p>
                             </div>
@@ -3047,13 +3025,13 @@
 
                         <button onclick="transcribeAudioFile()" id="transcribe-btn"
                             class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg flex items-center justify-center gap-3">
-                            <i class="fas fa-magic"></i>
+                            <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px"><path d="M32 8L8 24V48L32 56L56 48V24L32 8Z" stroke="#fff" stroke-width="2.5" fill="none"/><path d="M32 24V40M24 32H40" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="32" r="8" stroke="#fff" stroke-width="2" fill="none"/></svg></span>
                             تحويل إلى نص
                         </button>
 
                         <div id="audio-progress-wrapper" class="hidden">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-slate-300 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الملف...</span>
+                                <span class="text-slate-300 text-sm"><span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 44V52H52V44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>جاري رفع الملف...</span>
                                 <span id="audio-progress-text" class="upload-progress-text">0%</span>
                             </div>
                             <div class="upload-progress-container">
@@ -3072,12 +3050,12 @@
                                 <div class="flex gap-2">
                                     <button onclick="downloadFileTranscript()"
                                         class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-cyan-50">
-                                        <i class="fas fa-download text-cyan-500"></i>
+                                        <span class="icon-pharaonic icon-control"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><path d="M32 8V40M32 40L20 28M32 40L44 28" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 48H52" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                                         تحميل
                                     </button>
                                     <button onclick="copyFileText()"
                                         class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-cyan-50">
-                                        <i class="fas fa-copy text-cyan-500"></i>
+                                        <span class="icon-pharaonic icon-control"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><rect x="20" y="20" width="28" height="36" rx="3" stroke="#06b6d4" stroke-width="2.5" fill="none"/><path d="M16 48V12H40" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
                                         نسخ
                                     </button>
                                 </div>
@@ -3088,7 +3066,7 @@
                         </div>
 
                         <div id="file-error" class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#dc2626" stroke-width="2.5" fill="none"/><path d="M32 20V36M32 44V44.01" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/></svg></span>
                             <span id="file-error-text"></span>
                         </div>
                     </div>
@@ -3122,7 +3100,12 @@
                                 <img id="ocr-preview" src="" alt="" class="max-h-64 mx-auto rounded-lg shadow-md">
                             </div>
                             <div id="ocr-upload-prompt">
-                                <i class="fas fa-cloud-upload-alt text-4xl text-orange-400 mb-3"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-3">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="#fb923c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M12 44V52H52V44" stroke="#fb923c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
                                 <p class="text-slate-300 font-medium">اضغط لرفع صورة تحتوي على نص</p>
                                 <p class="text-slate-500 text-sm mt-1">PNG, JPG, JPEG, GIF, WEBP</p>
                             </div>
@@ -3130,7 +3113,13 @@
 
                         <button onclick="extractText()" id="ocr-btn"
                             class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg flex items-center justify-center gap-3">
-                            <i class="fas fa-magic"></i>
+                            <span class="icon-pharaonic icon-control">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M32 8L8 24V48L32 56L56 48V24L32 8Z" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <path d="M32 24V40M24 32H40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                    <circle cx="32" cy="32" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
+                                </svg>
+                            </span>
                             استخراج النص
                         </button>
 
@@ -3145,12 +3134,22 @@
                                 <div class="flex gap-2">
                                     <button onclick="downloadOcrText()"
                                         class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-orange-50">
-                                        <i class="fas fa-download text-orange-500"></i>
+                                        <span class="icon-pharaonic icon-sm inline-flex">
+                                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M32 8V40M32 40L20 28M32 40L44 28" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M12 44V52H52V44" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </span>
                                         تحميل
                                     </button>
                                     <button onclick="copyOcrText()"
                                         class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-orange-50">
-                                        <i class="fas fa-copy text-orange-500"></i>
+                                        <span class="icon-pharaonic icon-sm inline-flex">
+                                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <rect x="20" y="20" width="28" height="36" rx="3" stroke="#f97316" stroke-width="2.5" fill="none"/>
+                                                <path d="M16 48V12H40" stroke="#f97316" stroke-width="2.5" fill="none"/>
+                                            </svg>
+                                        </span>
                                         نسخ
                                     </button>
                                 </div>
@@ -3162,7 +3161,12 @@
                         </div>
 
                         <div id="ocr-error" class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <path d="M32 20V38M32 44V44.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                                </svg>
+                            </span>
                             <span id="ocr-error-text"></span>
                         </div>
                     </div>
@@ -3199,12 +3203,23 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <button onclick="downloadUniversalMedia('video')" id="universal-download-video-btn"
                                 class="w-full py-4 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
-                                <i class="fas fa-video"></i>
+                                <span class="icon-pharaonic icon-control">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="8" y="16" width="48" height="32" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                        <path d="M28 26L40 32L28 38V26Z" fill="currentColor"/>
+                                    </svg>
+                                </span>
                                 تحميل فيديو MP4
                             </button>
                             <button onclick="downloadUniversalMedia('audio')" id="universal-download-audio-btn"
                                 class="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
-                                <i class="fas fa-music"></i>
+                                <span class="icon-pharaonic icon-control">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="20" cy="44" r="8" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                        <circle cx="44" cy="40" r="8" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                        <path d="M28 44V16L52 12V40" stroke="currentColor" stroke-width="2.5"/>
+                                    </svg>
+                                </span>
                                 تحميل صوت MP3
                             </button>
                         </div>
@@ -3217,39 +3232,82 @@
 
                         <div id="downloader-error"
                             class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <path d="M32 20V38M32 44V44.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                                </svg>
+                            </span>
                             <span id="downloader-error-text"></span>
                         </div>
 
                         <div class="p-4 rounded-xl bg-teal-50 border border-teal-100">
                             <h4 class="font-medium text-slate-200 mb-2">
-                                <i class="fas fa-globe ml-2 text-teal-500"></i>
+                                <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="32" cy="32" r="24" stroke="#14b8a6" stroke-width="2.5" fill="none"/>
+                                        <path d="M20 32H44M32 20V44" stroke="#14b8a6" stroke-width="2" stroke-linecap="round"/>
+                                        <circle cx="32" cy="32" r="8" stroke="#14b8a6" stroke-width="1.5" fill="none"/>
+                                    </svg>
+                                </span>
                                 المواقع المدعومة:
                             </h4>
                             <div class="flex flex-wrap gap-2 text-sm">
                                 <span class="px-3 py-1 rounded-full bg-red-900/30 text-red-400 border border-red-500/30">
-                                    <i class="fab fa-youtube ml-1"></i>
+                                    <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="8" y="16" width="48" height="32" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                            <path d="M28 26L40 32L28 38V26Z" fill="currentColor"/>
+                                        </svg>
+                                    </span>
                                     YouTube
                                 </span>
                                 <span class="px-3 py-1 rounded-full bg-pink-900/30 text-pink-400 border border-pink-500/30">
-                                    <i class="fab fa-tiktok ml-1"></i>
+                                    <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M20 8V56M44 8V56M20 32H44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                            <circle cx="32" cy="32" r="6" stroke="currentColor" stroke-width="2" fill="none"/>
+                                        </svg>
+                                    </span>
                                     TikTok
                                 </span>
                                 <span class="px-3 py-1 rounded-full bg-blue-900/30 text-cyan-400 border border-cyan-500/30">
-                                    <i class="fab fa-facebook ml-1"></i>
+                                    <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                            <path d="M36 20V32H44M36 32V48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                        </svg>
+                                    </span>
                                     Facebook
                                 </span>
                                 <span
                                     class="px-3 py-1 rounded-full bg-gradient-to-r from-purple-900/30 to-pink-900/30 text-purple-400 border border-purple-500/30">
-                                    <i class="fab fa-instagram ml-1"></i>
+                                    <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="12" y="12" width="40" height="40" rx="10" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                            <circle cx="32" cy="32" r="10" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                            <circle cx="46" cy="18" r="3" fill="currentColor"/>
+                                        </svg>
+                                    </span>
                                     Instagram
                                 </span>
                                 <span class="px-3 py-1 rounded-full bg-sky-900/30 text-sky-400 border border-sky-500/30">
-                                    <i class="fab fa-twitter ml-1"></i>
+                                    <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M8 16L28 32L8 48V16Z" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                            <path d="M36 16L56 32L36 48V16Z" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                        </svg>
+                                    </span>
                                     Twitter/X
                                 </span>
                                 <span class="px-3 py-1 rounded-full bg-slate-800/50 text-slate-300 border border-slate-600/30">
-                                    <i class="fas fa-ellipsis-h ml-1"></i>
+                                    <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="16" cy="32" r="4" fill="currentColor"/>
+                                            <circle cx="32" cy="32" r="4" fill="currentColor"/>
+                                            <circle cx="48" cy="32" r="4" fill="currentColor"/>
+                                        </svg>
+                                    </span>
                                     والمزيد
                                 </span>
                             </div>
@@ -3257,7 +3315,12 @@
 
                         <div class="p-4 rounded-xl bg-amber-900/20 border border-amber-500/20">
                             <p class="text-slate-300 text-sm text-center">
-                                <i class="fas fa-info-circle ml-2 text-amber-400"></i>
+                                <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="32" cy="32" r="24" stroke="#fbbf24" stroke-width="2.5" fill="none"/>
+                                        <path d="M32 20V38M32 44V44.01" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
                                 الحد الأقصى: مدة ساعة واحدة وحجم 500 ميجابايت. الفيديو يُحوَّل إلى MP4 والصوت إلى MP3.
                             </p>
                         </div>
@@ -3291,12 +3354,23 @@
                                 onchange="handlePdfUpload(event)">
                             <div id="pdf-preview-container" class="hidden mb-4">
                                 <div class="flex items-center justify-center gap-3 text-rose-500">
-                                    <i class="fas fa-file-pdf text-5xl"></i>
+                                    <span class="icon-pharaonic icon-xl">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 8H36L48 20V56H12V8Z" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                            <path d="M36 8V20H48" stroke="currentColor" stroke-width="2.5"/>
+                                            <path d="M20 32H40M20 40H36M20 48H32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                    </span>
                                     <span id="pdf-filename" class="font-medium text-lg text-slate-200"></span>
                                 </div>
                             </div>
                             <div id="pdf-upload-prompt">
-                                <i class="fas fa-cloud-upload-alt text-4xl text-rose-400 mb-3"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-3">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M12 44V52H52V44" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
                                 <p class="text-slate-300 font-medium">اضغط لرفع ملف PDF أو اسحبه هنا</p>
                                 <p class="text-slate-500 text-sm mt-1">PDF فقط</p>
                             </div>
@@ -3342,7 +3416,15 @@
 
                         <div id="pdf-progress-wrapper" class="hidden">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-slate-300 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الملف...</span>
+                                <span class="text-slate-300 text-sm">
+                                    <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M12 44V52H52V44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
+                                    جاري رفع الملف...
+                                </span>
                                 <span id="pdf-progress-text" class="upload-progress-text">0%</span>
                             </div>
                             <div class="upload-progress-container">
@@ -3356,13 +3438,24 @@
                         </div>
 
                         <div id="pdf-error" class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <path d="M32 20V38M32 44V44.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                                </svg>
+                            </span>
                             <span id="pdf-error-text"></span>
                         </div>
 
                         <div class="p-4 rounded-xl bg-rose-50 border border-rose-100">
                             <h4 class="font-medium text-slate-200 mb-2">
-                                <i class="fas fa-magic ml-2 text-rose-500"></i>
+                                <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M32 8L8 24V48L32 56L56 48V24L32 8Z" stroke="#f43f5e" stroke-width="2.5" fill="none"/>
+                                        <path d="M32 24V40M24 32H40" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round"/>
+                                        <circle cx="32" cy="32" r="8" stroke="#f43f5e" stroke-width="2" fill="none"/>
+                                    </svg>
+                                </span>
                                 خيارات التحويل:
                             </h4>
                             <div class="space-y-2 text-sm text-slate-300">
@@ -3383,7 +3476,12 @@
 
                         <div class="p-4 rounded-xl bg-amber-900/20 border border-amber-500/20">
                             <p class="text-slate-300 text-sm text-center">
-                                <i class="fas fa-info-circle ml-2 text-amber-400"></i>
+                                <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="32" cy="32" r="24" stroke="#fbbf24" stroke-width="2.5" fill="none"/>
+                                        <path d="M32 20V38M32 44V44.01" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
                                 عند تفعيل وضع النص العربي المحسّن، يتم استخدام الذكاء الاصطناعي لاستخراج النص العربي
                                 بدقة عالية دون تشوه أو تكسير في الحروف.
                             </p>
@@ -3413,7 +3511,13 @@
                     <!-- Language Selection -->
                     <div class="mb-6">
                         <label class="block text-slate-300 font-medium mb-2">
-                            <i class="fas fa-language ml-2 text-indigo-500"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="32" cy="32" r="24" stroke="#6366f1" stroke-width="2.5" fill="none"/>
+                                    <path d="M20 24H44M20 32H36M20 40H28" stroke="#6366f1" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M40 36L48 44L40 52" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
                             لغة الفيديو:
                         </label>
                         <select id="video-language"
@@ -3442,12 +3546,23 @@
                         <button id="video-tab-upload" onclick="setVideoMode('upload')"
                             class="tab-btn active flex-1 py-3 font-medium"
                             style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
-                            <i class="fas fa-upload ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M12 44V52H52V44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
                             رفع فيديو
                         </button>
                         <button id="video-tab-url" onclick="setVideoMode('url')"
                             class="tab-btn flex-1 py-3 font-medium bg-slate-800/50 text-slate-300 hover:bg-indigo-50">
-                            <i class="fas fa-link ml-2"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="24" cy="32" r="10" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <circle cx="40" cy="32" r="10" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <path d="M34 32H30" stroke="currentColor" stroke-width="2.5"/>
+                                </svg>
+                            </span>
                             رابط فيديو
                         </button>
                     </div>
@@ -3460,12 +3575,22 @@
                                 class="hidden" onchange="handleVideoUpload(event)">
                             <div id="video-preview-container" class="hidden mb-4">
                                 <div class="flex items-center justify-center gap-3 text-indigo-500">
-                                    <i class="fas fa-file-video text-5xl"></i>
+                                    <span class="icon-pharaonic icon-xl">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="8" y="16" width="48" height="32" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                            <path d="M28 26L40 32L28 38V26Z" fill="currentColor"/>
+                                        </svg>
+                                    </span>
                                     <span id="video-filename" class="font-medium text-lg text-slate-200"></span>
                                 </div>
                             </div>
                             <div id="video-upload-prompt">
-                                <i class="fas fa-cloud-upload-alt text-4xl text-indigo-400 mb-3"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-3">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M12 44V52H52V44" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
                                 <p class="text-slate-300 font-medium">اضغط لرفع ملف فيديو أو اسحبه هنا</p>
                                 <p class="text-slate-500 text-sm mt-1">MP4, MOV, AVI, MKV, WEBM, FLV, WMV, M4V</p>
                             </div>
@@ -3473,13 +3598,26 @@
 
                         <button onclick="transcribeVideoFile()" id="transcribe-video-btn"
                             class="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
-                            <i class="fas fa-closed-captioning"></i>
+                            <span class="icon-pharaonic icon-control">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="8" y="8" width="48" height="48" rx="6" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <path d="M16 44H32M16 36H40M16 28H48" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </span>
                             تحويل إلى نص
                         </button>
 
                         <div id="video-progress-wrapper" class="hidden mt-4">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-slate-300 text-sm"><i class="fas fa-cloud-upload-alt ml-2"></i>جاري رفع الفيديو...</span>
+                                <span class="text-slate-300 text-sm">
+                                    <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M12 44V52H52V44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
+                                    جاري رفع الفيديو...
+                                </span>
                                 <span id="video-progress-text" class="upload-progress-text">0%</span>
                             </div>
                             <div class="upload-progress-container">
@@ -3499,7 +3637,12 @@
 
                         <button onclick="transcribeVideoUrl()" id="transcribe-video-url-btn"
                             class="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
-                            <i class="fas fa-closed-captioning"></i>
+                            <span class="icon-pharaonic icon-control">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="8" y="8" width="48" height="48" rx="6" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <path d="M16 44H32M16 36H40M16 28H48" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </span>
                             تحويل إلى نص
                         </button>
                     </div>
@@ -3517,17 +3660,32 @@
                             <div class="flex gap-2">
                                 <button onclick="clearVideoText()"
                                     class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-red-900/30">
-                                    <i class="fas fa-trash-alt text-red-500"></i>
+                                    <span class="icon-pharaonic icon-sm inline-flex">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M16 20H48M24 20V12H40V20M20 20V52H44V20" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M28 28V44M36 28V44" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                    </span>
                                     حذف
                                 </button>
                                 <button onclick="downloadVideoText()"
                                     class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-indigo-50">
-                                    <i class="fas fa-download text-indigo-500"></i>
+                                    <span class="icon-pharaonic icon-sm inline-flex">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M32 8V40M32 40L20 28M32 40L44 28" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M12 44V52H52V44" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
                                     تحميل (.txt)
                                 </button>
                                 <button onclick="copyVideoText()"
                                     class="px-4 py-2 rounded-lg glass soft-shadow transition-all duration-300 text-sm flex items-center gap-2 hover:bg-indigo-50">
-                                    <i class="fas fa-copy text-indigo-500"></i>
+                                    <span class="icon-pharaonic icon-sm inline-flex">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="20" y="20" width="28" height="36" rx="3" stroke="#6366f1" stroke-width="2.5" fill="none"/>
+                                            <path d="M16 48V12H40" stroke="#6366f1" stroke-width="2.5" fill="none"/>
+                                        </svg>
+                                    </span>
                                     نسخ
                                 </button>
                             </div>
@@ -3537,11 +3695,19 @@
                             style="max-height: 400px; overflow-y: auto;" placeholder="سيظهر النص هنا..."></textarea>
                         <div class="flex items-center gap-4 mt-3 text-sm">
                             <span class="text-slate-400">
-                                <i class="fas fa-font ml-1"></i>
+                                <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 16H52M20 16V48M44 16V48M16 48H28M36 48H48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
                                 عدد الكلمات: <span id="video-word-count" class="text-indigo-500 font-bold">0</span>
                             </span>
                             <span class="text-slate-400">
-                                <i class="fas fa-text-width ml-1"></i>
+                                <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M16 20H48M16 32H40M16 44H32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
                                 عدد الأحرف: <span id="video-char-count" class="text-indigo-500 font-bold">0</span>
                             </span>
                         </div>
@@ -3549,39 +3715,81 @@
 
                     <div id="video-error"
                         class="hidden mt-6 p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                        <i class="fas fa-exclamation-circle ml-2"></i>
+                        <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <path d="M32 20V38M32 44V44.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                        </span>
                         <span id="video-error-text"></span>
                     </div>
 
                     <div class="mt-6 p-4 rounded-xl bg-indigo-50 border border-indigo-100">
                         <h4 class="font-medium text-slate-200 mb-2">
-                            <i class="fas fa-info-circle ml-2 text-indigo-500"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="32" cy="32" r="24" stroke="#6366f1" stroke-width="2.5" fill="none"/>
+                                    <path d="M32 20V38M32 44V44.01" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
+                                </svg>
+                            </span>
                             المنصات المدعومة:
                         </h4>
                         <div class="flex flex-wrap gap-2 text-sm">
                             <span class="px-3 py-1 rounded-full bg-red-900/30 text-red-400 border border-red-500/30">
-                                <i class="fab fa-youtube ml-1"></i>
+                                <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="8" y="16" width="48" height="32" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                        <path d="M28 26L40 32L28 38V26Z" fill="currentColor"/>
+                                    </svg>
+                                </span>
                                 YouTube
                             </span>
                             <span class="px-3 py-1 rounded-full bg-gray-900 text-white">
-                                <i class="fab fa-tiktok ml-1"></i>
+                                <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M20 8V56M44 8V56M20 32H44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                        <circle cx="32" cy="32" r="6" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    </svg>
+                                </span>
                                 TikTok
                             </span>
                             <span class="px-3 py-1 rounded-full bg-blue-900/30 text-cyan-400 border border-cyan-500/30">
-                                <i class="fab fa-facebook ml-1"></i>
+                                <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                        <path d="M36 20V32H44M36 32V48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
                                 Facebook
                             </span>
                             <span
                                 class="px-3 py-1 rounded-full bg-gradient-to-r from-purple-900/30 to-pink-900/30 text-purple-400 border border-purple-500/30">
-                                <i class="fab fa-instagram ml-1"></i>
+                                <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="12" y="12" width="40" height="40" rx="10" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                        <circle cx="32" cy="32" r="10" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                        <circle cx="46" cy="18" r="3" fill="currentColor"/>
+                                    </svg>
+                                </span>
                                 Instagram
                             </span>
                             <span class="px-3 py-1 rounded-full bg-sky-900/30 text-sky-400 border border-sky-500/30">
-                                <i class="fab fa-twitter ml-1"></i>
+                                <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M8 16L28 32L8 48V16Z" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                        <path d="M36 16L56 32L36 48V16Z" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    </svg>
+                                </span>
                                 Twitter/X
                             </span>
                             <span class="px-3 py-1 rounded-full bg-slate-800/50 text-slate-300 border border-slate-600/30">
-                                <i class="fas fa-ellipsis-h ml-1"></i>
+                                <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="16" cy="32" r="4" fill="currentColor"/>
+                                        <circle cx="32" cy="32" r="4" fill="currentColor"/>
+                                        <circle cx="48" cy="32" r="4" fill="currentColor"/>
+                                    </svg>
+                                </span>
                                 والمزيد
                             </span>
                         </div>
@@ -3589,7 +3797,11 @@
 
                     <div class="mt-4 p-4 rounded-xl bg-amber-900/20 border border-amber-500/20">
                         <p class="text-slate-300 text-sm text-center">
-                            <i class="fas fa-lightbulb ml-2 text-amber-400"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M32 8L38 28H58L42 40L48 60L32 48L16 60L22 40L6 28H26L32 8Z" stroke="#fbbf24" stroke-width="2.5" fill="none"/>
+                                </svg>
+                            </span>
                             يدعم الفيديوهات الطويلة حتى عدة ساعات.
                         </p>
                     </div>
@@ -3618,14 +3830,21 @@
 
                     <div class="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-indigo-500/30">
                         <h3 class="font-bold text-slate-200 mb-2">
-                            <i class="fas fa-robot ml-2 text-purple-500"></i>
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="32" cy="20" r="12" stroke="#a855f7" stroke-width="2.5" fill="none"/>
+                                    <path d="M16 52C16 40 24 34 32 34C40 34 48 40 48 52" stroke="#a855f7" stroke-width="2.5" fill="none"/>
+                                    <circle cx="28" cy="18" r="2" fill="#a855f7"/>
+                                    <circle cx="36" cy="18" r="2" fill="#a855f7"/>
+                                </svg>
+                            </span>
                             كيف تعمل الأداة:
                         </h3>
                         <ul class="text-slate-300 text-sm space-y-1 mr-6">
-                            <li><i class="fas fa-upload text-blue-500 ml-2"></i>ارفع ملف Word أو PDF للتنسيق</li>
-                            <li><i class="fas fa-pen text-green-500 ml-2"></i>اكتب وصفاً للتنسيق المطلوب (مثال: تنسيق بحث جامعي)</li>
-                            <li><i class="fas fa-image text-orange-500 ml-2"></i>أو ارفع صورة/ملف مرجعي لنسخ التنسيق منه</li>
-                            <li><i class="fas fa-magic text-purple-500 ml-2"></i>الذكاء الاصطناعي يفهم ويطبق التنسيق تلقائياً</li>
+                            <li><span class="icon-pharaonic icon-xs inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none"><path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"/><path d="M12 44V52H52V44" stroke="#3b82f6" stroke-width="2.5"/></svg></span>ارفع ملف Word أو PDF للتنسيق</li>
+                            <li><span class="icon-pharaonic icon-xs inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none"><path d="M20 44L32 8L44 44M24 36H40" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>اكتب وصفاً للتنسيق المطلوب (مثال: تنسيق بحث جامعي)</li>
+                            <li><span class="icon-pharaonic icon-xs inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="4" stroke="#f97316" stroke-width="2.5" fill="none"/><circle cx="24" cy="28" r="6" stroke="#f97316" stroke-width="2" fill="none"/><path d="M8 44L20 32L32 44L44 28L56 40" stroke="#f97316" stroke-width="2"/></svg></span>أو ارفع صورة/ملف مرجعي لنسخ التنسيق منه</li>
+                            <li><span class="icon-pharaonic icon-xs inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none"><path d="M32 8L8 24V48L32 56L56 48V24L32 8Z" stroke="#a855f7" stroke-width="2.5" fill="none"/><path d="M32 24V40M24 32H40" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="32" r="8" stroke="#a855f7" stroke-width="2" fill="none"/></svg></span>الذكاء الاصطناعي يفهم ويطبق التنسيق تلقائياً</li>
                         </ul>
                     </div>
 
@@ -3635,12 +3854,23 @@
                             <input type="file" id="docx_file" name="file" accept=".docx,.pdf" required class="hidden"
                                 onchange="handleDocxFileUpload(event)">
                             <div id="docx-upload-icon">
-                                <i class="fas fa-cloud-upload-alt text-5xl text-blue-300 mb-3"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-3">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M12 44V52H52V44" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
                                 <p class="text-slate-300 font-medium">ارفع الملف المراد تنسيقه</p>
                                 <p class="text-slate-500 text-sm mt-1">يدعم ملفات Word (.docx) و PDF</p>
                             </div>
                             <div id="docx-file-info" class="hidden">
-                                <i class="fas fa-file-alt text-5xl text-blue-500 mb-3"></i>
+                                <span class="icon-pharaonic icon-xl block mx-auto mb-3">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 8H36L48 20V56H12V8Z" stroke="#3b82f6" stroke-width="2.5" fill="none"/>
+                                        <path d="M36 8V20H48" stroke="#3b82f6" stroke-width="2.5"/>
+                                        <path d="M20 32H40M20 40H36M20 48H32" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
                                 <p id="docx-file-name" class="text-slate-200 font-medium"></p>
                                 <p class="text-slate-500 text-sm mt-1">اضغط لاختيار ملف آخر</p>
                             </div>
@@ -3648,7 +3878,12 @@
 
                         <div class="mb-4">
                             <label class="block text-slate-200 font-medium mb-2">
-                                <i class="fas fa-pen-fancy ml-2 text-purple-500"></i>
+                                <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M40 8L56 24L24 56H8V40L40 8Z" stroke="#a855f7" stroke-width="2.5" stroke-linejoin="round"/>
+                                        <path d="M32 16L48 32" stroke="#a855f7" stroke-width="2"/>
+                                    </svg>
+                                </span>
                                 وصف التنسيق المطلوب:
                             </label>
                             <textarea id="format-instructions" name="instructions" rows="3"
@@ -3658,7 +3893,12 @@
 
                         <div class="mb-6">
                             <label class="block text-slate-200 font-medium mb-2">
-                                <i class="fas fa-copy ml-2 text-orange-500"></i>
+                                <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="20" y="20" width="28" height="36" rx="3" stroke="#f97316" stroke-width="2.5" fill="none"/>
+                                        <path d="M16 48V12H40" stroke="#f97316" stroke-width="2.5" fill="none"/>
+                                    </svg>
+                                </span>
                                 أو ارفع ملف مرجعي لنسخ التنسيق منه (اختياري):
                             </label>
                             <div class="file-upload rounded-xl p-4 text-center cursor-pointer border-dashed border-orange-200 bg-orange-50/30"
@@ -3667,11 +3907,22 @@
                                     accept=".docx,.pdf,.png,.jpg,.jpeg,.gif,.webp" class="hidden"
                                     onchange="handleReferenceFileUpload(event)">
                                 <div id="ref-upload-icon">
-                                    <i class="fas fa-image text-3xl text-orange-300 mb-2"></i>
+                                    <span class="icon-pharaonic icon-lg block mx-auto mb-2">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="8" y="12" width="48" height="40" rx="4" stroke="#fdba74" stroke-width="2.5" fill="none"/>
+                                            <circle cx="24" cy="28" r="6" stroke="#fdba74" stroke-width="2" fill="none"/>
+                                            <path d="M8 44L20 32L32 44L44 28L56 40" stroke="#fdba74" stroke-width="2" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
                                     <p class="text-slate-400 text-sm">ارفع صورة أو ملف Word أو PDF كمرجع</p>
                                 </div>
                                 <div id="ref-file-info" class="hidden">
-                                    <i class="fas fa-check-circle text-3xl text-green-500 mb-2"></i>
+                                    <span class="icon-pharaonic icon-lg block mx-auto mb-2">
+                                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="32" cy="32" r="24" stroke="#22c55e" stroke-width="2.5" fill="none"/>
+                                            <path d="M20 32L28 40L44 24" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
                                     <p id="ref-file-name" class="text-slate-200 text-sm font-medium"></p>
                                 </div>
                             </div>
@@ -3681,7 +3932,11 @@
                             <div class="bg-slate-800/50 rounded-2xl p-6 shadow-lg border border-gray-100">
                                 <div class="flex items-center justify-between mb-4">
                                     <span class="text-slate-200 font-bold">
-                                        <i class="fas fa-cog fa-spin ml-2 text-purple-500"></i>
+                                        <span class="icon-pharaonic icon-sm inline-flex ml-2 animate-spin">
+                                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="32" cy="32" r="24" stroke="#a855f7" stroke-width="2.5" fill="none" stroke-dasharray="75 75"/>
+                                            </svg>
+                                        </span>
                                         جارٍ المعالجة
                                     </span>
                                     <span id="docx-total-percent" class="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">0%</span>
@@ -3691,7 +3946,9 @@
                                     <div>
                                         <div class="flex justify-between text-sm mb-1">
                                             <span class="text-slate-300">
-                                                <i class="fas fa-cloud-upload-alt ml-1 text-blue-400"></i>
+                                                <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                                    <svg viewBox="0 0 64 64" fill="none"><path d="M32 40V16M32 16L20 28M32 16L44 28" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round"/><path d="M12 44V52H52V44" stroke="#60a5fa" stroke-width="2.5"/></svg>
+                                                </span>
                                                 رفع الملف
                                             </span>
                                             <span id="upload-percent" class="text-blue-600 font-semibold">0%</span>
@@ -3704,7 +3961,9 @@
                                     <div>
                                         <div class="flex justify-between text-sm mb-1">
                                             <span class="text-slate-300">
-                                                <i class="fas fa-wand-magic-sparkles ml-1 text-purple-400"></i>
+                                                <span class="icon-pharaonic icon-xs inline-flex ml-1">
+                                                    <svg viewBox="0 0 64 64" fill="none"><path d="M32 8L8 24V48L32 56L56 48V24L32 8Z" stroke="#c084fc" stroke-width="2.5" fill="none"/><path d="M32 24V40M24 32H40" stroke="#c084fc" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="32" r="8" stroke="#c084fc" stroke-width="2" fill="none"/></svg>
+                                                </span>
                                                 تحليل وتنسيق
                                             </span>
                                             <span id="process-percent" class="text-purple-600 font-semibold">0%</span>
@@ -3721,18 +3980,34 @@
 
                         <button type="submit" id="format-docx-btn"
                             class="w-full btn-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2">
-                            <i class="fas fa-wand-magic-sparkles"></i>
+                            <span class="icon-pharaonic icon-control">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M32 8L8 24V48L32 56L56 48V24L32 8Z" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <path d="M32 24V40M24 32H40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                    <circle cx="32" cy="32" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
+                                </svg>
+                            </span>
                             ابدأ التنسيق الذكي
                         </button>
                     </form>
 
                     <div id="docx-error" class="hidden mt-6 p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-600">
-                        <i class="fas fa-exclamation-circle ml-2"></i>
+                        <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <path d="M32 20V38M32 44V44.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                        </span>
                         <span id="docx-error-text"></span>
                     </div>
 
                     <div id="docx-success" class="hidden mt-6 p-4 rounded-xl bg-green-900/30 border border-green-500/30 text-green-600">
-                        <i class="fas fa-check-circle ml-2"></i>
+                        <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <path d="M20 32L28 40L44 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
                         <span>تم تنسيق الملف بنجاح وجارٍ التحميل...</span>
                     </div>
                 </div>
@@ -3740,6 +4015,7 @@
 
         </main>
     </div>
+    </div> <!-- end tool-view -->
 
 
     <script>
@@ -3747,6 +4023,8 @@
         let continuousRecognition = null;
         let isRecording = false;
         let isContinuousRecording = false;
+        let isRecordingStarting = false;
+        let isContinuousStarting = false;
         let uploadedAnimeFile = null;
         let uploadedAudioFile = null;
         let uploadedOcrFile = null;
@@ -3973,10 +4251,12 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             const bgColor = type === 'success' ? 'from-green-500 to-emerald-500' : 'from-red-500 to-pink-500';
-            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            const iconSvg = type === 'success' 
+                ? '<svg viewBox="0 0 64 64" class="w-5 h-5"><circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M20 32L28 40L44 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                : '<svg viewBox="0 0 64 64" class="w-5 h-5"><circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M32 20V38M32 44V44.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
 
             toast.className = `toast glass rounded-xl p-4 flex items-center gap-3 bg-gradient-to-r ${bgColor} text-white shadow-lg`;
-            toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
+            toast.innerHTML = `${iconSvg}<span>${message}</span>`;
             container.appendChild(toast);
 
             setTimeout(() => {
@@ -3986,90 +4266,12 @@
             }, 3000);
         }
 
-        // Mobile menu state
-        let mobileMenuOpen = false;
-        let scrollPosition = 0;
-
-        function toggleMobileMenu() {
-            if (mobileMenuOpen) {
-                closeMobileMenu();
-            } else {
-                openMobileMenu();
-            }
-        }
-
-        function openMobileMenu() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            const menuBtn = document.getElementById('mobile-menu-btn');
-
-            if (!sidebar || !overlay || !menuBtn) return;
-
-            mobileMenuOpen = true;
-            
-            // Save scroll position and lock body
-            scrollPosition = window.pageYOffset;
-            document.body.style.overflow = 'hidden';
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollPosition}px`;
-            document.body.style.width = '100%';
-            document.body.style.touchAction = 'none';
-            
-            sidebar.classList.add('open');
-            overlay.classList.add('open');
-            menuBtn.classList.add('active');
-
-            // Update icon
-            const icon = menuBtn.querySelector('i');
-            if (icon) {
-                icon.classList.remove('fa-bars');
-                icon.classList.add('fa-times');
-            }
-        }
-
-        function closeMobileMenu() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            const menuBtn = document.getElementById('mobile-menu-btn');
-
-            if (!sidebar || !overlay || !menuBtn) return;
-
-            mobileMenuOpen = false;
-
-            sidebar.classList.remove('open');
-            overlay.classList.remove('open');
-            menuBtn.classList.remove('active');
-
-            // Unlock body scroll and restore position
-            document.body.style.overflow = '';
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            document.body.style.touchAction = '';
-            window.scrollTo(0, scrollPosition);
-
-            const icon = menuBtn.querySelector('i');
-            if (icon) {
-                icon.classList.remove('fa-times');
-                icon.classList.add('fa-bars');
-            }
-        }
-
-        // Handle resize events to close mobile menu when switching to desktop
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 1024 && mobileMenuOpen) {
-                closeMobileMenu();
-            }
-        });
-
         function showTool(tool, event) {
-            // Prevent any default behavior and stop propagation
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
             }
             
-            // Update tool visibility
             document.querySelectorAll('.tool-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
@@ -4078,217 +4280,13 @@
             
             if (toolElement) toolElement.classList.remove('hidden');
             if (navElement) navElement.classList.add('active');
-
-            // Keep sidebar open on desktop, close on mobile
-            if (window.innerWidth < 1024 && mobileMenuOpen) {
-                // Small delay for visual feedback
-                setTimeout(() => {
-                    closeMobileMenu();
-                }, 100);
-            }
             
-            // Store active tool in localStorage for persistence
             localStorage.setItem('activeToolName', tool);
         }
         
-        // Initialize mobile touch handling
         document.addEventListener('DOMContentLoaded', function() {
-            // Setup nav items for touch
-            setupMobileNavigation();
-            
-            // Setup mobile menu button touch handlers
-            setupMobileMenuButton();
-            
-            // Re-setup when menu closes to ensure button is always responsive
-            setInterval(function() {
-                const menuBtn = document.getElementById('mobile-menu-btn');
-                if (menuBtn && !menuBtn._buttonSetup) {
-                    setupMobileMenuButton();
-                }
-            }, 500);
-            
-            // Check if already entered
             checkIfEntered();
         });
-        
-        /* === IMPROVED MOBILE MENU BUTTON HANDLER === */
-        let menuBtnLastTap = 0;
-        
-        function setupMobileMenuButton() {
-            const menuBtn = document.getElementById('mobile-menu-btn');
-            const overlay = document.getElementById('sidebar-overlay');
-            const closeBtn = document.getElementById('mobile-close-btn');
-            
-            if (menuBtn && !menuBtn._buttonSetup) {
-                menuBtn._buttonSetup = true;
-                
-                // Menu button click handler with debounce
-                function handleMenuClick(e) {
-                    // Debounce: prevent double triggers from touch + click
-                    const now = Date.now();
-                    if (now - menuBtnLastTap < 300) return;
-                    menuBtnLastTap = now;
-                    
-                    toggleMobileMenu();
-                }
-                
-                // Visual feedback on touch
-                menuBtn.addEventListener('touchstart', function() {
-                    this.style.transform = 'scale(0.95)';
-                }, { passive: true });
-                
-                menuBtn.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    this.style.transform = '';
-                    handleMenuClick(e);
-                }, { passive: false });
-                
-                // Click for non-touch devices
-                menuBtn.addEventListener('click', handleMenuClick);
-                
-                // Reset on cancel
-                menuBtn.addEventListener('touchcancel', function() {
-                    this.style.transform = '';
-                }, { passive: true });
-            }
-            
-            if (overlay && !overlay._overlaySetup) {
-                overlay._overlaySetup = true;
-                
-                overlay.addEventListener('click', function() {
-                    closeMobileMenu();
-                });
-                
-                overlay.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    closeMobileMenu();
-                }, { passive: false });
-            }
-            
-            if (closeBtn && !closeBtn._closeSetup) {
-                closeBtn._closeSetup = true;
-                
-                closeBtn.addEventListener('click', function() {
-                    closeMobileMenu();
-                });
-                
-                closeBtn.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    closeMobileMenu();
-                }, { passive: false });
-            }
-        }
-
-        /* === IMPROVED SCROLL VS TAP DETECTION FOR MOBILE SIDEBAR === */
-        const SCROLL_THRESHOLD = 10; // Minimum pixels to consider as scroll
-        let touchState = {
-            startY: 0,
-            startX: 0,
-            startTime: 0,
-            moved: false,
-            activeItem: null,
-            touchHandled: false
-        };
-
-        function setupMobileNavigation() {
-            const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
-            const sidebar = document.getElementById('sidebar');
-            
-            // Track sidebar scrolling to detect scroll vs tap
-            if (sidebar && !sidebar._scrollSetup) {
-                sidebar._scrollSetup = true;
-                
-                sidebar.addEventListener('scroll', function() {
-                    // If scrolling, cancel any pending tap
-                    if (touchState.activeItem) {
-                        touchState.activeItem.classList.remove('tapping');
-                        touchState.moved = true;
-                    }
-                }, { passive: true });
-            }
-            
-            navItems.forEach(function(item) {
-                if (item._navSetup) return;
-                item._navSetup = true;
-                
-                // Get tool name from data attribute
-                const toolName = item.getAttribute('data-tool');
-                if (!toolName) return;
-                
-                // Touch start - record position and show visual feedback
-                item.addEventListener('touchstart', function(e) {
-                    const touch = e.touches[0];
-                    touchState.startY = touch.clientY;
-                    touchState.startX = touch.clientX;
-                    touchState.startTime = Date.now();
-                    touchState.moved = false;
-                    touchState.activeItem = this;
-                    touchState.touchHandled = false;
-                    
-                    // Delay visual feedback slightly to distinguish from scroll intent
-                    setTimeout(() => {
-                        if (!touchState.moved && touchState.activeItem === this) {
-                            this.classList.add('tapping');
-                        }
-                    }, 50);
-                }, { passive: true });
-
-                // Touch move - check if this is a scroll
-                item.addEventListener('touchmove', function(e) {
-                    if (!touchState.activeItem) return;
-                    
-                    const touch = e.touches[0];
-                    const deltaY = Math.abs(touch.clientY - touchState.startY);
-                    const deltaX = Math.abs(touch.clientX - touchState.startX);
-                    
-                    // If moved more than threshold, treat as scroll
-                    if (deltaY > SCROLL_THRESHOLD || deltaX > SCROLL_THRESHOLD) {
-                        touchState.moved = true;
-                        this.classList.remove('tapping');
-                    }
-                }, { passive: true });
-
-                // Touch end - only trigger if it was a tap (not scroll)
-                item.addEventListener('touchend', function(e) {
-                    const wasTap = !touchState.moved && touchState.activeItem === this;
-                    const tapDuration = Date.now() - touchState.startTime;
-                    
-                    // Clean up visual feedback
-                    this.classList.remove('tapping');
-                    
-                    // Reset touch state
-                    touchState.activeItem = null;
-                    
-                    // Only trigger tool selection if:
-                    // 1. Not moved (was a tap, not scroll)
-                    // 2. Tap was quick enough (under 500ms - not a long press)
-                    if (wasTap && tapDuration < 500) {
-                        e.preventDefault();
-                        touchState.touchHandled = true;
-                        showTool(toolName, e);
-                    }
-                }, { passive: false });
-
-                // Touch cancel - cleanup
-                item.addEventListener('touchcancel', function() {
-                    this.classList.remove('tapping');
-                    touchState.activeItem = null;
-                    touchState.moved = false;
-                }, { passive: true });
-                
-                // Click handler for desktop/mouse (with touch duplicate prevention)
-                item.addEventListener('click', function(e) {
-                    // Skip if touch already handled this interaction
-                    if (touchState.touchHandled) {
-                        touchState.touchHandled = false;
-                        return;
-                    }
-                    e.preventDefault();
-                    e.stopPropagation();
-                    showTool(toolName, e);
-                });
-            });
-        }
 
         function setAnimeMode(mode) {
             const imageTab = document.getElementById('anime-tab-image');
@@ -4396,6 +4394,12 @@
                 return;
             }
 
+            // Prevent double-click race condition
+            if (isRecordingStarting) {
+                console.log('Recording already starting, ignoring click');
+                return;
+            }
+
             if (isRecording) {
                 stopRecording();
             } else {
@@ -4404,6 +4408,15 @@
         }
 
         function startRecording() {
+            // Prevent double recording - check if already recording or starting
+            if (isRecording || isRecordingStarting) {
+                console.log('Already recording or starting, ignoring request');
+                return;
+            }
+            
+            // Set starting flag immediately to prevent race conditions
+            isRecordingStarting = true;
+            
             // Stop continuous recording if active (prevent double recording)
             if (isContinuousRecording) {
                 stopContinuousRecording();
@@ -4425,6 +4438,7 @@
 
             recognition.onstart = () => {
                 isRecording = true;
+                isRecordingStarting = false;
                 micBtn.classList.add('recording');
                 micBtn.style.background = 'rgba(239, 68, 68, 0.2)';
                 // Update SVG icon colors to red for recording state
@@ -4494,6 +4508,7 @@
             try {
                 recognition.start();
             } catch (e) {
+                isRecordingStarting = false;
                 showSpeechError('فشل في بدء التسجيل. حاول مرة أخرى.');
             }
         }
@@ -4557,6 +4572,7 @@
         function stopRecording() {
             resetDuplicateTracking();
             isRecording = false;
+            isRecordingStarting = false;
 
             if (recognition) {
                 try {
@@ -4660,6 +4676,12 @@
                 return;
             }
 
+            // Prevent double-click race condition
+            if (isContinuousStarting) {
+                console.log('Continuous recording already starting, ignoring click');
+                return;
+            }
+
             if (isContinuousRecording) {
                 stopContinuousRecording();
             } else {
@@ -4671,6 +4693,15 @@
         }
 
         async function startContinuousRecording() {
+            // Prevent double recording - check if already recording or starting
+            if (isContinuousRecording || isContinuousStarting) {
+                console.log('Already continuous recording or starting, ignoring request');
+                return;
+            }
+            
+            // Set starting flag immediately to prevent race conditions
+            isContinuousStarting = true;
+            
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             continuousRecognition = new SpeechRecognition();
             continuousRecognition.lang = 'ar-EG';
@@ -4702,6 +4733,7 @@
 
             continuousRecognition.onstart = () => {
                 isContinuousRecording = true;
+                isContinuousStarting = false;
                 continuousBtn.classList.add('recording-continuous');
                 // Update SVG icon colors to purple for active continuous recording
                 const contSvg = continuousIcon.querySelector('svg');
@@ -4770,6 +4802,7 @@
             try {
                 continuousRecognition.start();
             } catch (e) {
+                isContinuousStarting = false;
                 showSpeechError('فشل في بدء الاستماع المستمر. حاول مرة أخرى.');
             }
         }
@@ -4833,6 +4866,7 @@
         function stopContinuousRecording() {
             resetDuplicateTracking();
             isContinuousRecording = false;
+            isContinuousStarting = false;
 
             if (continuousRecognition) {
                 try {
@@ -4914,7 +4948,7 @@
                 errorDiv.classList.remove('hidden');
             } finally {
                 fetchBtn.disabled = false;
-                fetchBtn.innerHTML = '<i class="fas fa-info-circle"></i> جلب المعلومات';
+                fetchBtn.innerHTML = '<span class="icon-pharaonic icon-sm inline-flex"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M32 20V38M32 44V44.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span> جلب المعلومات';
             }
         }
 
@@ -5143,15 +5177,15 @@
                                 <p class="text-slate-300 text-sm mb-2 line-clamp-3">${anime.description}</p>
                                 <div class="flex flex-wrap gap-2 text-xs">
                                     <span class="badge bg-purple-100 text-purple-700">
-                                        <i class="fas fa-tv ml-1"></i>
+                                        <span class="icon-pharaonic icon-xs inline-flex ml-1"><svg viewBox="0 0 64 64"><rect x="8" y="16" width="48" height="36" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M24 56H40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                                         ${anime.episodes} حلقة
                                     </span>
                                     <span class="badge bg-green-100 text-green-700">
-                                        <i class="fas fa-star ml-1"></i>
+                                        <span class="icon-pharaonic icon-xs inline-flex ml-1"><svg viewBox="0 0 64 64"><path d="M32 8L38 28H58L42 40L48 60L32 48L16 60L22 40L6 28H26L32 8Z" stroke="currentColor" stroke-width="2.5" fill="none"/></svg></span>
                                         ${anime.score}%
                                     </span>
                                     <span class="badge bg-blue-100 text-blue-700">
-                                        <i class="fas fa-calendar ml-1"></i>
+                                        <span class="icon-pharaonic icon-xs inline-flex ml-1"><svg viewBox="0 0 64 64"><rect x="8" y="16" width="48" height="40" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M8 28H56" stroke="currentColor" stroke-width="2"/><path d="M20 8V20M44 8V20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                                         ${anime.year}
                                     </span>
                                 </div>
@@ -5256,23 +5290,23 @@
                                 <p class="text-slate-400 text-sm mb-2">${podcast.artist}</p>
                                 <div class="flex flex-wrap gap-2 text-xs mb-3">
                                     <span class="badge bg-green-100 text-green-700">
-                                        <i class="fas fa-check-circle ml-1"></i>
+                                        <span class="icon-pharaonic icon-xs inline-flex ml-1"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M20 32L28 40L44 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
                                         تطابق ${data.similarity}%
                                     </span>
                                     <span class="badge bg-purple-100 text-purple-700">
-                                        <i class="fas fa-tag ml-1"></i>
+                                        <span class="icon-pharaonic icon-xs inline-flex ml-1"><svg viewBox="0 0 64 64"><path d="M8 8H32L56 32L32 56L8 32V8Z" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="20" cy="20" r="4" fill="currentColor"/></svg></span>
                                         ${podcast.genre}
                                     </span>
                                     <span class="badge bg-blue-100 text-blue-700">
-                                        <i class="fas fa-podcast ml-1"></i>
+                                        <span class="icon-pharaonic icon-xs inline-flex ml-1"><svg viewBox="0 0 64 64"><circle cx="32" cy="28" r="12" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M20 40C20 44 25 52 32 52C39 52 44 44 44 40" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M32 40V56" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                                         ${podcast.episode_count} حلقة
                                     </span>
                                 </div>
                                 <div class="flex flex-wrap gap-2 mt-3">
-                                    ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-900/300 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
-                                    ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-900/300 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
-                                    ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
-                                    ${podcast.itunes_url ? `<a href="${podcast.itunes_url}" target="_blank" class="px-3 py-2 rounded-lg bg-purple-500 text-white text-sm hover:bg-purple-600 transition-all flex items-center gap-2"><i class="fab fa-itunes"></i>iTunes</a>` : ''}
+                                    ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-900/300 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><rect x="8" y="16" width="48" height="32" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M28 26L40 32L28 38V26Z" fill="currentColor"/></svg></span>YouTube</a>` : ''}
+                                    ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-900/300 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M16 24C28 22 40 24 48 28M18 32C28 30 38 32 46 36M20 40C28 38 36 40 44 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>Spotify</a>` : ''}
+                                    ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><path d="M8 36V28M16 40V24M24 44V20M32 40V24M40 36V28M48 40V24M56 36V28" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>SoundCloud</a>` : ''}
+                                    ${podcast.itunes_url ? `<a href="${podcast.itunes_url}" target="_blank" class="px-3 py-2 rounded-lg bg-purple-500 text-white text-sm hover:bg-purple-600 transition-all flex items-center gap-2"><span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="32" cy="32" r="8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M32 24V12M32 52V40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>iTunes</a>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -5285,9 +5319,9 @@
                     let linksHtml = '';
                     if (links.youtube || links.spotify || links.soundcloud) {
                         linksHtml = `<div class="flex flex-wrap gap-2 mt-3">
-                            ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-900/300 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
-                            ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-900/300 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
-                            ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
+                            ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-900/300 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><rect x="8" y="16" width="48" height="32" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M28 26L40 32L28 38V26Z" fill="currentColor"/></svg></span>YouTube</a>` : ''}
+                            ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-900/300 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M16 24C28 22 40 24 48 28M18 32C28 30 38 32 46 36M20 40C28 38 36 40 44 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>Spotify</a>` : ''}
+                            ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><path d="M8 36V28M16 40V24M24 44V20M32 40V24M40 36V28M48 40V24M56 36V28" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>SoundCloud</a>` : ''}
                         </div>`;
                     }
                     document.getElementById('podcast-image-not-found-text').innerHTML = message + linksHtml;
@@ -5355,7 +5389,7 @@
                         aiHeader.className = 'mb-4 p-3 rounded-lg bg-purple-50 border border-purple-200';
                         aiHeader.innerHTML = `
                             <div class="flex items-center gap-2 text-purple-700">
-                                <i class="fas fa-robot"></i>
+                                <span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><path d="M32 8L8 24V48L32 56L56 48V24L32 8Z" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M32 24V40M24 32H40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="32" r="8" stroke="currentColor" stroke-width="2" fill="none"/></svg></span>
                                 <span class="font-medium">تم التعرف بواسطة الذكاء الاصطناعي:</span>
                                 <span class="font-bold">${data.identified_name}</span>
                             </div>
@@ -5377,19 +5411,19 @@
                                 <p class="text-slate-400 text-sm mb-2">${podcast.artist}</p>
                                 <div class="flex flex-wrap gap-2 text-xs mb-2">
                                     <span class="badge bg-purple-100 text-purple-700">
-                                        <i class="fas fa-tag ml-1"></i>
+                                        <span class="icon-pharaonic icon-xs inline-flex ml-1"><svg viewBox="0 0 64 64"><path d="M8 8H32L56 32L32 56L8 32V8Z" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="20" cy="20" r="4" fill="currentColor"/></svg></span>
                                         ${podcast.genre}
                                     </span>
                                     <span class="badge bg-blue-100 text-blue-700">
-                                        <i class="fas fa-podcast ml-1"></i>
+                                        <span class="icon-pharaonic icon-xs inline-flex ml-1"><svg viewBox="0 0 64 64"><circle cx="32" cy="28" r="12" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M20 40C20 44 25 52 32 52C39 52 44 44 44 40" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M32 40V56" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
                                         ${podcast.episode_count} حلقة
                                     </span>
                                 </div>
                                 <div class="flex flex-wrap gap-2 mt-2">
-                                    ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-2 py-1 rounded-lg bg-red-900/300 text-white text-xs hover:bg-red-600 transition-all flex items-center gap-1"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
-                                    ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-2 py-1 rounded-lg bg-green-900/300 text-white text-xs hover:bg-green-600 transition-all flex items-center gap-1"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
-                                    ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-2 py-1 rounded-lg bg-orange-500 text-white text-xs hover:bg-orange-600 transition-all flex items-center gap-1"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
-                                    ${podcast.itunes_url ? `<a href="${podcast.itunes_url}" target="_blank" class="px-2 py-1 rounded-lg bg-purple-500 text-white text-xs hover:bg-purple-600 transition-all flex items-center gap-1"><i class="fab fa-itunes"></i>iTunes</a>` : ''}
+                                    ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-2 py-1 rounded-lg bg-red-900/300 text-white text-xs hover:bg-red-600 transition-all flex items-center gap-1"><span class="icon-pharaonic icon-xs"><svg viewBox="0 0 64 64"><rect x="8" y="16" width="48" height="32" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M28 26L40 32L28 38V26Z" fill="currentColor"/></svg></span>YouTube</a>` : ''}
+                                    ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-2 py-1 rounded-lg bg-green-900/300 text-white text-xs hover:bg-green-600 transition-all flex items-center gap-1"><span class="icon-pharaonic icon-xs"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M16 24C28 22 40 24 48 28M18 32C28 30 38 32 46 36M20 40C28 38 36 40 44 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>Spotify</a>` : ''}
+                                    ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-2 py-1 rounded-lg bg-orange-500 text-white text-xs hover:bg-orange-600 transition-all flex items-center gap-1"><span class="icon-pharaonic icon-xs"><svg viewBox="0 0 64 64"><path d="M8 36V28M16 40V24M24 44V20M32 40V24M40 36V28M48 40V24M56 36V28" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>SoundCloud</a>` : ''}
+                                    ${podcast.itunes_url ? `<a href="${podcast.itunes_url}" target="_blank" class="px-2 py-1 rounded-lg bg-purple-500 text-white text-xs hover:bg-purple-600 transition-all flex items-center gap-1"><span class="icon-pharaonic icon-xs"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="32" cy="32" r="8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M32 24V12M32 52V40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>iTunes</a>` : ''}
                                 </div>
                             </div>
                         `;
@@ -5403,9 +5437,9 @@
                     let linksHtml = '';
                     if (links.youtube || links.spotify || links.soundcloud) {
                         linksHtml = `<div class="flex flex-wrap gap-2 mt-3">
-                            ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-900/300 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><i class="fab fa-youtube"></i>YouTube</a>` : ''}
-                            ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-900/300 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><i class="fab fa-spotify"></i>Spotify</a>` : ''}
-                            ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><i class="fab fa-soundcloud"></i>SoundCloud</a>` : ''}
+                            ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="px-3 py-2 rounded-lg bg-red-900/300 text-white text-sm hover:bg-red-600 transition-all flex items-center gap-2"><span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><rect x="8" y="16" width="48" height="32" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M28 26L40 32L28 38V26Z" fill="currentColor"/></svg></span>YouTube</a>` : ''}
+                            ${links.spotify ? `<a href="${links.spotify}" target="_blank" class="px-3 py-2 rounded-lg bg-green-900/300 text-white text-sm hover:bg-green-600 transition-all flex items-center gap-2"><span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M16 24C28 22 40 24 48 28M18 32C28 30 38 32 46 36M20 40C28 38 36 40 44 44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>Spotify</a>` : ''}
+                            ${links.soundcloud ? `<a href="${links.soundcloud}" target="_blank" class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition-all flex items-center gap-2"><span class="icon-pharaonic icon-sm"><svg viewBox="0 0 64 64"><path d="M8 36V28M16 40V24M24 44V20M32 40V24M40 36V28M48 40V24M56 36V28" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>SoundCloud</a>` : ''}
                         </div>`;
                     }
                     document.getElementById('podcast-audio-not-found-text').innerHTML = message + linksHtml;
@@ -6390,21 +6424,17 @@
         // Show auth container (welcome page)
         function showAuthContainer() {
             document.getElementById('auth-container').style.display = 'flex';
+            document.getElementById('tools-hub').style.display = 'none';
+            document.getElementById('tool-view').style.display = 'none';
             document.getElementById('main-app').style.display = 'none';
             document.body.classList.remove('app-active');
         }
         
-        // Hide auth container (enter the app)
+        // Hide auth container (enter the app - show Tools Hub)
         function hideAuthContainer() {
             document.getElementById('auth-container').style.display = 'none';
-            document.getElementById('main-app').style.display = 'flex';
-            document.body.classList.add('app-active');
-            
-            // Re-setup mobile navigation and menu button after main app is shown
-            setTimeout(function() {
-                setupMobileNavigation();
-                setupMobileMenuButton();
-            }, 100);
+            // Show Tools Hub instead of main-app directly
+            document.getElementById('tools-hub').style.display = 'flex';
         }
         
         // Enter AI World - main entry button
@@ -6432,29 +6462,59 @@
                 if (pharaonicOverlay) pharaonicOverlay.style.display = 'none';
                 if (authContainer) authContainer.style.display = 'none';
                 
-                // Show main app
-                document.getElementById('main-app').style.display = 'flex';
-                document.body.classList.add('app-active');
+                // Show Tools Hub instead of main-app directly
+                document.getElementById('tools-hub').style.display = 'flex';
                 
                 // Save entry state
                 localStorage.setItem('arkan_entered', 'true');
                 
                 // Show welcome message
                 showToast('مرحباً بك في أركان AI! ⚱️');
-                
-                // Re-setup mobile navigation
-                setTimeout(function() {
-                    setupMobileNavigation();
-                    setupMobileMenuButton();
-                }, 100);
             }, 1800);
         }
         
         // Return to welcome screen
         function returnToWelcome() {
             localStorage.removeItem('arkan_entered');
+            document.getElementById('tools-hub').style.display = 'none';
+            document.getElementById('tool-view').style.display = 'none';
             showAuthContainer();
             showToast('أهلاً بعودتك! 👋');
+        }
+        
+        // ========== TOOLS HUB NAVIGATION ==========
+        
+        // Open a specific tool from the Tools Hub
+        function openToolFromHub(toolName) {
+            // Hide tools hub
+            document.getElementById('tools-hub').style.display = 'none';
+            
+            // Show tool view (contains main-app)
+            document.getElementById('tool-view').style.display = 'block';
+            document.getElementById('main-app').style.display = 'flex';
+            document.body.classList.add('app-active');
+            
+            // Switch to the selected tool
+            switchTool(toolName);
+            
+            // Re-setup mobile navigation after tool view is shown
+            setTimeout(function() {
+                setupMobileNavigation();
+                setupMobileMenuButton();
+            }, 100);
+        }
+        
+        // Go back to Tools Hub from individual tool
+        function backToToolsHub() {
+            // Hide tool view
+            document.getElementById('tool-view').style.display = 'none';
+            document.getElementById('main-app').style.display = 'none';
+            
+            // Show tools hub
+            document.getElementById('tools-hub').style.display = 'flex';
+            document.body.classList.remove('app-active');
+            
+            showToast('اختر أداة أخرى ⚱️');
         }
         
         // Check if user already entered
