@@ -67,7 +67,7 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
         "nocheckcertificate": True,
         "geo_bypass": True,
         "geo_bypass_country": "US",
-        "socket_timeout": 60,
+        "socket_timeout": 1800,
         "retries": 5,
         "fragment_retries": 5,
         "concurrent_fragment_downloads": 4,
@@ -764,7 +764,7 @@ def video_info():
             'force_generic_extractor': False,
             'cookiefile':
             'cookies.txt' if os.path.exists('cookies.txt') else None,
-            'socket_timeout': 30,
+            'socket_timeout': 1800,
             'retries': 3,
             'http_headers': {
                 'User-Agent':
@@ -2013,7 +2013,7 @@ def download_video():
         info_opts = {
             'quiet': True,
             'no_warnings': True,
-            'socket_timeout': 60,
+            'socket_timeout': 1800,
             'noplaylist': True,
             'retries': 3,
             'http_headers': {
@@ -2697,7 +2697,7 @@ def transcribe_video():
                 'no_warnings':
                 True,
                 'socket_timeout':
-                300,
+                1800,
                 'retries':
                 15,
                 'fragment_retries':
@@ -3427,116 +3427,6 @@ def get_audio():
     
     except Exception as e:
         logging.error(f"Audio extraction error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-
-# =============================================================================
-# Music Removal using Local FFmpeg Processing (FREE - No API Required)
-# Uses FFmpeg audio filters to isolate vocals from music
-# Fast, free, and works offline - no paid API needed
-# =============================================================================
-@app.route('/remove-music', methods=['POST'])
-def remove_music():
-    """
-    Remove music from audio/video files using local FFmpeg processing.
-    Accepts either a file upload or a URL (YouTube, etc.)
-    Returns the vocals-only audio file (music removed)
-    
-    This uses FREE local processing with FFmpeg filters:
-    - Center channel extraction (vocals are usually centered in stereo)
-    - Frequency filtering (removes typical instrumental frequencies)
-    - Dynamic normalization for clarity
-    """
-    import shutil
-    from services.local_audio_separation import separate_vocals_enhanced
-    
-    temp_dir = tempfile.mkdtemp()
-    input_path = None
-    output_path = None
-    
-    try:
-        if 'file' in request.files and request.files['file'].filename:
-            uploaded_file = request.files['file']
-            filename = uploaded_file.filename
-            input_path = os.path.join(temp_dir, filename)
-            uploaded_file.save(input_path)
-            logger.info(f"Music removal: Processing uploaded file: {filename}")
-            
-        elif 'url' in request.form and request.form['url']:
-            url = request.form['url']
-            logger.info(f"Music removal: Downloading from URL: {url}")
-            
-            try:
-                input_path = download_audio_from_youtube(url, temp_dir)
-                logger.info(f"Music removal: Downloaded audio to: {input_path}")
-            except Exception as download_error:
-                logger.error(f"Music removal error during download: {download_error}")
-                return jsonify({
-                    'error': 'فشل تحميل الملف من YouTube. قد يكون الفيديو مقيداً أو محظوراً.',
-                    'details': str(download_error)
-                }), 500
-        else:
-            return jsonify({'error': 'يرجى رفع ملف أو إدخال رابط'}), 400
-        
-        file_ext = os.path.splitext(input_path)[1].lower()
-        video_extensions = ['.mp4', '.avi', '.mkv', '.mov', '.webm', '.flv', '.wmv', '.m4v']
-        
-        if file_ext in video_extensions:
-            logging.info(f"Music removal: Extracting audio from video file")
-            audio_path = os.path.join(temp_dir, 'extracted_audio.mp3')
-            
-            ffmpeg_cmd = [
-                'ffmpeg', '-y', '-i', input_path,
-                '-vn', '-acodec', 'libmp3lame', '-b:a', '192k',
-                audio_path
-            ]
-            
-            result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
-            if result.returncode != 0:
-                logging.error(f"FFmpeg error: {result.stderr}")
-                return jsonify({'error': 'فشل استخراج الصوت من الفيديو'}), 500
-            
-            input_path = audio_path
-        
-        logging.info(f"Music removal: Starting local FFmpeg vocal isolation...")
-        
-        try:
-            vocals_path = separate_vocals_enhanced(input_path)
-            logging.info(f"Music removal: Vocal isolation complete: {vocals_path}")
-        except FileNotFoundError as fnf:
-            return jsonify({'error': str(fnf)}), 400
-        except Exception as process_error:
-            logging.error(f"Local processing error: {process_error}")
-            return jsonify({
-                'error': 'فشل فصل الصوت عن الموسيقى',
-                'details': str(process_error)
-            }), 500
-        
-        output_path = vocals_path
-        
-        if not os.path.exists(output_path):
-            return jsonify({'error': 'فشل إنشاء ملف الصوت النهائي'}), 500
-        
-        logging.info(f"Music removal: Successfully created vocals-only file: {output_path}")
-        
-        @after_this_request
-        def cleanup(response):
-            try:
-                shutil.rmtree(temp_dir, ignore_errors=True)
-            except Exception as e:
-                logging.error(f"Cleanup error: {e}")
-            return response
-        
-        return send_file(
-            output_path,
-            mimetype='audio/mpeg',
-            as_attachment=True,
-            download_name='vocals_only.mp3'
-        )
-        
-    except Exception as e:
-        logging.error(f"Music removal error: {str(e)}")
-        shutil.rmtree(temp_dir, ignore_errors=True)
         return jsonify({'error': str(e)}), 500
 
 
