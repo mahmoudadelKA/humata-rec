@@ -326,16 +326,14 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
-            pointer-events: auto !important;
             -webkit-appearance: none;
             appearance: none;
             padding: 0;
             font-family: inherit;
-            background-color: transparent;
         }
 
         .mobile-menu-btn:hover {
@@ -611,6 +609,85 @@
             button[type="submit"] {
                 min-height: 48px;
             }
+
+            /* === MOBILE RESPONSIVE IMPROVEMENTS (640px and below) === */
+            
+            /* Tool title improvements */
+            .tool-content .text-center.mb-8 h2 {
+                font-size: 1.35rem;
+                line-height: 1.4;
+            }
+
+            .tool-content .text-center.mb-8 p {
+                font-size: 0.875rem;
+            }
+
+            /* Microphone buttons sizing */
+            .speech-mic-controls {
+                gap: 1rem;
+            }
+
+            .mic-button {
+                width: 90px;
+                height: 90px;
+            }
+
+            .mic-button i {
+                font-size: 1.75rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .mic-button span {
+                font-size: 0.65rem;
+            }
+
+            /* Action buttons - grid layout for mobile */
+            #tool-speech .flex.flex-wrap.items-center.justify-between {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+
+            #tool-speech .flex.flex-wrap.items-center.justify-between label {
+                text-align: center;
+            }
+
+            #tool-speech .flex.flex-wrap.items-center.justify-between .flex.gap-2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            #tool-speech .flex.flex-wrap.items-center.justify-between .flex.gap-2 button:first-child {
+                grid-column: 1 / -1;
+            }
+
+            #tool-speech .flex.gap-2 button {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.75rem;
+                justify-content: center;
+            }
+
+            /* Textarea improvements */
+            textarea#transcribed-text {
+                font-size: 1rem;
+                padding: 0.875rem;
+                min-height: 180px;
+            }
+
+            /* Status text */
+            #mic-status {
+                font-size: 0.875rem;
+                text-align: center;
+            }
+
+            /* Word/char count section */
+            #tool-speech .flex.items-center.justify-between.mt-3 {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: center;
+            }
         }
 
         /* Extra small screens (under 360px) */
@@ -620,12 +697,39 @@
             }
 
             .mic-button {
-                width: 80px !important;
-                height: 80px !important;
+                width: 75px;
+                height: 75px;
             }
 
-            .tool-content h2 {
+            .mic-button i {
+                font-size: 1.5rem;
+            }
+
+            .mic-button span {
+                font-size: 0.6rem;
+            }
+
+            .tool-content h2,
+            .tool-content .text-center.mb-8 h2 {
                 font-size: 1.1rem;
+            }
+
+            .tool-content .text-center.mb-8 p {
+                font-size: 0.75rem;
+            }
+
+            /* Action buttons full width on very small screens */
+            #tool-speech .flex.flex-wrap.items-center.justify-between .flex.gap-2 {
+                grid-template-columns: 1fr;
+            }
+
+            #tool-speech .flex.flex-wrap.items-center.justify-between .flex.gap-2 button:first-child {
+                grid-column: auto;
+            }
+
+            textarea#transcribed-text {
+                font-size: 0.9rem;
+                min-height: 150px;
             }
         }
 
@@ -651,6 +755,52 @@
             #tool-anime .anime-card,
             #tool-podcast .podcast-card {
                 width: 100%;
+            }
+
+            /* Input fields - prevent iOS zoom */
+            input[type="text"],
+            input[type="url"],
+            select {
+                padding: 0.875rem;
+            }
+
+            /* Buttons in flex containers - stack on mobile */
+            .tool-content .flex.gap-3:not(.flex-row) {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .tool-content .flex.gap-3 input,
+            .tool-content .flex.gap-3 button {
+                width: 100%;
+            }
+        }
+
+        /* Tablet screens (481px - 768px) */
+        @media (min-width: 481px) and (max-width: 768px) {
+            .main-content {
+                padding: 5rem 1.5rem 2rem 1.5rem;
+            }
+
+            .mic-button {
+                width: 100px;
+                height: 100px;
+            }
+
+            .tool-content .text-center.mb-8 h2 {
+                font-size: 1.5rem;
+            }
+
+            /* Action buttons side by side on tablet */
+            #tool-speech .flex.flex-wrap.items-center.justify-between .flex.gap-2 {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            #tool-speech .flex.gap-2 button {
+                padding: 0.625rem 1rem;
+                font-size: 0.8rem;
             }
         }
 
@@ -1873,16 +2023,16 @@
     </div>
 
     <div id="main-app" class="flex flex-col lg:flex-row min-h-screen" style="display: none;">
-        <!-- Mobile Menu Toggle Button -->
-        <button id="mobile-menu-btn" class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="القائمة">
+        <!-- Mobile Menu Toggle Button - onclick removed, handled via JavaScript -->
+        <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="القائمة">
             <i class="fas fa-bars"></i>
         </button>
 
-        <!-- Mobile Sidebar Overlay -->
-        <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+        <!-- Mobile Sidebar Overlay - onclick removed, handled via JavaScript -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
         <nav id="sidebar" class="sidebar-nav lg:w-72 w-full glass-sidebar lg:min-h-screen p-4 lg:p-6">
-            <!-- Mobile Close Button -->
-            <button id="mobile-close-btn" class="mobile-close-btn lg:hidden" onclick="closeMobileMenu()" aria-label="إغلاق">
+            <!-- Mobile Close Button - onclick removed, handled via JavaScript -->
+            <button id="mobile-close-btn" class="mobile-close-btn lg:hidden" aria-label="إغلاق">
                 <i class="fas fa-times"></i>
             </button>
             
@@ -3593,6 +3743,9 @@
             checkIfEntered();
         });
         
+        /* === IMPROVED MOBILE MENU BUTTON HANDLER === */
+        let menuBtnLastTap = 0;
+        
         function setupMobileMenuButton() {
             const menuBtn = document.getElementById('mobile-menu-btn');
             const overlay = document.getElementById('sidebar-overlay');
@@ -3601,69 +3754,60 @@
             if (menuBtn && !menuBtn._buttonSetup) {
                 menuBtn._buttonSetup = true;
                 
-                // Direct click handler with highest priority
-                menuBtn.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                // Menu button click handler with debounce
+                function handleMenuClick(e) {
+                    // Debounce: prevent double triggers from touch + click
+                    const now = Date.now();
+                    if (now - menuBtnLastTap < 300) return;
+                    menuBtnLastTap = now;
+                    
                     toggleMobileMenu();
-                    return false;
-                };
+                }
                 
-                // Backup event listener
-                menuBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleMobileMenu();
-                }, true);
+                // Visual feedback on touch
+                menuBtn.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.95)';
+                }, { passive: true });
                 
                 menuBtn.addEventListener('touchend', function(e) {
                     e.preventDefault();
-                    e.stopPropagation();
-                    toggleMobileMenu();
-                }, { passive: false, capture: true });
+                    this.style.transform = '';
+                    handleMenuClick(e);
+                }, { passive: false });
                 
-                // Pointer events for better device compatibility (including Xiaomi devices)
-                menuBtn.addEventListener('pointerdown', function(e) {
-                    menuBtn.style.opacity = '0.8';
-                }, { passive: true });
+                // Click for non-touch devices
+                menuBtn.addEventListener('click', handleMenuClick);
                 
-                menuBtn.addEventListener('pointerup', function(e) {
-                    menuBtn.style.opacity = '1';
-                }, { passive: true });
-                
-                menuBtn.addEventListener('pointercancel', function(e) {
-                    menuBtn.style.opacity = '1';
+                // Reset on cancel
+                menuBtn.addEventListener('touchcancel', function() {
+                    this.style.transform = '';
                 }, { passive: true });
             }
             
             if (overlay && !overlay._overlaySetup) {
                 overlay._overlaySetup = true;
                 
-                overlay.addEventListener('click', function(e) {
-                    e.preventDefault();
+                overlay.addEventListener('click', function() {
                     closeMobileMenu();
-                }, true);
+                });
                 
                 overlay.addEventListener('touchend', function(e) {
                     e.preventDefault();
                     closeMobileMenu();
-                }, { passive: false, capture: true });
+                }, { passive: false });
             }
             
             if (closeBtn && !closeBtn._closeSetup) {
                 closeBtn._closeSetup = true;
                 
-                closeBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                closeBtn.addEventListener('click', function() {
                     closeMobileMenu();
-                }, true);
+                });
                 
                 closeBtn.addEventListener('touchend', function(e) {
                     e.preventDefault();
-                    e.stopPropagation();
                     closeMobileMenu();
-                }, { passive: false, capture: true });
+                }, { passive: false });
             }
         }
 
