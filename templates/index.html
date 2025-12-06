@@ -1580,6 +1580,40 @@
             color: rgba(196, 163, 90, 0.7);
         }
 
+        /* Neon Glow Container for ARKAN Title */
+        .arkan-neon-container {
+            position: relative;
+            padding: 1.5rem 2rem;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 
+                0 0 30px rgba(0, 255, 255, 0.4),
+                0 0 60px rgba(139, 92, 246, 0.3),
+                0 0 90px rgba(236, 72, 153, 0.2),
+                inset 0 0 40px rgba(0, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            animation: neonPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes neonPulse {
+            0%, 100% {
+                box-shadow: 
+                    0 0 30px rgba(0, 255, 255, 0.4),
+                    0 0 60px rgba(139, 92, 246, 0.3),
+                    0 0 90px rgba(236, 72, 153, 0.2),
+                    inset 0 0 40px rgba(0, 255, 255, 0.1);
+                border-color: rgba(0, 255, 255, 0.3);
+            }
+            50% {
+                box-shadow: 
+                    0 0 50px rgba(0, 255, 255, 0.6),
+                    0 0 100px rgba(139, 92, 246, 0.5),
+                    0 0 150px rgba(236, 72, 153, 0.4),
+                    inset 0 0 60px rgba(0, 255, 255, 0.2);
+                border-color: rgba(139, 92, 246, 0.5);
+            }
+        }
+
         /* Pharaonic Enter Button */
         .pharaonic-enter-btn {
             position: relative;
@@ -1781,9 +1815,11 @@
                         <img src="/static/arkan-logo-optimized.png" alt="ARKAN AI Logo" loading="eager">
                     </div>
                 </div>
-                <h1 class="pharaonic-title">ARKAN AI</h1>
-                <h2 class="pharaonic-subtitle">أركان</h2>
-                <p class="pharaonic-tagline">بوابة الحضارة الرقمية للمحتوى العربي</p>
+                <div class="arkan-neon-container">
+                    <h1 class="pharaonic-title">ARKAN AI</h1>
+                    <h2 class="pharaonic-subtitle">أركان</h2>
+                    <p class="pharaonic-tagline">بوابة الحضارة الرقمية للمحتوى العربي</p>
+                </div>
             </div>
 
             <!-- Section 2: Pharaonic Enter Button -->
@@ -3161,46 +3197,8 @@
         </main>
     </div>
 
-    <!-- 3D Glass Tabs for Verse and Copyright -->
-    <footer class="py-8 mt-auto relative">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-col md:flex-row justify-center items-center gap-6">
-                
-                <!-- Tab 1: Quranic Verse -->
-                <div class="glass-3d-tab verse-tab group">
-                    <div class="tab-inner">
-                        <div class="tab-glow"></div>
-                        <div class="tab-content">
-                            <i class="fas fa-book-quran text-2xl text-emerald-400 mb-2"></i>
-                            <p class="verse-text text-lg font-semibold text-white/90 leading-relaxed">
-                                يَرْفَعِ اللَّهُ الَّذِينَ آمَنُوا مِنْكُمْ وَالَّذِينَ أُوتُوا الْعِلْمَ دَرَجَاتٍ
-                            </p>
-                            <span class="text-emerald-300/70 text-xs mt-2 block">سورة المجادلة - آية 11</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Tab 2: Copyright -->
-                <div class="glass-3d-tab copyright-tab group">
-                    <div class="tab-inner">
-                        <div class="tab-glow"></div>
-                        <div class="tab-content">
-                            <i class="fas fa-shield-halved text-2xl text-cyan-400 mb-2"></i>
-                            <p class="text-white/80 text-sm">
-                                &copy; <span id="current-year"></span> جميع الحقوق محفوظة
-                            </p>
-                            <p class="text-cyan-300/70 text-xs mt-1">ARKAN AI - منصة الأدوات الذكية</p>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
-        </div>
-    </footer>
 
     <script>
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-
         let recognition = null;
         let continuousRecognition = null;
         let isRecording = false;
