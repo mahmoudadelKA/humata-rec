@@ -5,6 +5,9 @@ import tempfile
 import subprocess
 import base64
 import logging
+import gc
+import time
+import glob
 from flask import Flask, render_template, request, jsonify, send_file, after_this_request
 from werkzeug.middleware.proxy_fix import ProxyFix
 import yt_dlp
@@ -19,8 +22,6 @@ from docx import Document
 from docx.shared import Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-import os
-
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
 # هذا يحمي حسابك بدلاً من رفع الملف على GitHub
 cookie_content = os.environ.get('COOKIE_CONTENT')
@@ -34,6 +35,77 @@ else:
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# =============================================================================
+# MEMORY OPTIMIZATION: Centralized cleanup utilities
+# =============================================================================
+TEMP_FILE_PATTERNS = [
+    'audio_*.mp3', 'audio_*.wav', 'audio_*.m4a', 'audio_*.webm',
+    'video_*.mp4', 'video_*.webm', 'video_*.mkv',
+    'ocr_*.*', 'cut_*.*', 'arkan_*.*',
+    '*_compressed.mp3', '*_chunk_*.wav'
+]
+TEMP_FILE_MAX_AGE_SECONDS = 3600
+last_cleanup_time = 0
+
+def cleanup_temp_files(force=False):
+    """
+    Clean up old temporary files to prevent disk space issues.
+    
+    Args:
+        force: If True, clean all matching files regardless of age.
+               If False, only clean files older than TEMP_FILE_MAX_AGE_SECONDS.
+    """
+    global last_cleanup_time
+    current_time = time.time()
+    
+    if not force and current_time - last_cleanup_time < 300:
+        return
+    
+    last_cleanup_time = current_time
+    temp_dir = tempfile.gettempdir()
+    cleaned_count = 0
+    cleaned_size = 0
+    
+    for pattern in TEMP_FILE_PATTERNS:
+        for filepath in glob.glob(os.path.join(temp_dir, pattern)):
+            try:
+                file_age = current_time - os.path.getmtime(filepath)
+                if force or file_age > TEMP_FILE_MAX_AGE_SECONDS:
+                    file_size = os.path.getsize(filepath)
+                    os.remove(filepath)
+                    cleaned_count += 1
+                    cleaned_size += file_size
+            except Exception as e:
+                logger.debug(f"Could not clean {filepath}: {e}")
+    
+    if cleaned_count > 0:
+        logger.info(f"Cleaned {cleaned_count} temp files, freed {cleaned_size / (1024*1024):.2f} MB")
+
+def run_garbage_collection():
+    """Run garbage collection to free memory after heavy operations."""
+    gc.collect()
+    logger.debug("Garbage collection completed")
+
+def cleanup_after_request():
+    """Combined cleanup: temp files + garbage collection."""
+    cleanup_temp_files()
+    run_garbage_collection()
+
+def safe_remove_file(filepath):
+    """Safely remove a file with error handling."""
+    if filepath and os.path.exists(filepath):
+        try:
+            os.remove(filepath)
+            return True
+        except Exception as e:
+            logger.debug(f"Could not remove {filepath}: {e}")
+    return False
+
+def safe_remove_files(*filepaths):
+    """Safely remove multiple files."""
+    for filepath in filepaths:
+        safe_remove_file(filepath)
 
 # =============================================================================
 # HELPER FUNCTION: Centralized YouTube Audio Download
@@ -103,6 +175,12 @@ app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 app.secret_key = os.environ.get("SESSION_SECRET")
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 * 1024
+
+@app.after_request
+def after_request_cleanup(response):
+    """Periodic cleanup after requests to manage memory and disk space."""
+    cleanup_after_request()
+    return response
 
 UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -534,12 +612,8 @@ Instructions:
                 except:
                     pass
 
-                if compressed_path != audio_path and os.path.exists(
-                        compressed_path):
-                    try:
-                        os.remove(compressed_path)
-                    except:
-                        pass
+                if compressed_path != audio_path:
+                    safe_remove_file(compressed_path)
 
                 if response and response.text:
                     text = response.text.strip()
@@ -613,11 +687,8 @@ Instructions:
         if len(local_exhausted_keys) >= total_keys:
             break
 
-    if compressed_path != audio_path and os.path.exists(compressed_path):
-        try:
-            os.remove(compressed_path)
-        except:
-            pass
+    if compressed_path != audio_path:
+        safe_remove_file(compressed_path)
 
     available_now = get_available_keys_count()
     logging.error(
@@ -1151,20 +1222,15 @@ def process_video():
         logging.info(f"تم قص الملف: {output_file}")
 
         # حذف الملف الأصلي بعد القص
-        if temp_media and os.path.exists(temp_media):
-            os.remove(temp_media)
-            logging.info(f"تم حذف الملف المؤقت: {temp_media}")
-            temp_media = None
+        safe_remove_file(temp_media)
+        logging.info(f"تم حذف الملف المؤقت: {temp_media}")
+        temp_media = None
 
         # تنظيف الملف بعد الإرسال
         @after_this_request
         def cleanup(response):
-            try:
-                if output_file and os.path.exists(output_file):
-                    os.remove(output_file)
-                    logging.info(f"تم حذف ملف المخرجات: {output_file}")
-            except Exception:
-                pass
+            if safe_remove_file(output_file):
+                logging.info(f"تم حذف ملف المخرجات: {output_file}")
             return response
 
         # إرجاع الملف حسب النوع
@@ -1183,20 +1249,14 @@ def process_video():
 
     except subprocess.CalledProcessError as e:
         logging.error(f"خطأ في معالجة الفيديو: {e}")
-        if temp_media and os.path.exists(temp_media):
-            os.remove(temp_media)
-        if output_file and os.path.exists(output_file):
-            os.remove(output_file)
+        safe_remove_files(temp_media, output_file)
         return jsonify({
             'error':
             f'خطأ في معالجة الفيديو: {e.stderr.decode() if e.stderr else str(e)}'
         }), 500
     except Exception as e:
         logging.error(f"خطأ عام: {str(e)}")
-        if temp_media and os.path.exists(temp_media):
-            os.remove(temp_media)
-        if output_file and os.path.exists(output_file):
-            os.remove(output_file)
+        safe_remove_files(temp_media, output_file)
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
@@ -1228,8 +1288,7 @@ def search_anime():
 
         gemini_result = identify_anime_with_gemini(temp_path)
         if gemini_result:
-            if temp_path and os.path.exists(temp_path):
-                os.remove(temp_path)
+            safe_remove_file(temp_path)
 
             anime_name = gemini_result
             episode_info = 'غير معروف'
@@ -1275,8 +1334,7 @@ def search_anime():
                                      timeout=30)
 
         if response.status_code != 200:
-            if temp_path and os.path.exists(temp_path):
-                os.remove(temp_path)
+            safe_remove_file(temp_path)
             return jsonify({
                 'found': False,
                 'message':
@@ -1287,15 +1345,13 @@ def search_anime():
         data = response.json()
 
         if data.get('error'):
-            if temp_path and os.path.exists(temp_path):
-                os.remove(temp_path)
+            safe_remove_file(temp_path)
             return jsonify({'error': data['error']}), 400
 
         results = data.get('result', [])
 
         if not results:
-            if temp_path and os.path.exists(temp_path):
-                os.remove(temp_path)
+            safe_remove_file(temp_path)
             return jsonify({
                 'found': False,
                 'message':
@@ -1307,8 +1363,7 @@ def search_anime():
         similarity = top_result.get('similarity', 0)
 
         if similarity < ANIME_SIMILARITY_THRESHOLD:
-            if temp_path and os.path.exists(temp_path):
-                os.remove(temp_path)
+            safe_remove_file(temp_path)
             return jsonify({
                 'found': False,
                 'message':
@@ -1316,8 +1371,7 @@ def search_anime():
                 'suggest_search_by_name': True
             })
 
-        if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
+        safe_remove_file(temp_path)
 
         anilist_info = top_result.get('anilist', {})
         anime_name = 'غير معروف'
@@ -1378,13 +1432,11 @@ def search_anime():
         return jsonify(result)
 
     except requests.Timeout:
-        if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
+        safe_remove_file(temp_path)
         return jsonify(
             {'error': 'انتهت مهلة الاتصال. الرجاء المحاولة مرة أخرى.'}), 500
     except Exception as e:
-        if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
+        safe_remove_file(temp_path)
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
@@ -1585,8 +1637,7 @@ def transcribe_file():
                             f'خطأ في قراءة الملف الصوتي: {str(e)}'}), 400
 
         if duration_seconds > 7200:
-            if temp_audio and os.path.exists(temp_audio):
-                os.remove(temp_audio)
+            safe_remove_file(temp_audio)
             return jsonify({
                 'error':
                 'الملف الصوتي أطول من ساعتين. الحد الأقصى المدعوم هو ساعتين.'
@@ -1603,16 +1654,16 @@ def transcribe_file():
             try:
                 text = transcribe_audio_with_gemini(temp_audio, language)
             except ValueError as ve:
-                if temp_audio and os.path.exists(temp_audio):
-                    os.remove(temp_audio)
+                safe_remove_file(temp_audio)
+                run_garbage_collection()
                 return jsonify({'error': str(ve)}), 400
             except Exception as e:
                 logging.error(f"Gemini transcription failed: {str(e)}")
                 text = None
 
             if text:
-                if temp_audio and os.path.exists(temp_audio):
-                    os.remove(temp_audio)
+                safe_remove_file(temp_audio)
+                run_garbage_collection()
 
                 return jsonify({
                     'success': True,
@@ -1630,8 +1681,7 @@ def transcribe_file():
             )
 
             if duration_seconds > 180:
-                if temp_audio and os.path.exists(temp_audio):
-                    os.remove(temp_audio)
+                safe_remove_file(temp_audio)
                 return jsonify({
                     'error':
                     'لتحويل ملفات أطول من 3 دقائق، يرجى إضافة مفاتيح Gemini API. الملفات الطويلة تحتاج إلى مفاتيح API.'
@@ -1719,13 +1769,8 @@ def transcribe_file():
 
                 text = ' '.join(transcribed_texts)
 
-        if temp_audio and os.path.exists(temp_audio):
-            os.remove(temp_audio)
-        if temp_wav and os.path.exists(temp_wav):
-            os.remove(temp_wav)
-        for chunk_file in chunk_files:
-            if os.path.exists(chunk_file):
-                os.remove(chunk_file)
+        safe_remove_files(temp_audio, temp_wav, *chunk_files)
+        run_garbage_collection()
 
         if not text:
             return jsonify({
@@ -1746,24 +1791,14 @@ def transcribe_file():
 
     except ValueError as ve:
         logging.error(f"Transcription ValueError: {str(ve)}")
-        if temp_audio and os.path.exists(temp_audio):
-            os.remove(temp_audio)
-        if temp_wav and os.path.exists(temp_wav):
-            os.remove(temp_wav)
-        for chunk_file in chunk_files:
-            if os.path.exists(chunk_file):
-                os.remove(chunk_file)
+        safe_remove_files(temp_audio, temp_wav, *chunk_files)
+        run_garbage_collection()
         return jsonify({'error': str(ve)}), 400
     except Exception as e:
         error_message = str(e)
         logging.error(f"Transcription error: {error_message}")
-        if temp_audio and os.path.exists(temp_audio):
-            os.remove(temp_audio)
-        if temp_wav and os.path.exists(temp_wav):
-            os.remove(temp_wav)
-        for chunk_file in chunk_files:
-            if os.path.exists(chunk_file):
-                os.remove(chunk_file)
+        safe_remove_files(temp_audio, temp_wav, *chunk_files)
+        run_garbage_collection()
 
         if 'timeout' in error_message.lower(
         ) or 'timed out' in error_message.lower():
@@ -1816,8 +1851,7 @@ def ocr_image():
                                            lang='ara+eng',
                                            config=custom_config)
 
-        if temp_image and os.path.exists(temp_image):
-            os.remove(temp_image)
+        safe_remove_file(temp_image)
 
         if not text.strip():
             return jsonify({
@@ -1829,8 +1863,7 @@ def ocr_image():
         return jsonify({'success': True, 'text': text.strip()})
 
     except Exception as e:
-        if temp_image and os.path.exists(temp_image):
-            os.remove(temp_image)
+        safe_remove_file(temp_image)
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
@@ -1893,8 +1926,7 @@ def search_podcast_by_image():
                 search_term = ' '.join(extracted_text.split()[:10])
 
         if not search_term:
-            if temp_image and os.path.exists(temp_image):
-                os.remove(temp_image)
+            safe_remove_file(temp_image)
             return jsonify({
                 'found':
                 False,
@@ -1911,8 +1943,7 @@ def search_podcast_by_image():
                                        timeout=15)
 
         if itunes_response.status_code != 200:
-            if temp_image and os.path.exists(temp_image):
-                os.remove(temp_image)
+            safe_remove_file(temp_image)
             return jsonify({'error': 'فشل الاتصال بخدمة البحث'}), 500
 
         itunes_data = itunes_response.json()
@@ -1921,8 +1952,7 @@ def search_podcast_by_image():
         smart_links = generate_podcast_search_links(search_term)
 
         if not podcasts:
-            if temp_image and os.path.exists(temp_image):
-                os.remove(temp_image)
+            safe_remove_file(temp_image)
             return jsonify({
                 'found': False,
                 'extracted_text': extracted_text,
@@ -2001,8 +2031,7 @@ def search_podcast_by_image():
                             gemini_result)
 
             if not best_match or best_similarity < PODCAST_NAME_SIMILARITY_THRESHOLD:
-                if temp_image and os.path.exists(temp_image):
-                    os.remove(temp_image)
+                safe_remove_file(temp_image)
                 return jsonify({
                     'found': False,
                     'extracted_text': extracted_text,
@@ -2013,8 +2042,7 @@ def search_podcast_by_image():
                     'search_links': smart_links
                 })
 
-        if temp_image and os.path.exists(temp_image):
-            os.remove(temp_image)
+        safe_remove_file(temp_image)
 
         if not best_match:
             return jsonify({
@@ -2056,13 +2084,11 @@ def search_podcast_by_image():
         return jsonify(result)
 
     except requests.Timeout:
-        if temp_image and os.path.exists(temp_image):
-            os.remove(temp_image)
+        safe_remove_file(temp_image)
         return jsonify(
             {'error': 'انتهت مهلة الاتصال. الرجاء المحاولة مرة أخرى.'}), 500
     except Exception as e:
-        if temp_image and os.path.exists(temp_image):
-            os.remove(temp_image)
+        safe_remove_file(temp_image)
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
@@ -2127,10 +2153,7 @@ def search_podcast_by_audio():
             return jsonify(
                 {'error': f'خطأ في خدمة التعرف على الصوت: {str(e)}'}), 500
 
-        if temp_audio and os.path.exists(temp_audio):
-            os.remove(temp_audio)
-        if temp_wav and os.path.exists(temp_wav):
-            os.remove(temp_wav)
+        safe_remove_files(temp_audio, temp_wav)
 
         if not transcribed_text:
             return jsonify({
@@ -2219,27 +2242,19 @@ def search_podcast_by_audio():
         return jsonify(
             {'error': 'انتهت مهلة الاتصال. الرجاء المحاولة مرة أخرى.'}), 500
     except Exception as e:
-        if temp_audio and os.path.exists(temp_audio):
-            os.remove(temp_audio)
-        if temp_wav and os.path.exists(temp_wav):
-            os.remove(temp_wav)
+        safe_remove_files(temp_audio, temp_wav)
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
 def cleanup_download_files(output_template, output_file):
     """Clean up all possible temp files from download"""
-    try:
-        for ext in [
-                'mp4', 'mkv', 'webm', 'avi', 'mov', 'mp3', 'wav', 'ogg', 'm4a',
-                'part', 'ytdl', 'temp'
-        ]:
-            temp_file = f'{output_template}.{ext}'
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
-        if output_file and os.path.exists(output_file):
-            os.remove(output_file)
-    except Exception:
-        pass
+    for ext in [
+            'mp4', 'mkv', 'webm', 'avi', 'mov', 'mp3', 'wav', 'ogg', 'm4a',
+            'part', 'ytdl', 'temp'
+    ]:
+        temp_file = f'{output_template}.{ext}'
+        safe_remove_file(temp_file)
+    safe_remove_file(output_file)
 
 
 @app.route('/download-video', methods=['POST'])
@@ -2447,7 +2462,7 @@ def download_video():
                                                check=True,
                                                capture_output=True,
                                                timeout=7200)
-                                os.remove(alt_file)
+                                safe_remove_file(alt_file)
                             except subprocess.CalledProcessError:
                                 cleanup_download_files(output_template,
                                                        output_file)
@@ -2514,9 +2529,8 @@ def download_video():
                                                check=True,
                                                capture_output=True,
                                                timeout=7200)
-                                if alt_file != output_file and os.path.exists(
-                                        alt_file):
-                                    os.remove(alt_file)
+                                if alt_file != output_file:
+                                    safe_remove_file(alt_file)
                             except subprocess.CalledProcessError:
                                 cleanup_download_files(output_template,
                                                        output_file)
@@ -2756,7 +2770,7 @@ def convert_pdf():
                         logging.info(
                             "Standard conversion has Arabic issues, trying OCR..."
                         )
-                        os.remove(docx_path)
+                        safe_remove_file(docx_path)
                         use_ocr = True
                     else:
                         conversion_success = True
@@ -2765,8 +2779,7 @@ def convert_pdf():
             except Exception as e:
                 logging.warning(f"Standard PDF conversion failed: {e}")
                 if extraction_method == 'standard':
-                    if pdf_path and os.path.exists(pdf_path):
-                        os.remove(pdf_path)
+                    safe_remove_file(pdf_path)
                     return jsonify(
                         {'error': f'فشل في تحويل PDF: {str(e)[:100]}'}), 500
                 use_ocr = True
@@ -2790,8 +2803,7 @@ def convert_pdf():
                 if success:
                     conversion_success = True
                 else:
-                    if pdf_path and os.path.exists(pdf_path):
-                        os.remove(pdf_path)
+                    safe_remove_file(pdf_path)
                     return jsonify({
                         'error':
                         f'فشل في استخراج النص: {error[:100] if error else "خطأ غير معروف"}'
@@ -2831,16 +2843,12 @@ def convert_pdf():
                 doc.save(docx_path)
 
             except Exception as e:
-                if pdf_path and os.path.exists(pdf_path):
-                    os.remove(pdf_path)
-                if docx_path and os.path.exists(docx_path):
-                    os.remove(docx_path)
+                safe_remove_files(pdf_path, docx_path)
                 return jsonify({'error':
                                 f'فشل في الترجمة: {str(e)[:100]}'}), 500
 
         if not os.path.exists(docx_path):
-            if pdf_path and os.path.exists(pdf_path):
-                os.remove(pdf_path)
+            safe_remove_file(pdf_path)
             return jsonify({'error': 'فشل في إنشاء ملف Word'}), 500
 
         final_pdf = pdf_path
@@ -2848,13 +2856,7 @@ def convert_pdf():
 
         @after_this_request
         def cleanup(response):
-            try:
-                if final_pdf and os.path.exists(final_pdf):
-                    os.remove(final_pdf)
-                if final_docx and os.path.exists(final_docx):
-                    os.remove(final_docx)
-            except Exception:
-                pass
+            safe_remove_files(final_pdf, final_docx)
             return response
 
         return send_file(
@@ -2866,16 +2868,7 @@ def convert_pdf():
         )
 
     except Exception as e:
-        if pdf_path and os.path.exists(pdf_path):
-            try:
-                os.remove(pdf_path)
-            except Exception:
-                pass
-        if docx_path and os.path.exists(docx_path):
-            try:
-                os.remove(docx_path)
-            except Exception:
-                pass
+        safe_remove_files(pdf_path, docx_path)
         return jsonify({'error': f'خطأ غير متوقع: {str(e)[:100]}'}), 500
 
 
@@ -3050,7 +3043,7 @@ def transcribe_video():
                                                check=True,
                                                capture_output=True,
                                                timeout=7200)
-                                os.remove(alt_file)
+                                safe_remove_file(alt_file)
                                 temp_audio = new_temp_audio
                             except:
                                 temp_audio = alt_file
@@ -3089,16 +3082,14 @@ def transcribe_video():
             extracted_audio = extract_audio_from_video(temp_video, temp_audio)
 
             if not extracted_audio or not os.path.exists(temp_audio):
-                if temp_video and os.path.exists(temp_video):
-                    os.remove(temp_video)
+                safe_remove_file(temp_video)
                 return jsonify({
                     'error':
                     'فشل في استخراج الصوت من الفيديو. تأكد من أن الفيديو يحتوي على صوت.'
                 }), 400
 
-            if temp_video and os.path.exists(temp_video):
-                os.remove(temp_video)
-                temp_video = None
+            safe_remove_file(temp_video)
+            temp_video = None
 
         logging.info(
             f"Starting Gemini transcription for video audio: {temp_audio} with language: {language}"
@@ -3107,20 +3098,20 @@ def transcribe_video():
         try:
             text = transcribe_audio_with_gemini(temp_audio, language)
         except ValueError as ve:
-            if temp_audio and os.path.exists(temp_audio):
-                os.remove(temp_audio)
+            safe_remove_file(temp_audio)
+            run_garbage_collection()
             return jsonify({'error': str(ve)}), 400
         except Exception as transcribe_error:
             logging.error(f"Transcription error: {transcribe_error}")
-            if temp_audio and os.path.exists(temp_audio):
-                os.remove(temp_audio)
+            safe_remove_files(temp_audio, temp_video)
+            run_garbage_collection()
             return jsonify({
                 'error':
                 'فشل في تحويل الصوت إلى نص. حاول مرة أخرى أو استخدم ملف أقصر.'
             }), 500
 
-        if temp_audio and os.path.exists(temp_audio):
-            os.remove(temp_audio)
+        safe_remove_file(temp_audio)
+        run_garbage_collection()
 
         if text:
             word_count = len(text.split())
@@ -3138,29 +3129,13 @@ def transcribe_video():
             }), 500
 
     except ValueError as ve:
-        if temp_video and os.path.exists(temp_video):
-            try:
-                os.remove(temp_video)
-            except:
-                pass
-        if temp_audio and os.path.exists(temp_audio):
-            try:
-                os.remove(temp_audio)
-            except:
-                pass
+        safe_remove_files(temp_video, temp_audio)
+        run_garbage_collection()
         return jsonify({'error': str(ve)}), 400
     except Exception as e:
         logging.error(f"Video transcription error: {e}")
-        if temp_video and os.path.exists(temp_video):
-            try:
-                os.remove(temp_video)
-            except:
-                pass
-        if temp_audio and os.path.exists(temp_audio):
-            try:
-                os.remove(temp_audio)
-            except:
-                pass
+        safe_remove_files(temp_video, temp_audio)
+        run_garbage_collection()
         error_message = str(e)
         if 'timeout' in error_message.lower(
         ) or 'timed out' in error_message.lower():
@@ -3675,10 +3650,7 @@ def get_audio():
             if os.path.exists(audio_file):
                 @after_this_request
                 def cleanup(response):
-                    try:
-                        os.remove(audio_file)
-                    except:
-                        pass
+                    safe_remove_file(audio_file)
                     return response
                 
                 return send_file(audio_file, mimetype='audio/mpeg', as_attachment=False, download_name=f"audio_{info['id']}.mp3")
