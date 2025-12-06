@@ -821,9 +821,283 @@ def video_info():
         return jsonify({'error': f'خطأ في جلب معلومات الفيديو: {str(e)}'}), 400
 
 
+# =============================================================================
+# دالة جلب الجودات المتاحة من يوتيوب
+# =============================================================================
+@app.route('/get-video-formats', methods=['POST'])
+def get_video_formats():
+    """جلب قائمة الجودات والفورمات المتاحة للفيديو"""
+    try:
+        data = request.get_json()
+        url = data.get('url', '')
+
+        if not url:
+            return jsonify({'error': 'الرجاء إدخال رابط الفيديو'}), 400
+
+        logging.info(f"جلب الجودات المتاحة للفيديو: {url}")
+
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'skip_download': True,
+            'noplaylist': True,
+            'socket_timeout': 1800,
+            'retries': 3,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            },
+        }
+
+        if os.path.exists('cookies.txt'):
+            ydl_opts['cookiefile'] = 'cookies.txt'
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+
+            if not info:
+                return jsonify({'error': 'لم يتم العثور على معلومات الفيديو'}), 400
+
+            formats = info.get('formats', [])
+            available_qualities = []
+            seen_resolutions = set()
+
+            # فلترة وتجميع الجودات المتاحة
+            for fmt in formats:
+                height = fmt.get('height')
+                vcodec = fmt.get('vcodec', 'none')
+                acodec = fmt.get('acodec', 'none')
+                ext = fmt.get('ext', '')
+                filesize = fmt.get('filesize') or fmt.get('filesize_approx') or 0
+
+                # تجاهل الفورمات بدون ارتفاع محدد
+                if height and vcodec != 'none':
+                    resolution = f"{height}p"
+                    if resolution not in seen_resolutions:
+                        seen_resolutions.add(resolution)
+                        size_mb = round(filesize / (1024 * 1024), 1) if filesize else 0
+                        available_qualities.append({
+                            'resolution': resolution,
+                            'height': height,
+                            'type': 'video',
+                            'size_mb': size_mb,
+                            'format': ext
+                        })
+
+            # ترتيب الجودات من الأعلى للأقل
+            available_qualities.sort(key=lambda x: x['height'], reverse=True)
+
+            # إضافة خيار الصوت فقط
+            audio_formats = [f for f in formats if f.get('acodec') != 'none' and f.get('vcodec') == 'none']
+            best_audio = None
+            for af in audio_formats:
+                if af.get('abr'):
+                    if not best_audio or af.get('abr', 0) > best_audio.get('abr', 0):
+                        best_audio = af
+
+            # جلب معلومات الفيديو الأساسية
+            duration_seconds = info.get('duration') or 0
+            title = info.get('title') or 'غير معروف'
+            thumbnail = info.get('thumbnail') or ''
+
+            logging.info(f"تم جلب {len(available_qualities)} جودة متاحة")
+
+            return jsonify({
+                'success': True,
+                'title': title,
+                'duration_seconds': duration_seconds,
+                'thumbnail': thumbnail,
+                'qualities': available_qualities,
+                'has_audio': best_audio is not None,
+                'default_quality': available_qualities[0]['resolution'] if available_qualities else '720p'
+            })
+
+    except Exception as e:
+        logging.error(f"خطأ في جلب الجودات: {str(e)}")
+        return jsonify({'error': f'خطأ في جلب الجودات المتاحة: {str(e)}'}), 400
+
+
+# =============================================================================
+# دالة تحميل الفيديو/الصوت من يوتيوب
+# =============================================================================
+def download_youtube_media(url: str, quality: str, download_type: str, output_dir: str) -> str:
+    """
+    تحميل الفيديو أو الصوت من يوتيوب بالجودة المحددة
+    
+    Args:
+        url: رابط الفيديو
+        quality: الجودة المطلوبة (مثل 720p, 1080p)
+        download_type: نوع التحميل (video أو audio)
+        output_dir: مجلد الحفظ
+    
+    Returns:
+        مسار الملف المحمل
+    """
+    unique_id = str(uuid.uuid4())[:8]
+    
+    if download_type == 'audio':
+        # تحميل الصوت فقط
+        output_template = os.path.join(output_dir, f'audio_{unique_id}.%(ext)s')
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': output_template,
+            'noplaylist': True,
+            'quiet': True,
+            'no_warnings': True,
+            'socket_timeout': 7200,
+            'retries': 5,
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+        }
+    else:
+        # تحميل الفيديو بالجودة المحددة
+        height = quality.replace('p', '') if quality else '720'
+        output_template = os.path.join(output_dir, f'video_{unique_id}.%(ext)s')
+        
+        # اختيار أفضل فورمات بناءً على الجودة المطلوبة
+        format_string = f'bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={height}]+bestaudio/best[height<={height}]/best'
+        
+        ydl_opts = {
+            'format': format_string,
+            'merge_output_format': 'mp4',
+            'outtmpl': output_template,
+            'noplaylist': True,
+            'quiet': True,
+            'no_warnings': True,
+            'socket_timeout': 7200,
+            'retries': 5,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+        }
+
+    if os.path.exists('cookies.txt'):
+        ydl_opts['cookiefile'] = 'cookies.txt'
+
+    logging.info(f"بدء تحميل {download_type} بجودة {quality}")
+    
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+
+    # البحث عن الملف المحمل
+    base_name = output_template.replace('.%(ext)s', '')
+    for ext in ['mp4', 'mp3', 'mkv', 'webm', 'm4a', 'wav']:
+        possible_file = f"{base_name}.{ext}"
+        if os.path.exists(possible_file):
+            logging.info(f"تم تحميل الملف: {possible_file}")
+            return possible_file
+
+    raise Exception("لم يتم العثور على الملف المحمل")
+
+
+# =============================================================================
+# دالة قص الملف باستخدام ffmpeg
+# =============================================================================
+def cut_media_segment(input_path: str, start_seconds: int, end_seconds: int, 
+                      download_type: str, output_dir: str) -> str:
+    """
+    قص جزء من الفيديو أو الصوت باستخدام ffmpeg
+    
+    Args:
+        input_path: مسار الملف الأصلي
+        start_seconds: وقت البداية بالثواني
+        end_seconds: وقت النهاية بالثواني
+        download_type: نوع الملف (video أو audio)
+        output_dir: مجلد الحفظ
+    
+    Returns:
+        مسار الملف المقصوص
+    """
+    unique_id = str(uuid.uuid4())[:8]
+    duration = end_seconds - start_seconds
+    
+    if download_type == 'audio':
+        output_path = os.path.join(output_dir, f'clip_{unique_id}.mp3')
+        # قص الصوت مع ترميز خفيف
+        ffmpeg_cmd = [
+            'ffmpeg', '-y',
+            '-ss', str(start_seconds),
+            '-i', input_path,
+            '-t', str(duration),
+            '-c:a', 'libmp3lame',
+            '-b:a', '192k',
+            '-ar', '44100',
+            output_path
+        ]
+    else:
+        output_path = os.path.join(output_dir, f'clip_{unique_id}.mp4')
+        # قص الفيديو بدون إعادة ترميز قدر الإمكان (أسرع وأخف)
+        ffmpeg_cmd = [
+            'ffmpeg', '-y',
+            '-ss', str(start_seconds),
+            '-i', input_path,
+            '-t', str(duration),
+            '-c', 'copy',  # نسخ مباشر بدون إعادة ترميز
+            '-avoid_negative_ts', 'make_zero',
+            output_path
+        ]
+
+    logging.info(f"بدء قص الملف من {start_seconds}s إلى {end_seconds}s")
+    
+    try:
+        result = subprocess.run(ffmpeg_cmd, check=True, capture_output=True, timeout=7200)
+        
+        # إذا فشل القص بدون ترميز، نحاول مع إعادة الترميز
+        if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+            if download_type == 'video':
+                logging.info("القص بدون ترميز فشل، جاري المحاولة مع إعادة الترميز...")
+                ffmpeg_cmd = [
+                    'ffmpeg', '-y',
+                    '-ss', str(start_seconds),
+                    '-i', input_path,
+                    '-t', str(duration),
+                    '-c:v', 'libx264',
+                    '-c:a', 'aac',
+                    '-strict', 'experimental',
+                    output_path
+                ]
+                subprocess.run(ffmpeg_cmd, check=True, capture_output=True, timeout=7200)
+    except subprocess.CalledProcessError as e:
+        # محاولة أخيرة مع إعادة الترميز الكامل
+        if download_type == 'video':
+            ffmpeg_cmd = [
+                'ffmpeg', '-y',
+                '-ss', str(start_seconds),
+                '-i', input_path,
+                '-t', str(duration),
+                '-c:v', 'libx264',
+                '-c:a', 'aac',
+                '-strict', 'experimental',
+                output_path
+            ]
+            subprocess.run(ffmpeg_cmd, check=True, capture_output=True, timeout=7200)
+        else:
+            raise e
+
+    if os.path.exists(output_path):
+        logging.info(f"تم قص الملف بنجاح: {output_path}")
+        return output_path
+    else:
+        raise Exception("فشل في إنشاء الملف المقصوص")
+
+
 @app.route('/process-video', methods=['POST'])
 def process_video():
-    temp_video = None
+    """
+    معالجة وقص الفيديو من يوتيوب مع دعم اختيار الجودة ونوع التحميل
+    الحقول المدعومة:
+    - url: رابط الفيديو (مطلوب)
+    - start_time: وقت البداية (مطلوب)
+    - end_time: وقت النهاية (مطلوب)
+    - quality: الجودة (اختياري - افتراضي 720p)
+    - download_type: نوع التحميل video أو audio (اختياري - افتراضي video)
+    """
+    temp_media = None
     output_file = None
 
     try:
@@ -831,12 +1105,20 @@ def process_video():
         url = data.get('url', '')
         start_time = data.get('start_time', '00:00')
         end_time = data.get('end_time', '')
+        quality = data.get('quality', '720p')  # الجودة الافتراضية
+        download_type = data.get('download_type', 'video')  # النوع الافتراضي
+
+        logging.info(f"طلب قص فيديو: quality={quality}, type={download_type}")
 
         if not url:
             return jsonify({'error': 'الرجاء إدخال رابط الفيديو'}), 400
 
         if not end_time:
             return jsonify({'error': 'الرجاء تحديد وقت النهاية'}), 400
+
+        # التحقق من نوع التحميل
+        if download_type not in ['video', 'audio']:
+            download_type = 'video'
 
         start_seconds = validate_time_format(start_time)
         end_seconds = validate_time_format(end_time)
@@ -857,84 +1139,52 @@ def process_video():
             return jsonify(
                 {'error': 'وقت النهاية يجب أن يكون أكبر من وقت البداية'}), 400
 
-        unique_id = str(uuid.uuid4())[:8]
-        temp_video = os.path.join(UPLOAD_FOLDER, f'temp_video_{unique_id}.mp4')
-        output_file = os.path.join(UPLOAD_FOLDER, f'clip_{unique_id}.mp4')
+        # تحميل الملف باستخدام الدالة المساعدة الجديدة
+        logging.info(f"بدء تحميل الملف من يوتيوب...")
+        temp_media = download_youtube_media(url, quality, download_type, UPLOAD_FOLDER)
+        logging.info(f"تم تحميل الملف: {temp_media}")
 
-        ydl_opts = {
-            'format':
-            'bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
-            'merge_output_format': 'mp4',
-            'outtmpl': temp_video.replace('.mp4', '.%(ext)s'),
-            'quiet': True,
-            'no_warnings': True,
-            'socket_timeout': 7200,
-            'retries': 5,
-            'fragment_retries': 5,
-            'http_headers': {
-                'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept':
-                'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-            },
-        }
+        # قص الملف باستخدام الدالة المساعدة
+        logging.info(f"بدء قص الملف...")
+        output_file = cut_media_segment(temp_media, start_seconds, end_seconds, 
+                                         download_type, UPLOAD_FOLDER)
+        logging.info(f"تم قص الملف: {output_file}")
 
-        if os.path.exists('cookies.txt'):
-            ydl_opts['cookiefile'] = 'cookies.txt'
+        # حذف الملف الأصلي بعد القص
+        if temp_media and os.path.exists(temp_media):
+            os.remove(temp_media)
+            logging.info(f"تم حذف الملف المؤقت: {temp_media}")
+            temp_media = None
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-
-        actual_temp_video = None
-        for ext in ['mp4', 'mkv', 'webm', 'avi']:
-            possible_file = temp_video.replace('.mp4', f'.{ext}')
-            if os.path.exists(possible_file):
-                actual_temp_video = possible_file
-                break
-
-        if not actual_temp_video:
-            return jsonify({'error': 'فشل في تحميل الفيديو'}), 500
-
-        temp_video = actual_temp_video
-
-        duration = end_seconds - start_seconds
-
-        ffmpeg_cmd = [
-            'ffmpeg', '-y', '-ss',
-            str(start_seconds), '-i', temp_video, '-t',
-            str(duration), '-c:v', 'libx264', '-c:a', 'aac', '-strict',
-            'experimental', output_file
-        ]
-
-        subprocess.run(ffmpeg_cmd,
-                       check=True,
-                       capture_output=True,
-                       timeout=7200)
-
-        if os.path.exists(temp_video):
-            os.remove(temp_video)
-            temp_video = None
-
+        # تنظيف الملف بعد الإرسال
         @after_this_request
         def cleanup(response):
             try:
                 if output_file and os.path.exists(output_file):
                     os.remove(output_file)
+                    logging.info(f"تم حذف ملف المخرجات: {output_file}")
             except Exception:
                 pass
             return response
 
+        # إرجاع الملف حسب النوع
+        if download_type == 'audio':
+            download_name = f'clip_{start_time.replace(":", "-")}_{end_time.replace(":", "-")}.mp3'
+            mimetype = 'audio/mpeg'
+        else:
+            download_name = f'clip_{start_time.replace(":", "-")}_{end_time.replace(":", "-")}_{quality}.mp4'
+            mimetype = 'video/mp4'
+
         return send_file(
             output_file,
             as_attachment=True,
-            download_name=
-            f'clip_{start_time.replace(":", "-")}_{end_time.replace(":", "-")}.mp4',
-            mimetype='video/mp4')
+            download_name=download_name,
+            mimetype=mimetype)
 
     except subprocess.CalledProcessError as e:
-        if temp_video and os.path.exists(temp_video):
-            os.remove(temp_video)
+        logging.error(f"خطأ في معالجة الفيديو: {e}")
+        if temp_media and os.path.exists(temp_media):
+            os.remove(temp_media)
         if output_file and os.path.exists(output_file):
             os.remove(output_file)
         return jsonify({
@@ -942,8 +1192,9 @@ def process_video():
             f'خطأ في معالجة الفيديو: {e.stderr.decode() if e.stderr else str(e)}'
         }), 500
     except Exception as e:
-        if temp_video and os.path.exists(temp_video):
-            os.remove(temp_video)
+        logging.error(f"خطأ عام: {str(e)}")
+        if temp_media and os.path.exists(temp_media):
+            os.remove(temp_media)
         if output_file and os.path.exists(output_file):
             os.remove(output_file)
         return jsonify({'error': f'خطأ: {str(e)}'}), 500

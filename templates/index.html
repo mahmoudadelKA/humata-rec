@@ -2194,6 +2194,32 @@
                             </div>
                         </div>
 
+                        <!-- اختيار الجودة ونوع التحميل -->
+                        <div id="quality-options" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-slate-300 font-medium mb-2">
+                                    <i class="fas fa-video ml-1 text-indigo-400"></i>
+                                    جودة الفيديو:
+                                </label>
+                                <select id="video-quality" class="w-full rounded-xl p-4">
+                                    <option value="1080p">1080p - جودة عالية</option>
+                                    <option value="720p" selected>720p - جودة متوسطة</option>
+                                    <option value="480p">480p - جودة منخفضة</option>
+                                    <option value="360p">360p - توفير البيانات</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 font-medium mb-2">
+                                    <i class="fas fa-download ml-1 text-green-400"></i>
+                                    نوع التحميل:
+                                </label>
+                                <select id="download-type" class="w-full rounded-xl p-4">
+                                    <option value="video" selected>فيديو (MP4)</option>
+                                    <option value="audio">صوت فقط (MP3)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-slate-300 font-medium mb-2">وقت البداية:</label>
@@ -4240,11 +4266,13 @@
 
             const fetchBtn = document.getElementById('fetch-btn');
             const videoInfo = document.getElementById('video-info');
+            const qualityOptions = document.getElementById('quality-options');
             const errorDiv = document.getElementById('youtube-error');
 
             fetchBtn.disabled = true;
             fetchBtn.innerHTML = '<div class="loader"></div>';
             videoInfo.classList.add('hidden');
+            qualityOptions.classList.add('hidden');
             errorDiv.classList.add('hidden');
 
             try {
@@ -4270,6 +4298,7 @@
                 document.getElementById('video-channel').textContent = data.channel;
                 document.getElementById('video-duration').textContent = data.duration;
                 videoInfo.classList.remove('hidden');
+                qualityOptions.classList.remove('hidden');
 
             } catch (error) {
                 document.getElementById('youtube-error-text').textContent = error.message;
@@ -4305,10 +4334,19 @@
             document.getElementById('loading-text').textContent = 'جاري تحميل ومعالجة الفيديو... قد يستغرق هذا بعض الوقت';
 
             try {
+                const quality = document.getElementById('video-quality').value;
+                const downloadType = document.getElementById('download-type').value;
+                
                 const response = await fetch('/process-video', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({url, start_time: startTime || '00:00', end_time: endTime})
+                    body: JSON.stringify({
+                        url, 
+                        start_time: startTime || '00:00', 
+                        end_time: endTime,
+                        quality: quality,
+                        download_type: downloadType
+                    })
                 });
 
                 const contentType = response.headers.get('content-type');
@@ -4326,7 +4364,8 @@
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = downloadUrl;
-                a.download = `clip_${startTime.replace(':', '-')}_${endTime.replace(':', '-')}.mp4`;
+                const fileExt = downloadType === 'audio' ? 'mp3' : 'mp4';
+                a.download = `clip_${startTime.replace(':', '-')}_${endTime.replace(':', '-')}.${fileExt}`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
