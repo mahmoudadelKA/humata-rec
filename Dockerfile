@@ -26,7 +26,8 @@ COPY . .
 
 
 # 8. أمر التشغيل - يربط على $PORT اللي Hugging Face بيبعته (أو 7860 لو مش موجود)
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --timeout 1800 --workers 2 --threads 4 main:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --timeout 1800 --workers 1 --threads 1 main:app"]
+
 
 
 
