@@ -234,7 +234,8 @@ def get_balanced_key_index(allow_exhausted_fallback=False):
     ]
     for k in expired_keys:
         del exhausted_keys_tracker[k]
-        logging.info(f"API key {k + 1} cooldown expired, now available")
+        key_usage_count[k] = 0
+        logging.info(f"API key {k + 1} cooldown expired, usage reset, now available")
 
     available_keys = [
         i for i in range(len(GEMINI_KEYS)) if i not in exhausted_keys_tracker
@@ -313,11 +314,11 @@ def get_next_gemini_key(current_index=0):
 def call_gemini_text(prompt, max_retries=None):
     """
     Call Gemini API for text-only prompts with automatic key rotation on quota errors.
-    Cycles through GEMINI_KEY_1 to GEMINI_KEY_5 on 429 errors.
+    Uses balanced key rotation with exhausted key tracking.
     
     Args:
         prompt: The text prompt to send to the model
-        max_retries: Maximum number of key rotations to try (defaults to number of available keys)
+        max_retries: Maximum number of key rotations to try (defaults to number of available keys * 2)
     
     Returns:
         str: Response text or None if all keys exhausted
@@ -327,10 +328,21 @@ def call_gemini_text(prompt, max_retries=None):
         return None
 
     if max_retries is None:
-        max_retries = len(GEMINI_KEYS)
+        max_retries = len(GEMINI_KEYS) * 2
+    
+    tried_keys = set()
 
     for attempt in range(max_retries):
-        key_index = attempt % len(GEMINI_KEYS)
+        key_index = get_balanced_key_index(allow_exhausted_fallback=False)
+        
+        if key_index is None:
+            logging.error("All Gemini API keys in cooldown")
+            return None
+        
+        if key_index in tried_keys:
+            continue
+            
+        tried_keys.add(key_index)
         api_key = GEMINI_KEYS[key_index]
 
         try:
@@ -346,8 +358,9 @@ def call_gemini_text(prompt, max_retries=None):
         except Exception as e:
             error_str = str(e).lower()
             if '429' in error_str or 'quota' in error_str or 'rate' in error_str or 'limit' in error_str:
+                mark_key_exhausted(key_index)
                 logging.warning(
-                    f"Gemini text key {key_index + 1} quota exceeded, rotating to next key..."
+                    f"Gemini text key {key_index + 1} quota exceeded, marked as exhausted and rotating..."
                 )
                 continue
             else:
@@ -361,12 +374,12 @@ def call_gemini_text(prompt, max_retries=None):
 def call_gemini_vision(image_or_path, prompt, max_retries=None):
     """
     Call Gemini Vision API with automatic key rotation on quota errors.
-    Cycles through GEMINI_KEY_1 to GEMINI_KEY_5 on 429 errors.
+    Uses balanced key rotation with exhausted key tracking.
     
     Args:
         image_or_path: Either a PIL Image object or path to image file
         prompt: The prompt to send to the model
-        max_retries: Maximum number of key rotations to try (defaults to number of available keys)
+        max_retries: Maximum number of key rotations to try (defaults to number of available keys * 2)
     
     Returns:
         str: Response text or None if all keys exhausted
@@ -376,15 +389,26 @@ def call_gemini_vision(image_or_path, prompt, max_retries=None):
         return None
 
     if max_retries is None:
-        max_retries = len(GEMINI_KEYS)
+        max_retries = len(GEMINI_KEYS) * 2
 
     if isinstance(image_or_path, str):
         img = Image.open(image_or_path)
     else:
         img = image_or_path
+    
+    tried_keys = set()
 
     for attempt in range(max_retries):
-        key_index = attempt % len(GEMINI_KEYS)
+        key_index = get_balanced_key_index(allow_exhausted_fallback=False)
+        
+        if key_index is None:
+            logging.error("All Gemini API keys in cooldown")
+            return None
+        
+        if key_index in tried_keys:
+            continue
+            
+        tried_keys.add(key_index)
         api_key = GEMINI_KEYS[key_index]
 
         try:
@@ -400,8 +424,9 @@ def call_gemini_vision(image_or_path, prompt, max_retries=None):
         except Exception as e:
             error_str = str(e).lower()
             if '429' in error_str or 'quota' in error_str or 'rate' in error_str or 'limit' in error_str:
+                mark_key_exhausted(key_index)
                 logging.warning(
-                    f"Gemini key {key_index + 1} quota exceeded, rotating to next key..."
+                    f"Gemini vision key {key_index + 1} quota exceeded, marked as exhausted and rotating..."
                 )
                 continue
             else:
