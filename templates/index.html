@@ -312,22 +312,29 @@
         
         .tools-hub-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 1.5rem;
             max-width: 1200px;
             width: 100%;
             padding: 0 1rem;
+            perspective: 1200px;
+        }
+        
+        @media (min-width: 1400px) {
+            .tools-hub-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
         }
         
         .tool-card {
-            background: rgba(8, 12, 28, 0.9);
+            background: linear-gradient(145deg, rgba(15, 20, 45, 0.95), rgba(8, 12, 28, 0.98));
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--card-border-color, rgba(99, 102, 241, 0.2));
+            border: 1px solid var(--card-border-color, rgba(212, 175, 55, 0.25));
             border-radius: 1.25rem;
-            padding: 1rem;
+            padding: 1.25rem 1rem;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -337,7 +344,12 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
             user-select: none;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(212, 175, 55, 0.05) inset,
+                inset 0 1px 0 rgba(255, 215, 0, 0.05);
+            transform-style: preserve-3d;
+            transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
         }
         
         /* Neon glow border effect */
@@ -368,13 +380,14 @@
         }
         
         .tool-card:hover, .tool-card:active {
-            transform: translateY(-6px) scale(1.03);
-            border-color: var(--card-border-color, rgba(0, 191, 255, 0.6));
+            transform: perspective(1000px) rotateX(-5deg) rotateY(5deg) translateY(-8px) scale(1.02);
+            border-color: var(--card-border-color, rgba(212, 175, 55, 0.6));
             box-shadow: 
-                0 15px 40px rgba(0, 0, 0, 0.5), 
-                0 0 30px var(--card-glow-shadow, rgba(0, 191, 255, 0.25)),
-                0 0 60px var(--card-glow-shadow, rgba(0, 191, 255, 0.1)),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                0 20px 50px rgba(0, 0, 0, 0.5),
+                0 0 40px var(--card-glow-shadow, rgba(212, 175, 55, 0.3)),
+                0 0 80px var(--card-glow-shadow, rgba(255, 215, 0, 0.15)),
+                inset 0 1px 0 rgba(255, 215, 0, 0.15),
+                -5px 15px 30px rgba(0, 0, 0, 0.4);
         }
         
         .tool-card:hover::before, .tool-card:active::before {
@@ -451,12 +464,14 @@
             line-height: 1.3;
         }
         
-        /* Enhanced Neon color variants - brighter and more vibrant */
+        /* Enhanced Pharaonic color variants - gold, turquoise, purple */
+        .tool-card[data-color="gold"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #FFD700 50%, transparent 95%); --card-border-color: rgba(212, 175, 55, 0.5); --card-glow-shadow: rgba(255, 215, 0, 0.4); --icon-border-color: rgba(212, 175, 55, 0.6); --icon-glow: rgba(255, 215, 0, 0.7); }
+        .tool-card[data-color="turquoise"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #40E0D0 50%, transparent 95%); --card-border-color: rgba(64, 224, 208, 0.5); --card-glow-shadow: rgba(64, 224, 208, 0.4); --icon-border-color: rgba(64, 224, 208, 0.6); --icon-glow: rgba(64, 224, 208, 0.7); }
         .tool-card[data-color="cyan"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #00e5ff 50%, transparent 95%); --card-border-color: rgba(0, 229, 255, 0.4); --card-glow-shadow: rgba(0, 229, 255, 0.3); --icon-border-color: rgba(0, 229, 255, 0.5); --icon-glow: rgba(0, 229, 255, 0.6); }
         .tool-card[data-color="pink"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #ff4d94 50%, transparent 95%); --card-border-color: rgba(255, 77, 148, 0.4); --card-glow-shadow: rgba(255, 77, 148, 0.3); --icon-border-color: rgba(255, 77, 148, 0.5); --icon-glow: rgba(255, 77, 148, 0.6); }
         .tool-card[data-color="yellow"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #ffd000 50%, transparent 95%); --card-border-color: rgba(255, 208, 0, 0.4); --card-glow-shadow: rgba(255, 208, 0, 0.3); --icon-border-color: rgba(255, 208, 0, 0.5); --icon-glow: rgba(255, 208, 0, 0.6); }
         .tool-card[data-color="green"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #00ff88 50%, transparent 95%); --card-border-color: rgba(0, 255, 136, 0.4); --card-glow-shadow: rgba(0, 255, 136, 0.3); --icon-border-color: rgba(0, 255, 136, 0.5); --icon-glow: rgba(0, 255, 136, 0.6); }
-        .tool-card[data-color="purple"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #bf5af2 50%, transparent 95%); --card-border-color: rgba(191, 90, 242, 0.4); --card-glow-shadow: rgba(191, 90, 242, 0.3); --icon-border-color: rgba(191, 90, 242, 0.5); --icon-glow: rgba(191, 90, 242, 0.6); }
+        .tool-card[data-color="purple"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #9b59b6 50%, transparent 95%); --card-border-color: rgba(155, 89, 182, 0.5); --card-glow-shadow: rgba(155, 89, 182, 0.4); --icon-border-color: rgba(155, 89, 182, 0.6); --icon-glow: rgba(155, 89, 182, 0.7); }
         .tool-card[data-color="orange"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #ff9500 50%, transparent 95%); --card-border-color: rgba(255, 149, 0, 0.4); --card-glow-shadow: rgba(255, 149, 0, 0.3); --icon-border-color: rgba(255, 149, 0, 0.5); --icon-glow: rgba(255, 149, 0, 0.6); }
         .tool-card[data-color="red"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #ff453a 50%, transparent 95%); --card-border-color: rgba(255, 69, 58, 0.4); --card-glow-shadow: rgba(255, 69, 58, 0.3); --icon-border-color: rgba(255, 69, 58, 0.5); --icon-glow: rgba(255, 69, 58, 0.6); }
         .tool-card[data-color="teal"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #30d5c8 50%, transparent 95%); --card-border-color: rgba(48, 213, 200, 0.4); --card-glow-shadow: rgba(48, 213, 200, 0.3); --icon-border-color: rgba(48, 213, 200, 0.5); --icon-glow: rgba(48, 213, 200, 0.6); }

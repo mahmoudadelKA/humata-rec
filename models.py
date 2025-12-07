@@ -78,3 +78,21 @@ class DailyStats(db.Model):
     video_requests = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ActiveSession(db.Model):
+    __tablename__ = 'active_sessions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    user_id = db.Column(db.String(100))
+    ip_address = db.Column(db.String(45), nullable=False)
+    user_agent = db.Column(db.String(500))
+    device_type = db.Column(db.String(50))
+    browser = db.Column(db.String(100))
+    os_name = db.Column(db.String(100))
+    country = db.Column(db.String(100))
+    first_seen = db.Column(db.DateTime, default=datetime.utcnow)
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    page_views = db.Column(db.Integer, default=1)
+    is_active = db.Column(db.Boolean, default=True)

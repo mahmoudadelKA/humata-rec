@@ -25,7 +25,7 @@ import google.generativeai as genai
 from docx import Document
 from docx.shared import Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from models import db, AdminUser, GeminiKeyState, GeminiUsageLog, DailyStats
+from models import db, AdminUser, GeminiKeyState, GeminiUsageLog, DailyStats, ActiveSession
 
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
 # هذا يحمي حسابك بدلاً من رفع الملف على GitHub
@@ -212,6 +212,120 @@ def after_request_cleanup(response):
     """Periodic cleanup after requests to manage memory and disk space."""
     cleanup_after_request()
     return response
+
+
+def parse_user_agent(user_agent_string):
+    """Parse user agent string to extract device type, browser, and OS."""
+    if not user_agent_string:
+        return 'unknown', 'unknown', 'unknown'
+    
+    ua = user_agent_string.lower()
+    
+    if 'mobile' in ua or 'android' in ua or 'iphone' in ua:
+        device_type = 'mobile'
+    elif 'tablet' in ua or 'ipad' in ua:
+        device_type = 'tablet'
+    else:
+        device_type = 'desktop'
+    
+    browser = 'unknown'
+    if 'chrome' in ua and 'edg' not in ua:
+        browser = 'Chrome'
+    elif 'firefox' in ua:
+        browser = 'Firefox'
+    elif 'safari' in ua and 'chrome' not in ua:
+        browser = 'Safari'
+    elif 'edg' in ua:
+        browser = 'Edge'
+    elif 'opera' in ua:
+        browser = 'Opera'
+    
+    os_name = 'unknown'
+    if 'windows' in ua:
+        os_name = 'Windows'
+    elif 'mac os' in ua or 'macos' in ua:
+        os_name = 'macOS'
+    elif 'linux' in ua:
+        os_name = 'Linux'
+    elif 'android' in ua:
+        os_name = 'Android'
+    elif 'iphone' in ua or 'ipad' in ua:
+        os_name = 'iOS'
+    
+    return device_type, browser, os_name
+
+
+SESSION_INACTIVE_MINUTES = 5
+SESSION_CLEANUP_INTERVAL = 300
+last_session_cleanup = 0
+
+
+@app.before_request
+def track_active_session():
+    """Track active sessions for analytics."""
+    global last_session_cleanup
+    
+    if request.endpoint in ('static', 'admin_api_stats', 'admin_api_active_sessions'):
+        return
+    
+    try:
+        session_id = request.cookies.get('arkan_session')
+        if not session_id:
+            session_id = str(uuid.uuid4())
+            request.new_session_id = session_id
+        
+        ip_address = request.remote_addr or 'unknown'
+        user_agent = request.headers.get('User-Agent', '')
+        device_type, browser, os_name = parse_user_agent(user_agent)
+        
+        existing_session = ActiveSession.query.filter_by(session_id=session_id).first()
+        
+        if existing_session:
+            existing_session.last_seen = datetime.utcnow()
+            existing_session.page_views += 1
+            existing_session.is_active = True
+        else:
+            new_session = ActiveSession(
+                session_id=session_id,
+                ip_address=ip_address,
+                user_agent=user_agent[:500] if user_agent else None,
+                device_type=device_type,
+                browser=browser,
+                os_name=os_name
+            )
+            db.session.add(new_session)
+        
+        current_time = time.time()
+        if current_time - last_session_cleanup > SESSION_CLEANUP_INTERVAL:
+            inactive_threshold = datetime.utcnow() - timedelta(minutes=SESSION_INACTIVE_MINUTES)
+            ActiveSession.query.filter(ActiveSession.last_seen < inactive_threshold).update({'is_active': False})
+            old_threshold = datetime.utcnow() - timedelta(days=7)
+            ActiveSession.query.filter(ActiveSession.last_seen < old_threshold).delete()
+            last_session_cleanup = current_time
+        
+        db.session.commit()
+    except Exception as e:
+        logger.debug(f"Session tracking error: {e}")
+        try:
+            db.session.rollback()
+        except:
+            pass
+
+
+@app.after_request
+def set_session_cookie(response):
+    """Set session cookie for new visitors."""
+    new_session_id = getattr(request, 'new_session_id', None)
+    if new_session_id:
+        response.set_cookie(
+            'arkan_session',
+            new_session_id,
+            max_age=60*60*24*365,
+            httponly=True,
+            samesite='Lax'
+        )
+    return response
+
 
 UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -3104,34 +3218,25 @@ def download_video():
         return jsonify({'error': f'خطأ غير متوقع: {str(e)[:100]}'}), 500
 
 
-def extract_arabic_text_with_gemini(image):
-    """Use Gemini AI to extract Arabic text from PDF page image with high accuracy"""
-    prompt = """أنت أداة OCR متخصصة في استخراج النص العربي. قم باستخراج كل النص الموجود في هذه الصورة بدقة عالية.
-
-التعليمات المهمة:
-- استخرج النص العربي كما هو بالضبط، حرف بحرف وكلمة بكلمة
-- حافظ على ترتيب الفقرات والسطور كما تظهر في الصورة
-- لا تترجم أي نص - فقط استخرجه كما هو
-- إذا كان هناك نص إنجليزي أو أرقام، استخرجها أيضاً كما هي
-- افصل بين الفقرات بسطر فارغ
-- لا تضف أي تعليقات أو شروحات - فقط النص المستخرج
-- إذا لم يكن هناك نص مقروء، أرجع "لا يوجد نص"
-
-أعد النص المستخرج فقط بدون أي مقدمات أو ملاحظات."""
-
-    result = call_gemini_vision(image, prompt)
-
-    if result and result.strip() and result.strip() != "لا يوجد نص":
-        return result.strip()
+def extract_arabic_text_with_tesseract(image):
+    """Use Tesseract OCR to extract Arabic text from PDF page image (no Gemini API usage)"""
+    try:
+        custom_config = r'--oem 3 --psm 6'
+        text = pytesseract.image_to_string(image, lang='ara+eng', config=custom_config)
+        if text and text.strip():
+            return text.strip()
+    except Exception as e:
+        logging.warning(f"Tesseract OCR failed: {e}")
     return None
 
 
-def convert_pdf_with_ocr(pdf_path, docx_path, use_gemini=True):
-    """Convert PDF to DOCX using OCR for better Arabic text extraction"""
+def convert_pdf_with_ocr(pdf_path, docx_path, use_tesseract=True):
+    """Convert PDF to DOCX using Tesseract OCR for Arabic text extraction (no Gemini API usage)"""
     import fitz
     from docx import Document
     from docx.shared import Pt, Inches
     from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from io import BytesIO
 
     try:
         pdf_doc = fitz.open(pdf_path)
@@ -3146,37 +3251,27 @@ def convert_pdf_with_ocr(pdf_path, docx_path, use_gemini=True):
 
         for page_num in range(total_pages):
             page = pdf_doc[page_num]
+            extracted_text = None
 
-            if use_gemini and GEMINI_KEYS:
+            if use_tesseract:
                 mat = fitz.Matrix(2.0, 2.0)
                 pix = page.get_pixmap(matrix=mat)
                 img_data = pix.tobytes("png")
-
-                from io import BytesIO
                 img = Image.open(BytesIO(img_data))
+                extracted_text = extract_arabic_text_with_tesseract(img)
 
-                extracted_text = extract_arabic_text_with_gemini(img)
+            if not extracted_text:
+                extracted_text = page.get_text("text")
 
-                if extracted_text:
-                    extracted_any_text = True
-                    paragraphs = extracted_text.split('\n\n')
-                    for para_text in paragraphs:
-                        if para_text.strip():
-                            p = doc.add_paragraph()
-                            p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-                            run = p.add_run(para_text.strip())
-                            run.font.size = Pt(12)
-            else:
-                text = page.get_text("text")
-                if text and text.strip():
-                    extracted_any_text = True
-                    paragraphs = text.split('\n\n')
-                    for para_text in paragraphs:
-                        if para_text.strip():
-                            p = doc.add_paragraph()
-                            p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-                            run = p.add_run(para_text.strip())
-                            run.font.size = Pt(12)
+            if extracted_text and extracted_text.strip():
+                extracted_any_text = True
+                paragraphs = extracted_text.split('\n\n')
+                for para_text in paragraphs:
+                    if para_text.strip():
+                        p = doc.add_paragraph()
+                        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                        run = p.add_run(para_text.strip())
+                        run.font.size = Pt(12)
 
             if page_num < total_pages - 1:
                 doc.add_page_break()
@@ -3284,29 +3379,16 @@ def convert_pdf():
                 use_ocr = True
 
         if use_ocr and not conversion_success:
-            if GEMINI_KEYS:
-                logging.info(
-                    "Using Gemini AI OCR for Arabic text extraction...")
-                success, error = convert_pdf_with_ocr(pdf_path,
-                                                      docx_path,
-                                                      use_gemini=True)
-                if success:
-                    conversion_success = True
-                else:
-                    logging.warning(f"Gemini OCR failed: {error}")
-
-            if not conversion_success:
-                success, error = convert_pdf_with_ocr(pdf_path,
-                                                      docx_path,
-                                                      use_gemini=False)
-                if success:
-                    conversion_success = True
-                else:
-                    safe_remove_file(pdf_path)
-                    return jsonify({
-                        'error':
-                        f'فشل في استخراج النص: {error[:100] if error else "خطأ غير معروف"}'
-                    }), 500
+            logging.info("Using Tesseract OCR for Arabic text extraction (no Gemini API)...")
+            success, error = convert_pdf_with_ocr(pdf_path, docx_path, use_tesseract=True)
+            if success:
+                conversion_success = True
+            else:
+                safe_remove_file(pdf_path)
+                return jsonify({
+                    'error':
+                    f'فشل في استخراج النص: {error[:100] if error else "خطأ غير معروف"}'
+                }), 500
 
         if mode == 'en':
             try:
@@ -4275,6 +4357,61 @@ def admin_api_stats():
         'stats': gemini_manager.get_dashboard_stats(),
         'keys_info': gemini_manager.get_all_keys_info(),
         'hourly_stats': gemini_manager.get_hourly_stats()
+    })
+
+
+@app.route('/admin/api/active-sessions')
+@login_required
+def admin_api_active_sessions():
+    """API endpoint to get active sessions for dashboard."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    five_minutes_ago = datetime.utcnow() - timedelta(minutes=5)
+    one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+    
+    ActiveSession.query.filter(ActiveSession.last_seen < five_minutes_ago).update({'is_active': False})
+    db.session.commit()
+    
+    active_now = ActiveSession.query.filter(ActiveSession.last_seen >= five_minutes_ago).count()
+    active_hour = ActiveSession.query.filter(ActiveSession.last_seen >= one_hour_ago).count()
+    total_sessions = ActiveSession.query.count()
+    
+    recent_sessions = ActiveSession.query.filter(
+        ActiveSession.last_seen >= one_hour_ago
+    ).order_by(ActiveSession.last_seen.desc()).limit(50).all()
+    
+    device_stats = db.session.query(
+        ActiveSession.device_type,
+        db.func.count(ActiveSession.id)
+    ).filter(ActiveSession.last_seen >= one_hour_ago).group_by(ActiveSession.device_type).all()
+    
+    browser_stats = db.session.query(
+        ActiveSession.browser,
+        db.func.count(ActiveSession.id)
+    ).filter(ActiveSession.last_seen >= one_hour_ago).group_by(ActiveSession.browser).all()
+    
+    sessions_data = []
+    for s in recent_sessions:
+        sessions_data.append({
+            'session_id': s.session_id[:8] + '...',
+            'ip_address': s.ip_address,
+            'device_type': s.device_type,
+            'browser': s.browser,
+            'os_name': s.os_name,
+            'page_views': s.page_views,
+            'first_seen': s.first_seen.isoformat() if s.first_seen else None,
+            'last_seen': s.last_seen.isoformat() if s.last_seen else None,
+            'is_active': s.is_active
+        })
+    
+    return jsonify({
+        'active_now': active_now,
+        'active_hour': active_hour,
+        'total_sessions': total_sessions,
+        'sessions': sessions_data,
+        'device_stats': dict(device_stats),
+        'browser_stats': dict(browser_stats)
     })
 
 

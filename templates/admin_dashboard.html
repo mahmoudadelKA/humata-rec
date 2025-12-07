@@ -7,76 +7,223 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --gold-primary: #d4a853;
+            --gold-secondary: #c4943f;
+            --gold-dark: #9a7230;
+            --turquoise-primary: #40e0d0;
+            --turquoise-dark: #2ab5a8;
+            --dark-bg: #0a0f1a;
+            --dark-surface: #111827;
+            --dark-card: #1a2332;
+        }
+        
         body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #0f172a 50%, var(--dark-bg) 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            perspective: 1200px;
         }
+        
         .glass-card {
-            background: rgba(30, 41, 59, 0.8);
+            background: linear-gradient(145deg, rgba(26, 35, 50, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            border: 1px solid rgba(212, 168, 83, 0.2);
+            border-radius: 20px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(212, 168, 83, 0.1),
+                0 0 60px rgba(212, 168, 83, 0.05);
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
         }
+        
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(212, 168, 83, 0.15),
+                0 0 80px rgba(212, 168, 83, 0.08);
+        }
+        
         .stat-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(51, 65, 85, 0.9) 100%);
+            background: linear-gradient(145deg, rgba(26, 35, 50, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            border: 1px solid rgba(212, 168, 83, 0.15);
+            border-radius: 16px;
+            box-shadow: 
+                0 6px 24px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transform-style: preserve-3d;
+            transition: all 0.25s ease;
         }
+        
+        .stat-card:hover {
+            transform: perspective(1000px) rotateX(-3deg) translateY(-4px);
+            border-color: rgba(212, 168, 83, 0.4);
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.4),
+                0 0 40px rgba(212, 168, 83, 0.1);
+        }
+        
+        .stat-card-3d {
+            background: linear-gradient(145deg, rgba(26, 35, 50, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(64, 224, 208, 0.15);
+            border-radius: 16px;
+            box-shadow: 
+                0 6px 24px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transform-style: preserve-3d;
+            transition: all 0.25s ease;
+        }
+        
+        .stat-card-3d:hover {
+            transform: perspective(1000px) rotateX(-3deg) translateY(-4px);
+            border-color: rgba(64, 224, 208, 0.4);
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.4),
+                0 0 40px rgba(64, 224, 208, 0.1);
+        }
+        
         .status-active { background: #22c55e; }
         .status-cooldown { background: #f59e0b; }
         .status-disabled { background: #ef4444; }
+        
         .btn-toggle {
             transition: all 0.3s ease;
         }
         .btn-toggle:hover {
             transform: scale(1.05);
         }
+        
         .warning-banner {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%);
-            border: 1px solid rgba(239, 68, 68, 0.5);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 16px;
         }
-        .gold-text { color: #d4a853; }
-        .gold-border { border-color: #d4a853; }
-        .gold-bg { background: linear-gradient(135deg, #d4a853 0%, #c4943f 100%); }
+        
+        .gold-text { color: var(--gold-primary); }
+        .gold-border { border-color: var(--gold-primary); }
+        .gold-bg { background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%); }
+        .turquoise-text { color: var(--turquoise-primary); }
+        .turquoise-bg { background: linear-gradient(135deg, var(--turquoise-primary) 0%, var(--turquoise-dark) 100%); }
+        
         table th { 
             position: sticky; 
             top: 0; 
-            background: rgba(30, 41, 59, 0.95);
+            background: rgba(17, 24, 39, 0.98);
             z-index: 10;
         }
+        
         .filter-btn {
             transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .filter-btn:hover {
+            border-color: rgba(212, 168, 83, 0.3);
         }
         .filter-btn.active {
-            background: #d4a853;
-            color: #0f172a;
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+            color: var(--dark-bg);
+            font-weight: 600;
+        }
+        
+        .pharaonic-header {
+            background: linear-gradient(135deg, rgba(212, 168, 83, 0.1) 0%, transparent 50%, rgba(64, 224, 208, 0.1) 100%);
+            border-bottom: 2px solid;
+            border-image: linear-gradient(90deg, transparent, var(--gold-primary), transparent) 1;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .icon-container {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .icon-gold {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+        }
+        
+        .icon-turquoise {
+            background: linear-gradient(135deg, rgba(64, 224, 208, 0.2) 0%, rgba(64, 224, 208, 0.1) 100%);
+        }
+        
+        .session-row {
+            transition: all 0.2s ease;
+        }
+        .session-row:hover {
+            background: rgba(212, 168, 83, 0.05);
+        }
+        
+        .pulse-active {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .device-badge {
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        
+        .device-desktop { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .device-mobile { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .device-tablet { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(17, 24, 39, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(212, 168, 83, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(212, 168, 83, 0.5);
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
-        <header class="flex flex-wrap justify-between items-center mb-8 gap-4">
+        <header class="pharaonic-header flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-white">لوحة تحكم مفاتيح Gemini</h1>
-                <p class="text-gray-400 mt-1">مراقبة وإدارة مفاتيح API</p>
+                <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                    <span class="gold-text">ARKAN</span>
+                    <span>لوحة تحكم Gemini</span>
+                </h1>
+                <p class="text-gray-400 mt-1">مراقبة وإدارة مفاتيح API والجلسات النشطة</p>
             </div>
             <div class="flex items-center gap-4">
-                <button onclick="refreshStats()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition flex items-center gap-2">
+                <button onclick="refreshStats()" class="px-4 py-2 bg-slate-700/80 hover:bg-slate-600 text-white rounded-lg transition flex items-center gap-2 border border-slate-600">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
                     تحديث
                 </button>
-                <a href="{{ url_for('admin_logout') }}" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+                <a href="{{ url_for('admin_logout') }}" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition border border-red-500">
                     تسجيل الخروج
                 </a>
             </div>
         </header>
 
         {% if show_warning %}
-        <div class="warning-banner rounded-xl p-4 mb-6 flex items-center gap-3">
+        <div class="warning-banner p-4 mb-6 flex items-center gap-3">
             <svg class="w-6 h-6 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
@@ -91,7 +238,7 @@
                         <p class="text-gray-400 text-sm">إجمالي المفاتيح</p>
                         <p class="text-3xl font-bold text-white mt-1" id="stat-total">{{ stats.total_keys }}</p>
                     </div>
-                    <div class="w-12 h-12 rounded-full gold-bg flex items-center justify-center">
+                    <div class="icon-container icon-gold">
                         <svg class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                         </svg>
@@ -105,7 +252,7 @@
                         <p class="text-gray-400 text-sm">المفاتيح النشطة</p>
                         <p class="text-3xl font-bold text-green-400 mt-1" id="stat-active">{{ stats.active_keys }}</p>
                     </div>
-                    <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <div class="icon-container bg-green-500/20">
                         <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
@@ -119,7 +266,7 @@
                         <p class="text-gray-400 text-sm">في حالة Cooldown</p>
                         <p class="text-3xl font-bold text-amber-400 mt-1" id="stat-cooldown">{{ stats.cooldown_keys }}</p>
                     </div>
-                    <div class="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <div class="icon-container bg-amber-500/20">
                         <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
@@ -133,7 +280,7 @@
                         <p class="text-gray-400 text-sm">معطلة يدوياً</p>
                         <p class="text-3xl font-bold text-red-400 mt-1" id="stat-disabled">{{ stats.disabled_keys }}</p>
                     </div>
-                    <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                    <div class="icon-container bg-red-500/20">
                         <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                         </svg>
@@ -142,14 +289,31 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
             <div class="stat-card p-6">
                 <p class="text-gray-400 text-sm">طلبات اليوم</p>
                 <p class="text-2xl font-bold text-white mt-1" id="stat-requests">{{ stats.total_requests_today }}</p>
-                <div class="mt-2 flex items-center gap-2">
-                    <span class="text-green-400 text-sm">{{ stats.successful_requests_today }} ناجح</span>
+                <div class="mt-2 flex items-center gap-2 text-sm">
+                    <span class="text-green-400">{{ stats.successful_requests_today }} ناجح</span>
                     <span class="text-gray-500">|</span>
-                    <span class="text-red-400 text-sm">{{ stats.quota_errors_today }} خطأ quota</span>
+                    <span class="text-red-400">{{ stats.quota_errors_today }} خطأ</span>
+                </div>
+            </div>
+
+            <div class="stat-card-3d p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">الجلسات النشطة الآن</p>
+                        <p class="text-2xl font-bold turquoise-text mt-1" id="active-now">
+                            <span class="pulse-active inline-block w-2 h-2 rounded-full bg-green-400 ml-2"></span>
+                            0
+                        </p>
+                    </div>
+                    <div class="icon-container icon-turquoise">
+                        <svg class="w-6 h-6 turquoise-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
                 </div>
             </div>
 
@@ -176,10 +340,30 @@
             </div>
         </div>
 
-        <div class="glass-card p-6 mb-8">
-            <h2 class="text-xl font-bold text-white mb-4">الطلبات لكل ساعة (آخر 24 ساعة)</h2>
-            <div class="h-64">
-                <canvas id="hourlyChart"></canvas>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="gold-text">الطلبات لكل ساعة</span>
+                    <span class="text-gray-400 text-sm font-normal">(آخر 24 ساعة)</span>
+                </h2>
+                <div class="h-64">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="turquoise-text">الجلسات النشطة</span>
+                    <span class="text-gray-400 text-sm font-normal">(آخر ساعة)</span>
+                </h2>
+                <div class="h-64 overflow-y-auto" id="sessions-container">
+                    <div class="text-center text-gray-400 py-8">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <p>جاري تحميل الجلسات...</p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -193,7 +377,7 @@
                     <button onclick="filterKeys('disabled')" class="filter-btn px-3 py-1 rounded-lg bg-slate-700 text-white text-sm" data-filter="disabled">معطل</button>
                 </div>
                 <div class="flex gap-2">
-                    <select id="sortBy" onchange="sortKeys()" class="px-3 py-1 rounded-lg bg-slate-700 text-white text-sm border-0">
+                    <select id="sortBy" onchange="sortKeys()" class="px-3 py-1 rounded-lg bg-slate-700 text-white text-sm border border-slate-600">
                         <option value="index">ترتيب حسب: الرقم</option>
                         <option value="usage">الأكثر استخداماً</option>
                         <option value="cooldown">الأكثر cooldown</option>
@@ -216,7 +400,7 @@
                     </thead>
                     <tbody id="keysTableBody">
                         {% for key in keys_info %}
-                        <tr class="key-row border-b border-slate-700/50 hover:bg-slate-800/50" data-status="{{ key.status }}" data-usage="{{ key.usage_count }}" data-cooldown-count="{{ key.cooldown_count }}" data-index="{{ key.index }}">
+                        <tr class="key-row border-b border-slate-700/50 hover:bg-slate-800/50 transition-colors" data-status="{{ key.status }}" data-usage="{{ key.usage_count }}" data-cooldown-count="{{ key.cooldown_count }}" data-index="{{ key.index }}">
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-2">
                                     <span class="text-white font-medium">{{ key.display_name }}</span>
@@ -259,7 +443,8 @@
         </div>
 
         <footer class="mt-8 text-center text-gray-500 text-sm">
-            <p>ARKAN AI - Gemini Keys Management Dashboard</p>
+            <p class="gold-text font-medium">ARKAN AI</p>
+            <p>Gemini Keys Management Dashboard</p>
         </footer>
     </div>
 
@@ -370,8 +555,65 @@
                 document.getElementById('stat-requests').textContent = data.stats.total_requests_today;
             })
             .catch(err => console.error('Refresh failed:', err));
+            
+            loadActiveSessions();
         }
 
+        function loadActiveSessions() {
+            fetch('/admin/api/active-sessions')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('active-now').innerHTML = `
+                    <span class="pulse-active inline-block w-2 h-2 rounded-full bg-green-400 ml-2"></span>
+                    ${data.active_now}
+                `;
+                
+                const container = document.getElementById('sessions-container');
+                if (data.sessions.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-400 py-8">
+                            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            </svg>
+                            <p>لا توجد جلسات نشطة</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div class="space-y-2">';
+                data.sessions.forEach(s => {
+                    const deviceClass = s.device_type === 'mobile' ? 'device-mobile' : 
+                                       s.device_type === 'tablet' ? 'device-tablet' : 'device-desktop';
+                    const isActiveClass = s.is_active ? 'border-r-2 border-green-400' : '';
+                    
+                    html += `
+                        <div class="session-row p-3 rounded-lg bg-slate-800/50 ${isActiveClass}">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <span class="device-badge ${deviceClass}">${s.device_type}</span>
+                                    <span class="text-white text-sm">${s.browser} / ${s.os_name}</span>
+                                </div>
+                                <span class="text-gray-400 text-xs">${s.page_views} مشاهدة</span>
+                            </div>
+                            <div class="text-gray-500 text-xs mt-1">${s.ip_address}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            })
+            .catch(err => {
+                console.error('Sessions load failed:', err);
+                document.getElementById('sessions-container').innerHTML = `
+                    <div class="text-center text-gray-400 py-8">
+                        <p>لا يمكن تحميل الجلسات</p>
+                    </div>
+                `;
+            });
+        }
+
+        loadActiveSessions();
         setInterval(refreshStats, 30000);
     </script>
 </body>
