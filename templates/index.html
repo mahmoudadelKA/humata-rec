@@ -745,6 +745,65 @@
             }
         }
 
+        /* ========== PHARAOH STATUES DECORATION ========== */
+        
+        .pharaoh-statue {
+            position: fixed;
+            bottom: 0;
+            height: 70vh;
+            max-height: 600px;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.9;
+            filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.4)) drop-shadow(0 0 60px rgba(255, 215, 0, 0.2));
+            transition: all 0.5s ease;
+        }
+        
+        .pharaoh-statue:hover {
+            opacity: 1;
+            filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.6)) drop-shadow(0 0 80px rgba(255, 215, 0, 0.3));
+        }
+        
+        .pharaoh-statue-left {
+            left: 0;
+            transform: translateX(-15%);
+        }
+        
+        .pharaoh-statue-right {
+            right: 0;
+            transform: translateX(15%);
+        }
+        
+        .pharaoh-statue img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+        }
+        
+        /* Hide statues on tablet */
+        @media (max-width: 1024px) {
+            .pharaoh-statue {
+                height: 50vh;
+                max-height: 400px;
+                opacity: 0.7;
+            }
+            
+            .pharaoh-statue-left {
+                transform: translateX(-30%);
+            }
+            
+            .pharaoh-statue-right {
+                transform: translateX(30%);
+            }
+        }
+        
+        /* Hide statues on mobile */
+        @media (max-width: 768px) {
+            .pharaoh-statue {
+                display: none;
+            }
+        }
+
         /* Egyptian/Pharaonic Icons for Desktop */
         @media (min-width: 1024px) {
             .nav-item .nav-icon-container {
@@ -2465,6 +2524,14 @@
 
     <!-- Tools Hub - Grid of all tools -->
     <div id="tools-hub" style="display: none;">
+        <!-- Pharaoh Statues Decoration -->
+        <div class="pharaoh-statue pharaoh-statue-left">
+            <img src="/static/images/ramesses_ii_statue_transparent.png" alt="Ramesses II Statue" loading="lazy">
+        </div>
+        <div class="pharaoh-statue pharaoh-statue-right">
+            <img src="/static/images/tutankhamun_mask_transparent.png" alt="Tutankhamun Golden Mask" loading="lazy">
+        </div>
+        
         <div class="tools-hub-header">
             <div class="relative mx-auto mb-6 w-24 h-24">
                 <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-yellow-500/30 via-amber-500/20 to-orange-500/30 blur-xl"></div>
