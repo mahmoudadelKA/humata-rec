@@ -339,8 +339,9 @@ PODCAST_NAME_SIMILARITY_THRESHOLD = 90
 # =============================================================================
 # Unified layer for all Gemini API calls with:
 # - Support for up to 50 API keys (GEMINI_KEY_1 to GEMINI_KEY_50)
-# - Smart round-robin distribution with cooldown
-# - 2-key-max retry policy (protects API keys from exhaustion)
+# - Smart round-robin distribution with 1-hour cooldown for exhausted keys
+# - Try ALL available keys per request (no 2-key limit)
+# - Instant key switching with NO delays between attempts
 # - Session-based rate limiting (15 requests per 20 minutes)
 # - Comprehensive logging with database persistence
 # - Graceful quota exhaustion handling with Arabic error messages
@@ -349,13 +350,12 @@ PODCAST_NAME_SIMILARITY_THRESHOLD = 90
 # =============================================================================
 
 class GeminiAPIManager:
-    """Centralized Gemini API manager with intelligent key protection and rate limiting."""
+    """Centralized Gemini API manager with fast key rotation and cooldown protection."""
     
     MAX_KEYS = 50
     RATE_LIMIT_REQUESTS = 15
     RATE_LIMIT_WINDOW_SECONDS = 1200
     KEY_COOLDOWN_SECONDS = 3600
-    MAX_KEYS_PER_REQUEST = 2
     MAX_AUDIO_DURATION_MINUTES = 120
     MAX_LONG_VIDEO_PER_SESSION = 3
     LONG_VIDEO_THRESHOLD_MINUTES = 60
@@ -802,7 +802,7 @@ class GeminiAPIManager:
     
     def call_text(self, prompt, operation='text', use_heavy_model=False, session_id=None):
         """
-        Call Gemini for text prompts with 2-key-max retry policy.
+        Call Gemini for text prompts - tries ALL available keys instantly.
         
         Args:
             prompt: Text prompt
@@ -830,21 +830,32 @@ class GeminiAPIManager:
             )
         
         model_name = self.MODEL_HEAVY if use_heavy_model else self.MODEL_LIGHT
-        keys_tried = 0
-        last_error = None
+        keys_tried = []
+        errors_log = []
         
-        for attempt in range(self.MAX_KEYS_PER_REQUEST):
+        while True:
             key_index = self._get_available_key_index()
             
             if key_index is None:
-                time_remaining = int(self.get_time_until_key_available() / 60)
+                if keys_tried:
+                    logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
+                    raise ValueError(
+                        "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
+                    )
+                else:
+                    time_remaining = int(self.get_time_until_key_available() / 60)
+                    raise ValueError(
+                        f"تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة بعد {time_remaining} دقيقة."
+                    )
+            
+            if key_index in keys_tried:
+                logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
                 raise ValueError(
-                    f"تم استهلاك الحد المتاح من خدمة الذكاء الاصطناعي مؤقتاً. "
-                    f"الرجاء المحاولة بعد {time_remaining} دقيقة أو تجربة أداة أخرى."
+                    "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
                 )
             
-            keys_tried += 1
-            is_retry = attempt > 0
+            keys_tried.append(key_index)
+            is_retry = len(keys_tried) > 1
             
             try:
                 genai.configure(api_key=self.keys[key_index])
@@ -857,33 +868,31 @@ class GeminiAPIManager:
                     return response.text.strip()
                 
                 self._log_request(operation, key_index, is_retry, success=False, error_type='empty_response')
-                return None
+                errors_log.append(f"Key{key_index+1}:empty_response")
+                continue
                 
             except Exception as e:
                 error_str = str(e).lower()
-                last_error = str(e)
                 
                 if self._is_quota_error(error_str):
                     self._mark_key_exhausted(key_index)
                     self._log_request(operation, key_index, is_retry, success=False, error_type='quota')
+                    errors_log.append(f"Key{key_index+1}:quota")
                     continue
                 elif self._is_auth_error(error_str):
                     self._log_request(operation, key_index, is_retry, success=False, error_type='auth')
+                    errors_log.append(f"Key{key_index+1}:auth")
                     logging.error(f"[GeminiManager] Auth error on key {key_index + 1}: {e}")
-                    return None
+                    continue
                 else:
                     self._log_request(operation, key_index, is_retry, success=False, error_type='other')
+                    errors_log.append(f"Key{key_index+1}:other({str(e)[:50]})")
                     logging.error(f"[GeminiManager] API error: {e}")
-                    return None
-        
-        logging.warning(f"[GeminiManager] All {keys_tried} keys exhausted for {operation}")
-        raise ValueError(
-            "خدمة الذكاء الاصطناعي مشغولة حالياً. الرجاء المحاولة لاحقاً."
-        )
+                    continue
     
     def call_vision(self, image_or_path, prompt, operation='vision', use_heavy_model=False, session_id=None):
         """
-        Call Gemini Vision with 2-key-max retry policy.
+        Call Gemini Vision - tries ALL available keys instantly.
         
         Args:
             image_or_path: PIL Image object or path to image file
@@ -917,21 +926,32 @@ class GeminiAPIManager:
             img = image_or_path
         
         model_name = self.MODEL_HEAVY if use_heavy_model else self.MODEL_LIGHT
-        keys_tried = 0
-        last_error = None
+        keys_tried = []
+        errors_log = []
         
-        for attempt in range(self.MAX_KEYS_PER_REQUEST):
+        while True:
             key_index = self._get_available_key_index()
             
             if key_index is None:
-                time_remaining = int(self.get_time_until_key_available() / 60)
+                if keys_tried:
+                    logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
+                    raise ValueError(
+                        "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
+                    )
+                else:
+                    time_remaining = int(self.get_time_until_key_available() / 60)
+                    raise ValueError(
+                        f"تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة بعد {time_remaining} دقيقة."
+                    )
+            
+            if key_index in keys_tried:
+                logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
                 raise ValueError(
-                    f"تم استهلاك الحد المتاح من خدمة الذكاء الاصطناعي مؤقتاً. "
-                    f"الرجاء المحاولة بعد {time_remaining} دقيقة أو تجربة أداة أخرى."
+                    "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
                 )
             
-            keys_tried += 1
-            is_retry = attempt > 0
+            keys_tried.append(key_index)
+            is_retry = len(keys_tried) > 1
             
             try:
                 genai.configure(api_key=self.keys[key_index])
@@ -944,33 +964,31 @@ class GeminiAPIManager:
                     return response.text.strip()
                 
                 self._log_request(operation, key_index, is_retry, success=False, error_type='empty_response')
-                return None
+                errors_log.append(f"Key{key_index+1}:empty_response")
+                continue
                 
             except Exception as e:
                 error_str = str(e).lower()
-                last_error = str(e)
                 
                 if self._is_quota_error(error_str):
                     self._mark_key_exhausted(key_index)
                     self._log_request(operation, key_index, is_retry, success=False, error_type='quota')
+                    errors_log.append(f"Key{key_index+1}:quota")
                     continue
                 elif self._is_auth_error(error_str):
                     self._log_request(operation, key_index, is_retry, success=False, error_type='auth')
+                    errors_log.append(f"Key{key_index+1}:auth")
                     logging.error(f"[GeminiManager] Auth error on key {key_index + 1}: {e}")
-                    return None
+                    continue
                 else:
                     self._log_request(operation, key_index, is_retry, success=False, error_type='other')
+                    errors_log.append(f"Key{key_index+1}:vision_error({str(e)[:50]})")
                     logging.error(f"[GeminiManager] Vision API error: {e}")
-                    return None
-        
-        logging.warning(f"[GeminiManager] All {keys_tried} keys exhausted for {operation}")
-        raise ValueError(
-            "خدمة الذكاء الاصطناعي مشغولة حالياً. الرجاء المحاولة لاحقاً."
-        )
+                    continue
     
     def call_audio_transcription(self, audio_path, prompt, operation='transcription', session_id=None):
         """
-        Call Gemini for audio transcription with file upload and 2-key-max retry policy.
+        Call Gemini for audio transcription - tries ALL available keys instantly.
         
         Args:
             audio_path: Path to audio file
@@ -998,20 +1016,32 @@ class GeminiAPIManager:
                 f"تم بلوغ الحد المسموح به من الطلبات. الرجاء الانتظار {reset_time} دقيقة."
             )
         
-        keys_tried = 0
-        last_error = None
+        keys_tried = []
+        errors_log = []
         
-        for attempt in range(self.MAX_KEYS_PER_REQUEST):
+        while True:
             key_index = self._get_available_key_index()
             
             if key_index is None:
-                time_remaining = int(self.get_time_until_key_available() / 60)
+                if keys_tried:
+                    logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
+                    raise ValueError(
+                        "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
+                    )
+                else:
+                    time_remaining = int(self.get_time_until_key_available() / 60)
+                    raise ValueError(
+                        f"تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة بعد {time_remaining} دقيقة."
+                    )
+            
+            if key_index in keys_tried:
+                logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
                 raise ValueError(
-                    f"تم استنفاد حصة جميع مفاتيح API. الرجاء الانتظار {time_remaining} دقيقة أو إضافة مفاتيح جديدة."
+                    "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
                 )
             
-            keys_tried += 1
-            is_retry = attempt > 0
+            keys_tried.append(key_index)
+            is_retry = len(keys_tried) > 1
             audio_file = None
             
             try:
@@ -1042,12 +1072,11 @@ class GeminiAPIManager:
                     return text
                 
                 self._log_request(operation, key_index, is_retry, success=False, error_type='empty_response')
-                last_error = "Empty response from API"
+                errors_log.append(f"Key{key_index+1}:empty_response")
                 continue
                 
             except Exception as e:
                 error_str = str(e).lower()
-                last_error = str(e)
                 
                 try:
                     if audio_file:
@@ -1058,24 +1087,23 @@ class GeminiAPIManager:
                 if self._is_quota_error(error_str):
                     self._mark_key_exhausted(key_index)
                     self._log_request(operation, key_index, is_retry, success=False, error_type='quota')
+                    errors_log.append(f"Key{key_index+1}:quota")
                     continue
                 elif 'timeout' in error_str or 'deadline' in error_str:
                     self._log_request(operation, key_index, is_retry, success=False, error_type='timeout')
+                    errors_log.append(f"Key{key_index+1}:timeout")
                     logging.warning(f"[GeminiManager] Timeout on key {key_index + 1}")
                     continue
                 elif self._is_auth_error(error_str):
                     self._log_request(operation, key_index, is_retry, success=False, error_type='auth')
+                    errors_log.append(f"Key{key_index+1}:auth")
                     logging.error(f"[GeminiManager] Invalid API key {key_index + 1}")
-                    return None
+                    continue
                 else:
                     self._log_request(operation, key_index, is_retry, success=False, error_type='other')
+                    errors_log.append(f"Key{key_index+1}:transcription_error({str(e)[:50]})")
                     logging.error(f"[GeminiManager] Transcription error: {e}")
                     continue
-        
-        logging.warning(f"[GeminiManager] All {keys_tried} keys exhausted for {operation}")
-        raise ValueError(
-            f"تم استنفاد حصة جميع مفاتيح API. حاول مرة أخرى بعد ساعة أو أضف مفاتيح جديدة."
-        )
     
     def check_audio_duration_limit(self, audio_path):
         """
