@@ -8,6 +8,8 @@ import logging
 import gc
 import time
 import glob
+import threading
+from collections import defaultdict
 from flask import Flask, render_template, request, jsonify, send_file, after_this_request
 from werkzeug.middleware.proxy_fix import ProxyFix
 import yt_dlp
@@ -189,252 +191,549 @@ ALLOWED_AUDIO_EXTENSIONS = {'mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma'}
 ANIME_SIMILARITY_THRESHOLD = 0.85
 PODCAST_NAME_SIMILARITY_THRESHOLD = 90
 
-GEMINI_KEYS = [
-    os.environ.get("GEMINI_KEY_1"),
-    os.environ.get("GEMINI_KEY_2"),
-    os.environ.get("GEMINI_KEY_3"),
-    os.environ.get("GEMINI_KEY_4"),
-    os.environ.get("GEMINI_KEY_5"),
-    os.environ.get("GEMINI_KEY_6"),
-    os.environ.get("GEMINI_KEY_7"),
-    os.environ.get("GEMINI_KEY_8"),
-    os.environ.get("GEMINI_KEY_9"),
-    os.environ.get("GEMINI_KEY_10"),
-    os.environ.get("GEMINI_KEY_11"),
-    os.environ.get("GEMINI_API_KEY"),
-]
-GEMINI_KEYS = [k for k in GEMINI_KEYS if k]
+# =============================================================================
+# CENTRALIZED GEMINI API MANAGER
+# =============================================================================
+# Unified layer for all Gemini API calls with:
+# - 2-key-max retry policy (protects API keys from exhaustion)
+# - Session-based rate limiting (15 requests per 20 minutes)
+# - Comprehensive logging for consumption monitoring
+# - Graceful quota exhaustion handling with Arabic error messages
+# - File duration limits for audio/video transcription (15 minutes max)
+# =============================================================================
 
-current_key_index = 0
-key_usage_count = {}
-exhausted_keys_tracker = {}
-
-
-def get_balanced_key_index(allow_exhausted_fallback=False):
-    """
-    Get the next key index for load balancing across all keys with smart rotation.
+class GeminiAPIManager:
+    """Centralized Gemini API manager with intelligent key protection and rate limiting."""
     
-    Args:
-        allow_exhausted_fallback: If True, return earliest exhausted key when all are cooling down.
-                                   If False, return None when all keys are cooling down.
+    RATE_LIMIT_REQUESTS = 15
+    RATE_LIMIT_WINDOW_SECONDS = 1200
+    KEY_COOLDOWN_SECONDS = 3600
+    MAX_KEYS_PER_REQUEST = 2
+    MAX_AUDIO_DURATION_MINUTES = 15
+    MODEL_LIGHT = 'gemini-2.0-flash'
+    MODEL_HEAVY = 'gemini-2.0-flash'
     
-    Returns:
-        int: Key index to use, or None if no keys available (when allow_exhausted_fallback=False)
-    """
-    global current_key_index, key_usage_count, exhausted_keys_tracker
-    import time
-
-    if not GEMINI_KEYS:
-        return None
-
-    current_time = time.time()
-
-    expired_keys = [
-        k for k, v in exhausted_keys_tracker.items() if current_time - v > 3600
-    ]
-    for k in expired_keys:
-        del exhausted_keys_tracker[k]
-        key_usage_count[k] = 0
-        logging.info(f"API key {k + 1} cooldown expired, usage reset, now available")
-
-    available_keys = [
-        i for i in range(len(GEMINI_KEYS)) if i not in exhausted_keys_tracker
-    ]
-
-    if not available_keys:
-        if exhausted_keys_tracker:
-            earliest_key = min(exhausted_keys_tracker.items(),
-                               key=lambda x: x[1])
-            time_remaining = 3600 - (current_time - earliest_key[1])
-            logging.warning(
-                f"All API keys exhausted. Earliest key {earliest_key[0] + 1} available in {time_remaining/60:.1f} minutes"
-            )
-
-            if allow_exhausted_fallback:
-                return earliest_key[0]
-            else:
+    def __init__(self):
+        self.keys = self._load_keys()
+        self.exhausted_keys = {}
+        self.key_usage_count = defaultdict(int)
+        self.session_usage = defaultdict(list)
+        self.daily_stats = {
+            'total_requests': 0,
+            'successful_requests': 0,
+            'quota_errors': 0,
+            'other_errors': 0,
+            'requests_by_operation': defaultdict(int),
+            'requests_by_key': defaultdict(int)
+        }
+        self._lock = threading.Lock()
+        
+        logging.info(f"[GeminiManager] Initialized with {len(self.keys)} API keys")
+    
+    def _load_keys(self):
+        """Load all available Gemini API keys from environment."""
+        keys = []
+        for i in range(1, 12):
+            key = os.environ.get(f"GEMINI_KEY_{i}")
+            if key:
+                keys.append(key)
+        
+        main_key = os.environ.get("GEMINI_API_KEY")
+        if main_key and main_key not in keys:
+            keys.append(main_key)
+        
+        return keys
+    
+    def _get_session_id(self):
+        """Get current session/IP identifier for rate limiting."""
+        try:
+            if request:
+                return request.remote_addr or 'unknown'
+        except:
+            pass
+        return 'system'
+    
+    def _check_rate_limit(self, session_id):
+        """Check if session has exceeded rate limit. Returns (allowed, remaining, reset_time)."""
+        current_time = time.time()
+        
+        with self._lock:
+            self.session_usage[session_id] = [
+                t for t in self.session_usage[session_id]
+                if current_time - t < self.RATE_LIMIT_WINDOW_SECONDS
+            ]
+            
+            request_count = len(self.session_usage[session_id])
+            remaining = max(0, self.RATE_LIMIT_REQUESTS - request_count)
+            
+            if request_count >= self.RATE_LIMIT_REQUESTS:
+                oldest_request = min(self.session_usage[session_id])
+                reset_time = int((oldest_request + self.RATE_LIMIT_WINDOW_SECONDS - current_time) / 60)
+                return False, remaining, reset_time
+            
+            return True, remaining, 0
+    
+    def _record_session_request(self, session_id):
+        """Record a request for rate limiting."""
+        with self._lock:
+            self.session_usage[session_id].append(time.time())
+    
+    def _get_available_key_index(self):
+        """Get an available (non-exhausted) key index."""
+        current_time = time.time()
+        
+        with self._lock:
+            expired_keys = [
+                k for k, t in self.exhausted_keys.items()
+                if current_time - t > self.KEY_COOLDOWN_SECONDS
+            ]
+            for k in expired_keys:
+                del self.exhausted_keys[k]
+                self.key_usage_count[k] = 0
+                logging.info(f"[GeminiManager] Key {k + 1} cooldown expired, now available")
+            
+            available = [
+                i for i in range(len(self.keys))
+                if i not in self.exhausted_keys
+            ]
+            
+            if not available:
                 return None
+            
+            min_usage = min(self.key_usage_count.get(i, 0) for i in available)
+            least_used = [i for i in available if self.key_usage_count.get(i, 0) == min_usage]
+            
+            selected = least_used[0]
+            self.key_usage_count[selected] += 1
+            return selected
+    
+    def _mark_key_exhausted(self, key_index):
+        """Mark a key as exhausted with timestamp."""
+        with self._lock:
+            self.exhausted_keys[key_index] = time.time()
+            self.daily_stats['quota_errors'] += 1
+            logging.warning(f"[GeminiManager] Key {key_index + 1} marked as exhausted (cooldown: 1 hour)")
+    
+    def _is_quota_error(self, error_str):
+        """Check if error is related to quota/rate limiting."""
+        quota_indicators = ['429', 'quota', 'rate', 'limit', 'exhausted', 'resource_exhausted']
+        return any(ind in error_str for ind in quota_indicators)
+    
+    def _is_auth_error(self, error_str):
+        """Check if error is related to authentication/authorization."""
+        auth_indicators = ['400', '401', '403', 'invalid', 'unauthorized', 'permission', 'api_key']
+        return any(ind in error_str for ind in auth_indicators)
+    
+    def _log_request(self, operation, key_index, is_retry, success, error_type=None):
+        """Log API request for monitoring."""
+        with self._lock:
+            self.daily_stats['total_requests'] += 1
+            self.daily_stats['requests_by_operation'][operation] += 1
+            self.daily_stats['requests_by_key'][key_index + 1] += 1
+            
+            if success:
+                self.daily_stats['successful_requests'] += 1
+            elif error_type:
+                if 'quota' in error_type:
+                    self.daily_stats['quota_errors'] += 1
+                else:
+                    self.daily_stats['other_errors'] += 1
+        
+        retry_str = " (retry)" if is_retry else ""
+        status = "SUCCESS" if success else f"FAILED ({error_type})"
+        logging.info(f"[GeminiManager] [{operation}] Key {key_index + 1}{retry_str} - {status}")
+    
+    def get_stats(self):
+        """Get current API usage statistics."""
+        with self._lock:
+            available_keys = len(self.keys) - len(self.exhausted_keys)
+            return {
+                'total_keys': len(self.keys),
+                'available_keys': available_keys,
+                'exhausted_keys': len(self.exhausted_keys),
+                **dict(self.daily_stats)
+            }
+    
+    def get_available_keys_count(self):
+        """Get count of currently available (non-exhausted) keys."""
+        current_time = time.time()
+        with self._lock:
+            available = len([
+                k for k in range(len(self.keys))
+                if k not in self.exhausted_keys or 
+                current_time - self.exhausted_keys[k] > self.KEY_COOLDOWN_SECONDS
+            ])
+            return available
+    
+    def get_time_until_key_available(self):
+        """Get seconds until earliest exhausted key becomes available."""
+        with self._lock:
+            if not self.exhausted_keys:
+                return 0
+            current_time = time.time()
+            earliest = min(self.exhausted_keys.values())
+            remaining = self.KEY_COOLDOWN_SECONDS - (current_time - earliest)
+            return max(0, remaining)
+    
+    def has_keys(self):
+        """Check if any API keys are configured."""
+        return len(self.keys) > 0
+    
+    def call_text(self, prompt, operation='text', use_heavy_model=False, session_id=None):
+        """
+        Call Gemini for text prompts with 2-key-max retry policy.
+        
+        Args:
+            prompt: Text prompt
+            operation: Operation name for logging (e.g., 'podcast_identify', 'anime_search')
+            use_heavy_model: Whether to use the heavier model (for complex tasks)
+            session_id: Optional session ID for rate limiting
+        
+        Returns:
+            str or None: Response text or None on failure
+        
+        Raises:
+            ValueError: If rate limit exceeded or quota exhausted with Arabic message
+        """
+        if not self.keys:
+            logging.warning("[GeminiManager] No API keys configured")
+            return None
+        
+        if session_id is None:
+            session_id = self._get_session_id()
+        
+        allowed, remaining, reset_time = self._check_rate_limit(session_id)
+        if not allowed:
+            raise ValueError(
+                f"تم بلوغ الحد المسموح به من الطلبات. الرجاء الانتظار {reset_time} دقيقة."
+            )
+        
+        model_name = self.MODEL_HEAVY if use_heavy_model else self.MODEL_LIGHT
+        keys_tried = 0
+        last_error = None
+        
+        for attempt in range(self.MAX_KEYS_PER_REQUEST):
+            key_index = self._get_available_key_index()
+            
+            if key_index is None:
+                time_remaining = int(self.get_time_until_key_available() / 60)
+                raise ValueError(
+                    f"تم استهلاك الحد المتاح من خدمة الذكاء الاصطناعي مؤقتاً. "
+                    f"الرجاء المحاولة بعد {time_remaining} دقيقة أو تجربة أداة أخرى."
+                )
+            
+            keys_tried += 1
+            is_retry = attempt > 0
+            
+            try:
+                genai.configure(api_key=self.keys[key_index])
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(prompt)
+                
+                if response and response.text:
+                    self._record_session_request(session_id)
+                    self._log_request(operation, key_index, is_retry, success=True)
+                    return response.text.strip()
+                
+                self._log_request(operation, key_index, is_retry, success=False, error_type='empty_response')
+                return None
+                
+            except Exception as e:
+                error_str = str(e).lower()
+                last_error = str(e)
+                
+                if self._is_quota_error(error_str):
+                    self._mark_key_exhausted(key_index)
+                    self._log_request(operation, key_index, is_retry, success=False, error_type='quota')
+                    continue
+                elif self._is_auth_error(error_str):
+                    self._log_request(operation, key_index, is_retry, success=False, error_type='auth')
+                    logging.error(f"[GeminiManager] Auth error on key {key_index + 1}: {e}")
+                    return None
+                else:
+                    self._log_request(operation, key_index, is_retry, success=False, error_type='other')
+                    logging.error(f"[GeminiManager] API error: {e}")
+                    return None
+        
+        logging.warning(f"[GeminiManager] All {keys_tried} keys exhausted for {operation}")
+        raise ValueError(
+            "خدمة الذكاء الاصطناعي مشغولة حالياً. الرجاء المحاولة لاحقاً."
+        )
+    
+    def call_vision(self, image_or_path, prompt, operation='vision', use_heavy_model=False, session_id=None):
+        """
+        Call Gemini Vision with 2-key-max retry policy.
+        
+        Args:
+            image_or_path: PIL Image object or path to image file
+            prompt: Text prompt
+            operation: Operation name for logging
+            use_heavy_model: Whether to use the heavier model
+            session_id: Optional session ID for rate limiting
+        
+        Returns:
+            str or None: Response text or None on failure
+        
+        Raises:
+            ValueError: If rate limit exceeded or quota exhausted
+        """
+        if not self.keys:
+            logging.warning("[GeminiManager] No API keys configured")
+            return None
+        
+        if session_id is None:
+            session_id = self._get_session_id()
+        
+        allowed, remaining, reset_time = self._check_rate_limit(session_id)
+        if not allowed:
+            raise ValueError(
+                f"تم بلوغ الحد المسموح به من الطلبات. الرجاء الانتظار {reset_time} دقيقة."
+            )
+        
+        if isinstance(image_or_path, str):
+            img = Image.open(image_or_path)
         else:
-            return 0
+            img = image_or_path
+        
+        model_name = self.MODEL_HEAVY if use_heavy_model else self.MODEL_LIGHT
+        keys_tried = 0
+        last_error = None
+        
+        for attempt in range(self.MAX_KEYS_PER_REQUEST):
+            key_index = self._get_available_key_index()
+            
+            if key_index is None:
+                time_remaining = int(self.get_time_until_key_available() / 60)
+                raise ValueError(
+                    f"تم استهلاك الحد المتاح من خدمة الذكاء الاصطناعي مؤقتاً. "
+                    f"الرجاء المحاولة بعد {time_remaining} دقيقة أو تجربة أداة أخرى."
+                )
+            
+            keys_tried += 1
+            is_retry = attempt > 0
+            
+            try:
+                genai.configure(api_key=self.keys[key_index])
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content([prompt, img])
+                
+                if response and response.text:
+                    self._record_session_request(session_id)
+                    self._log_request(operation, key_index, is_retry, success=True)
+                    return response.text.strip()
+                
+                self._log_request(operation, key_index, is_retry, success=False, error_type='empty_response')
+                return None
+                
+            except Exception as e:
+                error_str = str(e).lower()
+                last_error = str(e)
+                
+                if self._is_quota_error(error_str):
+                    self._mark_key_exhausted(key_index)
+                    self._log_request(operation, key_index, is_retry, success=False, error_type='quota')
+                    continue
+                elif self._is_auth_error(error_str):
+                    self._log_request(operation, key_index, is_retry, success=False, error_type='auth')
+                    logging.error(f"[GeminiManager] Auth error on key {key_index + 1}: {e}")
+                    return None
+                else:
+                    self._log_request(operation, key_index, is_retry, success=False, error_type='other')
+                    logging.error(f"[GeminiManager] Vision API error: {e}")
+                    return None
+        
+        logging.warning(f"[GeminiManager] All {keys_tried} keys exhausted for {operation}")
+        raise ValueError(
+            "خدمة الذكاء الاصطناعي مشغولة حالياً. الرجاء المحاولة لاحقاً."
+        )
+    
+    def call_audio_transcription(self, audio_path, prompt, operation='transcription', session_id=None):
+        """
+        Call Gemini for audio transcription with file upload and 2-key-max retry policy.
+        
+        Args:
+            audio_path: Path to audio file
+            prompt: Transcription prompt
+            operation: Operation name for logging
+            session_id: Optional session ID for rate limiting
+        
+        Returns:
+            str or None: Transcription text or None on failure
+        
+        Raises:
+            ValueError: If rate limit exceeded, quota exhausted, or file too large
+        """
+        if not self.keys:
+            raise ValueError(
+                "لم يتم إعداد مفاتيح Gemini API. يرجى إضافة GEMINI_API_KEY في الإعدادات."
+            )
+        
+        if session_id is None:
+            session_id = self._get_session_id()
+        
+        allowed, remaining, reset_time = self._check_rate_limit(session_id)
+        if not allowed:
+            raise ValueError(
+                f"تم بلوغ الحد المسموح به من الطلبات. الرجاء الانتظار {reset_time} دقيقة."
+            )
+        
+        keys_tried = 0
+        last_error = None
+        
+        for attempt in range(self.MAX_KEYS_PER_REQUEST):
+            key_index = self._get_available_key_index()
+            
+            if key_index is None:
+                time_remaining = int(self.get_time_until_key_available() / 60)
+                raise ValueError(
+                    f"تم استنفاد حصة جميع مفاتيح API. الرجاء الانتظار {time_remaining} دقيقة أو إضافة مفاتيح جديدة."
+                )
+            
+            keys_tried += 1
+            is_retry = attempt > 0
+            audio_file = None
+            
+            try:
+                genai.configure(api_key=self.keys[key_index])
+                
+                logging.info(f"[GeminiManager] [{operation}] Key {key_index + 1} - Uploading audio...")
+                audio_file = genai.upload_file(audio_path)
+                
+                model = genai.GenerativeModel(self.MODEL_LIGHT)
+                logging.info(f"[GeminiManager] [{operation}] Key {key_index + 1} - Transcribing (timeout: 30 min)...")
+                
+                response = model.generate_content(
+                    [prompt, audio_file],
+                    request_options={"timeout": 1800}
+                )
+                
+                try:
+                    genai.delete_file(audio_file.name)
+                except:
+                    pass
+                
+                if response and response.text:
+                    self._record_session_request(session_id)
+                    self._log_request(operation, key_index, is_retry, success=True)
+                    text = response.text.strip()
+                    word_count = len(text.split())
+                    logging.info(f"[GeminiManager] [{operation}] Success: {len(text)} chars, ~{word_count} words")
+                    return text
+                
+                self._log_request(operation, key_index, is_retry, success=False, error_type='empty_response')
+                last_error = "Empty response from API"
+                continue
+                
+            except Exception as e:
+                error_str = str(e).lower()
+                last_error = str(e)
+                
+                try:
+                    if audio_file:
+                        genai.delete_file(audio_file.name)
+                except:
+                    pass
+                
+                if self._is_quota_error(error_str):
+                    self._mark_key_exhausted(key_index)
+                    self._log_request(operation, key_index, is_retry, success=False, error_type='quota')
+                    continue
+                elif 'timeout' in error_str or 'deadline' in error_str:
+                    self._log_request(operation, key_index, is_retry, success=False, error_type='timeout')
+                    logging.warning(f"[GeminiManager] Timeout on key {key_index + 1}")
+                    continue
+                elif self._is_auth_error(error_str):
+                    self._log_request(operation, key_index, is_retry, success=False, error_type='auth')
+                    logging.error(f"[GeminiManager] Invalid API key {key_index + 1}")
+                    return None
+                else:
+                    self._log_request(operation, key_index, is_retry, success=False, error_type='other')
+                    logging.error(f"[GeminiManager] Transcription error: {e}")
+                    continue
+        
+        logging.warning(f"[GeminiManager] All {keys_tried} keys exhausted for {operation}")
+        raise ValueError(
+            f"تم استنفاد حصة جميع مفاتيح API. حاول مرة أخرى بعد ساعة أو أضف مفاتيح جديدة."
+        )
+    
+    def check_audio_duration_limit(self, audio_path):
+        """
+        Check if audio duration is within allowed limits.
+        
+        Returns:
+            tuple: (allowed: bool, duration_minutes: float, error_message: str or None)
+        """
+        try:
+            audio = AudioSegment.from_file(audio_path)
+            duration_minutes = len(audio) / 60000
+            
+            if duration_minutes > self.MAX_AUDIO_DURATION_MINUTES:
+                return False, duration_minutes, (
+                    f"مدة الملف ({duration_minutes:.1f} دقيقة) أكبر من الحد المسموح ({self.MAX_AUDIO_DURATION_MINUTES} دقيقة). "
+                    f"يُنصح بتقسيم الملف إلى أجزاء أقصر."
+                )
+            
+            return True, duration_minutes, None
+            
+        except Exception as e:
+            logging.error(f"[GeminiManager] Could not check audio duration: {e}")
+            return True, 0, None
 
-    min_usage = min(key_usage_count.get(i, 0) for i in available_keys)
-    least_used = [
-        i for i in available_keys if key_usage_count.get(i, 0) == min_usage
-    ]
 
-    index = least_used[0]
-    key_usage_count[index] = key_usage_count.get(index, 0) + 1
+gemini_manager = GeminiAPIManager()
 
-    return index
-
-
-def get_time_until_key_available():
-    """Get the time in seconds until the earliest exhausted key becomes available"""
-    import time
-    if not exhausted_keys_tracker:
-        return 0
-    current_time = time.time()
-    earliest_key = min(exhausted_keys_tracker.items(), key=lambda x: x[1])
-    time_remaining = 3600 - (current_time - earliest_key[1])
-    return max(0, time_remaining)
-
-
-def mark_key_exhausted(key_index):
-    """Mark a key as exhausted with timestamp"""
-    import time
-    exhausted_keys_tracker[key_index] = time.time()
-    logging.warning(
-        f"API key {key_index + 1} marked as exhausted, will retry after 1 hour"
-    )
+GEMINI_KEYS = gemini_manager.keys
 
 
 def get_available_keys_count():
-    """Get count of currently available (non-exhausted) keys"""
-    import time
-    current_time = time.time()
-    available = len([
-        k for k in range(len(GEMINI_KEYS))
-        if k not in exhausted_keys_tracker or current_time -
-        exhausted_keys_tracker[k] > 3600
-    ])
-    return available
+    """Get count of currently available (non-exhausted) keys - backward compatibility."""
+    return gemini_manager.get_available_keys_count()
 
 
-logging.info(f"Loaded {len(GEMINI_KEYS)} Gemini API keys for load balancing")
+def get_time_until_key_available():
+    """Get seconds until earliest key available - backward compatibility."""
+    return gemini_manager.get_time_until_key_available()
 
 
-def get_next_gemini_key(current_index=0):
-    """Get the next available Gemini API key with rotation"""
-    if not GEMINI_KEYS:
-        return None, -1
-    next_index = (current_index + 1) % len(GEMINI_KEYS)
-    return GEMINI_KEYS[next_index], next_index
-
-
-def call_gemini_text(prompt, max_retries=None):
+def call_gemini_text(prompt, max_retries=None, operation='text'):
     """
-    Call Gemini API for text-only prompts with automatic key rotation on quota errors.
-    Uses balanced key rotation with exhausted key tracking.
+    Call Gemini API for text-only prompts - backward compatible wrapper.
+    Now uses 2-key-max retry policy instead of rotating through all keys.
     
     Args:
         prompt: The text prompt to send to the model
-        max_retries: Maximum number of key rotations to try (defaults to number of available keys * 2)
+        max_retries: Ignored (kept for backward compatibility)
+        operation: Operation name for logging
     
     Returns:
         str: Response text or None if all keys exhausted
     """
-    if not GEMINI_KEYS:
-        logging.warning("No Gemini API keys configured")
+    try:
+        return gemini_manager.call_text(prompt, operation=operation)
+    except ValueError as e:
+        logging.warning(f"[call_gemini_text] {e}")
         return None
 
-    if max_retries is None:
-        max_retries = len(GEMINI_KEYS) * 2
-    
-    tried_keys = set()
 
-    for attempt in range(max_retries):
-        key_index = get_balanced_key_index(allow_exhausted_fallback=False)
-        
-        if key_index is None:
-            logging.error("All Gemini API keys in cooldown")
-            return None
-        
-        if key_index in tried_keys:
-            continue
-            
-        tried_keys.add(key_index)
-        api_key = GEMINI_KEYS[key_index]
-
-        try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.0-flash')
-
-            response = model.generate_content(prompt)
-
-            if response and response.text:
-                return response.text.strip()
-            return None
-
-        except Exception as e:
-            error_str = str(e).lower()
-            if '429' in error_str or 'quota' in error_str or 'rate' in error_str or 'limit' in error_str:
-                mark_key_exhausted(key_index)
-                logging.warning(
-                    f"Gemini text key {key_index + 1} quota exceeded, marked as exhausted and rotating..."
-                )
-                continue
-            else:
-                logging.error(f"Gemini text API error: {e}")
-                return None
-
-    logging.error("All Gemini API keys exhausted for text")
-    return None
-
-
-def call_gemini_vision(image_or_path, prompt, max_retries=None):
+def call_gemini_vision(image_or_path, prompt, max_retries=None, operation='vision'):
     """
-    Call Gemini Vision API with automatic key rotation on quota errors.
-    Uses balanced key rotation with exhausted key tracking.
+    Call Gemini Vision API - backward compatible wrapper.
+    Now uses 2-key-max retry policy instead of rotating through all keys.
     
     Args:
         image_or_path: Either a PIL Image object or path to image file
         prompt: The prompt to send to the model
-        max_retries: Maximum number of key rotations to try (defaults to number of available keys * 2)
+        max_retries: Ignored (kept for backward compatibility)
+        operation: Operation name for logging
     
     Returns:
         str: Response text or None if all keys exhausted
     """
-    if not GEMINI_KEYS:
-        logging.warning("No Gemini API keys configured")
+    try:
+        return gemini_manager.call_vision(image_or_path, prompt, operation=operation)
+    except ValueError as e:
+        logging.warning(f"[call_gemini_vision] {e}")
         return None
-
-    if max_retries is None:
-        max_retries = len(GEMINI_KEYS) * 2
-
-    if isinstance(image_or_path, str):
-        img = Image.open(image_or_path)
-    else:
-        img = image_or_path
-    
-    tried_keys = set()
-
-    for attempt in range(max_retries):
-        key_index = get_balanced_key_index(allow_exhausted_fallback=False)
-        
-        if key_index is None:
-            logging.error("All Gemini API keys in cooldown")
-            return None
-        
-        if key_index in tried_keys:
-            continue
-            
-        tried_keys.add(key_index)
-        api_key = GEMINI_KEYS[key_index]
-
-        try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.0-flash')
-
-            response = model.generate_content([prompt, img])
-
-            if response and response.text:
-                return response.text.strip()
-            return None
-
-        except Exception as e:
-            error_str = str(e).lower()
-            if '429' in error_str or 'quota' in error_str or 'rate' in error_str or 'limit' in error_str:
-                mark_key_exhausted(key_index)
-                logging.warning(
-                    f"Gemini vision key {key_index + 1} quota exceeded, marked as exhausted and rotating..."
-                )
-                continue
-            else:
-                logging.error(f"Gemini API error: {e}")
-                return None
-
-    logging.error("All Gemini API keys exhausted")
-    return None
 
 
 def allowed_image(filename):
@@ -533,32 +832,30 @@ LANGUAGE_NAMES = {
 
 def transcribe_audio_with_gemini(audio_path, language='ar'):
     """
-    Use Gemini to transcribe audio file - supports videos up to 2 hours.
+    Use Gemini to transcribe audio file with centralized API management.
+    
     Features:
-    - Smart load balancing across all 11 API keys
-    - Automatic key rotation on quota exhaustion
-    - 30-minute timeout for long videos (1800 seconds)
-    - Multiple retry attempts per key with exponential backoff
-    - Connection resilience for slow internet (< 1 Mbps upload)
+    - Uses centralized GeminiAPIManager with 2-key-max retry policy
+    - Duration limit: 15 minutes max (protects API quota)
+    - Session-based rate limiting
+    - Comprehensive logging for monitoring
+    - Graceful error handling with Arabic messages
     """
-    import time
-
-    if not GEMINI_KEYS:
-        logging.warning("No Gemini API keys configured for transcription")
-        raise ValueError(
-            "لم يتم إعداد مفاتيح Gemini API. يرجى إضافة GEMINI_API_KEY في الإعدادات."
-        )
-
+    allowed, duration_minutes, error_msg = gemini_manager.check_audio_duration_limit(audio_path)
+    if not allowed:
+        raise ValueError(error_msg)
+    
+    logging.info(f"[Transcription] Audio duration: {duration_minutes:.1f} minutes")
+    
     compressed_path = compress_audio_for_upload(audio_path)
     upload_path = compressed_path if compressed_path != audio_path else audio_path
-
+    
     language_name = LANGUAGE_NAMES.get(language, 'Arabic')
-    language_instruction = ""
     if language == 'auto':
         language_instruction = "Auto-detect the language spoken in the audio and transcribe in that same language."
     else:
         language_instruction = f"The audio is in {language_name}. Transcribe in {language_name} exactly as spoken - do NOT translate to any other language."
-
+    
     prompt = f"""Transcribe this entire audio file completely and accurately. This is a FULL transcription request - transcribe EVERYTHING up to 22,000 words.
 
 {language_instruction}
@@ -572,161 +869,29 @@ Instructions:
 - If there are multiple speakers, indicate speaker changes with new paragraphs
 - Output ONLY the transcription text, no commentary, no timestamps, no summaries
 - If the audio is unclear in parts, transcribe what you can hear
-- For long audio (1-2+ hours), continue transcribing until the very end
-- Maximum output: 22,000 words - use all of it if needed for 2-hour videos"""
-
-    max_retries_per_key = 5
-    base_retry_delay = 3
-    last_error = None
-    local_exhausted_keys = set()
-
-    total_keys = len(GEMINI_KEYS)
-    available_at_start = get_available_keys_count()
-    logging.info(
-        f"Starting transcription with {available_at_start}/{total_keys} keys available"
-    )
-
-    for rotation in range(total_keys * 2):
-        key_index = get_balanced_key_index(allow_exhausted_fallback=False)
-
-        if key_index is None:
-            if not GEMINI_KEYS:
-                logging.error("No API keys configured")
-                raise ValueError(
-                    "لم يتم إعداد مفاتيح Gemini API. يرجى إضافة GEMINI_API_KEY في الإعدادات."
-                )
-            else:
-                time_until_available = get_time_until_key_available()
-                minutes_remaining = time_until_available / 60
-                logging.warning(
-                    f"All keys in cooldown. Time until next available: {minutes_remaining:.1f} minutes"
-                )
-                raise ValueError(
-                    f"تم استنفاد حصة جميع مفاتيح API. الرجاء الانتظار {int(minutes_remaining)} دقيقة أو إضافة مفاتيح جديدة."
-                )
-
-        if key_index in local_exhausted_keys:
-            continue
-
-        api_key = GEMINI_KEYS[key_index]
-
-        for retry in range(max_retries_per_key):
-            audio_file = None
-            retry_delay = base_retry_delay * (2**retry)
-
-            try:
-                genai.configure(api_key=api_key)
-
-                logging.info(
-                    f"[Key {key_index + 1}/{total_keys}] Uploading audio file (attempt {retry + 1}/{max_retries_per_key})..."
-                )
-
-                audio_file = genai.upload_file(upload_path)
-
-                model = genai.GenerativeModel('gemini-2.0-flash')
-
-                logging.info(
-                    f"[Key {key_index + 1}/{total_keys}] Starting transcription (timeout: 30 minutes)..."
-                )
-
-                response = model.generate_content(
-                    [prompt, audio_file], request_options={"timeout": 1800})
-
-                try:
-                    genai.delete_file(audio_file.name)
-                except:
-                    pass
-
-                if compressed_path != audio_path:
-                    safe_remove_file(compressed_path)
-
-                if response and response.text:
-                    text = response.text.strip()
-                    word_count = len(text.split())
-                    logging.info(
-                        f"[Key {key_index + 1}/{total_keys}] Transcription successful! {len(text)} chars, ~{word_count} words"
-                    )
-                    return text
-
-                logging.warning(
-                    f"[Key {key_index + 1}/{total_keys}] Empty response, retrying in {retry_delay}s..."
-                )
-                last_error = "Empty response from API"
-                time.sleep(retry_delay)
-                continue
-
-            except Exception as e:
-                error_str = str(e).lower()
-                last_error = str(e)
-
-                try:
-                    if audio_file:
-                        genai.delete_file(audio_file.name)
-                except:
-                    pass
-
-                if '429' in error_str or 'quota' in error_str or 'rate' in error_str or 'limit' in error_str or 'exhausted' in error_str:
-                    logging.warning(
-                        f"[Key {key_index + 1}/{total_keys}] Quota exhausted, marking and switching..."
-                    )
-                    local_exhausted_keys.add(key_index)
-                    mark_key_exhausted(key_index)
-                    break
-
-                elif 'timeout' in error_str or 'deadline' in error_str or 'timed out' in error_str:
-                    logging.warning(
-                        f"[Key {key_index + 1}/{total_keys}] Timeout on attempt {retry + 1}, retrying in {retry_delay * 2}s..."
-                    )
-                    time.sleep(retry_delay * 2)
-                    continue
-
-                elif 'connection' in error_str or 'network' in error_str or 'unavailable' in error_str or 'reset' in error_str or 'broken' in error_str:
-                    logging.warning(
-                        f"[Key {key_index + 1}/{total_keys}] Connection error: {str(e)[:100]}, retrying in {retry_delay * 3}s..."
-                    )
-                    time.sleep(retry_delay * 3)
-                    continue
-
-                elif 'invalid' in error_str or 'unauthorized' in error_str or 'permission' in error_str or 'api_key' in error_str:
-                    logging.error(
-                        f"[Key {key_index + 1}/{total_keys}] Invalid API key, skipping..."
-                    )
-                    local_exhausted_keys.add(key_index)
-                    mark_key_exhausted(key_index)
-                    break
-
-                elif 'upload' in error_str or 'file' in error_str:
-                    logging.warning(
-                        f"[Key {key_index + 1}/{total_keys}] Upload error: {str(e)[:100]}, retrying in {retry_delay * 2}s..."
-                    )
-                    time.sleep(retry_delay * 2)
-                    continue
-
-                else:
-                    logging.error(
-                        f"[Key {key_index + 1}/{total_keys}] Error: {str(e)[:150]}, retrying in {retry_delay}s..."
-                    )
-                    time.sleep(retry_delay)
-                    continue
-
-        if len(local_exhausted_keys) >= total_keys:
-            break
-
-    if compressed_path != audio_path:
-        safe_remove_file(compressed_path)
-
-    available_now = get_available_keys_count()
-    logging.error(
-        f"Transcription failed. Keys exhausted in session: {len(local_exhausted_keys)}/{total_keys}. Available now: {available_now}. Last error: {last_error}"
-    )
-
-    if len(local_exhausted_keys) >= total_keys:
-        raise ValueError(
-            "تم استنفاد حصة جميع مفاتيح API. حاول مرة أخرى بعد ساعة أو أضف مفاتيح جديدة."
+- Maximum output: 22,000 words - use all of it if needed"""
+    
+    try:
+        result = gemini_manager.call_audio_transcription(
+            upload_path, 
+            prompt, 
+            operation='audio_transcription'
         )
-    else:
-        raise ValueError(
-            f"فشل في تحويل الصوت إلى نص. الخطأ: {str(last_error)[:100]}")
+        
+        if compressed_path != audio_path:
+            safe_remove_file(compressed_path)
+        
+        return result
+        
+    except ValueError:
+        if compressed_path != audio_path:
+            safe_remove_file(compressed_path)
+        raise
+    except Exception as e:
+        if compressed_path != audio_path:
+            safe_remove_file(compressed_path)
+        logging.error(f"[Transcription] Unexpected error: {e}")
+        raise ValueError(f"فشل في تحويل الصوت إلى نص. الخطأ: {str(e)[:100]}")
 
 
 def generate_podcast_search_links(podcast_name):
