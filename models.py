@@ -43,6 +43,7 @@ class AIProviderState(db.Model):
     failed_requests = db.Column(db.Integer, default=0)
     last_error = db.Column(db.String(500))
     last_error_at = db.Column(db.DateTime)
+    avg_latency_ms = db.Column(db.Float, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -55,13 +56,16 @@ class AIUsageLog(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     provider = db.Column(db.String(50), nullable=False)
     operation_type = db.Column(db.String(50), nullable=False)
+    model_used = db.Column(db.String(100))
     success = db.Column(db.Boolean, nullable=False)
     error_type = db.Column(db.String(100))
     error_message = db.Column(db.String(500))
     duration_seconds = db.Column(db.Float)
+    latency_ms = db.Column(db.Integer)
     session_id = db.Column(db.String(100))
     cached = db.Column(db.Boolean, default=False)
     hour_bucket = db.Column(db.Integer)
+    tool_name = db.Column(db.String(100))
 
 
 class DailyStats(db.Model):
@@ -79,6 +83,11 @@ class DailyStats(db.Model):
     vision_requests = db.Column(db.Integer, default=0)
     groq_requests = db.Column(db.Integer, default=0)
     huggingface_requests = db.Column(db.Integer, default=0)
+    unique_sessions = db.Column(db.Integer, default=0)
+    page_views = db.Column(db.Integer, default=0)
+    tool_usage = db.Column(db.Text)
+    avg_latency_ms = db.Column(db.Float, default=0)
+    peak_hour = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -110,6 +119,7 @@ class ActiveSession(db.Model):
     browser = db.Column(db.String(100))
     os_name = db.Column(db.String(100))
     country = db.Column(db.String(100))
+    current_page = db.Column(db.String(200))
     first_seen = db.Column(db.DateTime, default=datetime.utcnow)
     last_seen = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     page_views = db.Column(db.Integer, default=1)
@@ -131,3 +141,83 @@ class SessionRateLimit(db.Model):
     is_blocked = db.Column(db.Boolean, default=False)
     blocked_until = db.Column(db.DateTime)
     block_reason = db.Column(db.String(200))
+
+
+class ActivityLog(db.Model):
+    """Log all tool activities (AI and non-AI) for admin dashboard"""
+    __tablename__ = 'activity_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    session_id = db.Column(db.String(100), index=True)
+    ip_address = db.Column(db.String(45))
+    tool_name = db.Column(db.String(100), nullable=False, index=True)
+    action = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(20), nullable=False)
+    details = db.Column(db.Text)
+    duration_ms = db.Column(db.Integer)
+    file_size = db.Column(db.Integer)
+    error_message = db.Column(db.String(500))
+    user_agent = db.Column(db.String(500))
+    device_type = db.Column(db.String(50))
+
+
+class ToolStats(db.Model):
+    """Aggregated tool usage statistics"""
+    __tablename__ = 'tool_stats'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False, index=True)
+    tool_name = db.Column(db.String(100), nullable=False, index=True)
+    usage_count = db.Column(db.Integer, default=0)
+    success_count = db.Column(db.Integer, default=0)
+    error_count = db.Column(db.Integer, default=0)
+    avg_duration_ms = db.Column(db.Float, default=0)
+    total_file_size = db.Column(db.BigInteger, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (
+        db.UniqueConstraint('date', 'tool_name', name='unique_date_tool'),
+    )
+
+
+class HourlyStats(db.Model):
+    """Hourly statistics for charts"""
+    __tablename__ = 'hourly_stats'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False, index=True)
+    hour = db.Column(db.Integer, nullable=False)
+    total_requests = db.Column(db.Integer, default=0)
+    successful_requests = db.Column(db.Integer, default=0)
+    failed_requests = db.Column(db.Integer, default=0)
+    ai_requests = db.Column(db.Integer, default=0)
+    groq_requests = db.Column(db.Integer, default=0)
+    huggingface_requests = db.Column(db.Integer, default=0)
+    avg_latency_ms = db.Column(db.Float, default=0)
+    unique_sessions = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (
+        db.UniqueConstraint('date', 'hour', name='unique_date_hour'),
+    )
+
+
+class ErrorLog(db.Model):
+    """Track all errors for debugging"""
+    __tablename__ = 'error_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    error_type = db.Column(db.String(100), nullable=False, index=True)
+    error_message = db.Column(db.Text, nullable=False)
+    stack_trace = db.Column(db.Text)
+    provider = db.Column(db.String(50))
+    tool_name = db.Column(db.String(100))
+    session_id = db.Column(db.String(100))
+    request_data = db.Column(db.Text)
+    resolved = db.Column(db.Boolean, default=False)
+    resolved_at = db.Column(db.DateTime)
+    resolution_notes = db.Column(db.Text)
