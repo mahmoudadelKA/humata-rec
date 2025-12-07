@@ -592,10 +592,10 @@
             }
         }
         
-        /* Mobile - Single Column Layout for better touch experience */
+        /* Mobile - Two Column Grid Layout centered with pharaonic glow */
         @media (max-width: 480px) {
             #tools-hub {
-                padding: 1rem 0.75rem;
+                padding: 1rem 0.5rem;
                 padding-bottom: 5rem;
             }
             
@@ -617,46 +617,83 @@
             }
             
             .tools-hub-grid {
-                grid-template-columns: 1fr;
-                gap: 0.875rem;
-                max-width: 320px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                max-width: 100%;
                 margin: 0 auto;
+                justify-content: center;
+                padding: 0 0.25rem;
             }
             
             .tool-card {
-                padding: 1rem;
-                flex-direction: row;
-                text-align: right;
-                gap: 1rem;
-                min-height: 80px;
+                padding: 0.75rem 0.5rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+                min-height: auto;
+                /* Remove dark background - make transparent with pharaonic glow */
+                background: transparent !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                /* Add subtle pharaonic golden glow */
+                filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.3));
+            }
+            
+            .tool-card::before,
+            .tool-card::after {
+                display: none !important;
+            }
+            
+            .tool-card:hover, .tool-card:active {
+                transform: scale(1.05);
+                filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.5));
+                box-shadow: none !important;
             }
             
             .tool-card-icon {
-                width: 56px;
-                height: 56px;
-                margin-bottom: 0;
+                width: 44px;
+                height: 44px;
+                margin-bottom: 0.25rem;
                 flex-shrink: 0;
+                border-radius: 12px;
+                /* Pharaonic golden glow effect */
+                background: linear-gradient(145deg, rgba(20, 25, 50, 0.8), rgba(10, 15, 35, 0.9)) !important;
+                border: 1.5px solid rgba(212, 175, 55, 0.5) !important;
+                box-shadow: 
+                    0 0 12px rgba(212, 175, 55, 0.4),
+                    0 0 25px rgba(255, 215, 0, 0.2),
+                    inset 0 1px 2px rgba(255, 215, 0, 0.1) !important;
+            }
+            
+            .tool-card:hover .tool-card-icon,
+            .tool-card:active .tool-card-icon {
+                box-shadow: 
+                    0 0 20px rgba(212, 175, 55, 0.6),
+                    0 0 40px rgba(255, 215, 0, 0.3) !important;
+                transform: scale(1.1);
             }
             
             .tool-card-icon svg {
-                width: 28px;
-                height: 28px;
+                width: 22px;
+                height: 22px;
+                filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.8)) !important;
             }
             
             .tool-card .tool-card-content {
                 flex: 1;
-                text-align: right;
+                text-align: center;
             }
             
             .tool-card-title {
-                font-size: 0.95rem;
-                margin-bottom: 0.2rem;
+                font-size: 0.75rem;
+                margin-bottom: 0.1rem;
+                text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
             }
             
             .tool-card-desc {
-                display: block;
-                font-size: 0.75rem;
-                opacity: 0.8;
+                display: none;
             }
             
             .tools-hub-back-btn {
@@ -676,29 +713,24 @@
         /* Very small screens */
         @media (max-width: 360px) {
             .tools-hub-grid {
-                max-width: 280px;
+                gap: 0.5rem;
             }
             
             .tool-card {
-                padding: 0.875rem;
-                min-height: 72px;
+                padding: 0.5rem 0.25rem;
             }
             
             .tool-card-icon {
-                width: 48px;
-                height: 48px;
+                width: 40px;
+                height: 40px;
             }
             
             .tool-card-icon svg {
-                width: 24px;
-                height: 24px;
+                width: 20px;
+                height: 20px;
             }
             
             .tool-card-title {
-                font-size: 0.875rem;
-            }
-            
-            .tool-card-desc {
                 font-size: 0.7rem;
             }
         }
