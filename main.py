@@ -21,11 +21,11 @@ from pydub import AudioSegment
 import pytesseract
 from PIL import Image
 from fuzzywuzzy import fuzz
-import google.generativeai as genai
 from docx import Document
 from docx.shared import Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from models import db, AdminUser, GeminiKeyState, GeminiUsageLog, DailyStats, ActiveSession
+from models import db, AdminUser, AIProviderState, AIUsageLog, DailyStats, ActiveSession
+from services.ai_providers import ai_manager, AIProviderError, RateLimitError, ProviderNotConfiguredError
 
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
 # هذا يحمي حسابك بدلاً من رفع الملف على GitHub
@@ -335,821 +335,60 @@ ANIME_SIMILARITY_THRESHOLD = 0.85
 PODCAST_NAME_SIMILARITY_THRESHOLD = 90
 
 # =============================================================================
-# CENTRALIZED GEMINI API MANAGER
+# AI MANAGER WRAPPER FUNCTIONS
 # =============================================================================
-# Unified layer for all Gemini API calls with:
-# - Support for up to 50 API keys (GEMINI_KEY_1 to GEMINI_KEY_50)
-# - Smart round-robin distribution with 1-hour cooldown for exhausted keys
-# - Try ALL available keys per request (no 2-key limit)
-# - Instant key switching with NO delays between attempts
-# - Session-based rate limiting (15 requests per 20 minutes)
-# - Comprehensive logging with database persistence
-# - Graceful quota exhaustion handling with Arabic error messages
-# - Video transcription support up to 2 hours (120 minutes)
-# - Admin dashboard with key management
+# Provides backward-compatible wrapper functions using the new AIManager
+# from services/ai_providers.py which uses Groq + HuggingFace instead of Gemini.
 # =============================================================================
 
-class GeminiAPIManager:
-    """Centralized Gemini API manager with fast key rotation and cooldown protection."""
-    
-    MAX_KEYS = 50
-    RATE_LIMIT_REQUESTS = 15
-    RATE_LIMIT_WINDOW_SECONDS = 1200
-    KEY_COOLDOWN_SECONDS = 3600
-    MAX_AUDIO_DURATION_MINUTES = 120
-    MAX_LONG_VIDEO_PER_SESSION = 3
-    LONG_VIDEO_THRESHOLD_MINUTES = 60
-    MODEL_LIGHT = os.environ.get('GEMINI_TEXT_MODEL', 'gemini-2.0-flash')
-    MODEL_HEAVY = os.environ.get('GEMINI_VISION_MODEL', 'gemini-2.0-flash')
-    
-    def __init__(self):
-        self.keys = self._load_keys()
-        self.key_names = self._get_key_names()
-        self.exhausted_keys = {}
-        self.manually_disabled_keys = set()
-        self.key_usage_count = defaultdict(int)
-        self.key_last_used = {}
-        self.key_cooldown_count = defaultdict(int)
-        self.session_usage = defaultdict(list)
-        self.session_long_video_count = defaultdict(int)
-        self.current_key_index = 0
-        self.hourly_stats = defaultdict(lambda: defaultdict(int))
-        self.daily_stats = {
-            'total_requests': 0,
-            'successful_requests': 0,
-            'quota_errors': 0,
-            'other_errors': 0,
-            'requests_by_operation': defaultdict(int),
-            'requests_by_key': defaultdict(int)
-        }
-        self._lock = threading.Lock()
-        self._db_initialized = False
-        
-        logging.info(f"[GeminiManager] Initialized with {len(self.keys)} API keys (max supported: {self.MAX_KEYS})")
-        logging.info(f"[GeminiManager] Video transcription limit: {self.MAX_AUDIO_DURATION_MINUTES} minutes (2 hours)")
-    
-    def _load_keys(self):
-        """Load all available Gemini API keys from environment (up to 50 keys)."""
-        keys = []
-        for i in range(1, self.MAX_KEYS + 1):
-            key = os.environ.get(f"GEMINI_KEY_{i}")
-            if key and key.strip():
-                keys.append(key.strip())
-        
-        main_key = os.environ.get("GEMINI_API_KEY")
-        if main_key and main_key.strip() and main_key.strip() not in keys:
-            keys.append(main_key.strip())
-        
-        return keys
-    
-    def _get_key_names(self):
-        """Get the environment variable names for each key."""
-        names = {}
-        key_index = 0
-        for i in range(1, self.MAX_KEYS + 1):
-            key = os.environ.get(f"GEMINI_KEY_{i}")
-            if key and key.strip():
-                names[key_index] = f"GEMINI_KEY_{i}"
-                key_index += 1
-        
-        main_key = os.environ.get("GEMINI_API_KEY")
-        if main_key and main_key.strip():
-            found = False
-            for idx, name in names.items():
-                if self.keys[idx] == main_key.strip():
-                    found = True
-                    break
-            if not found:
-                names[len(names)] = "GEMINI_API_KEY"
-        
-        return names
-    
-    def init_db_state(self):
-        """Initialize database state for keys - call after app context is available."""
-        if self._db_initialized:
-            return
-        
-        try:
-            self._load_disabled_keys_from_db()
-            self._db_initialized = True
-            logging.info("[GeminiManager] Database state initialized")
-        except Exception as e:
-            logging.warning(f"[GeminiManager] Could not initialize DB state: {e}")
-    
-    def _load_disabled_keys_from_db(self):
-        """Load manually disabled keys from database."""
-        try:
-            disabled_states = GeminiKeyState.query.filter_by(is_manually_disabled=True).all()
-            for state in disabled_states:
-                if state.key_index < len(self.keys):
-                    self.manually_disabled_keys.add(state.key_index)
-                    logging.info(f"[GeminiManager] Key {state.key_index + 1} loaded as manually disabled")
-        except Exception as e:
-            logging.warning(f"[GeminiManager] Could not load disabled keys: {e}")
-    
-    def _save_key_state_to_db(self, key_index, **updates):
-        """Save key state to database."""
-        try:
-            key_name = self.key_names.get(key_index, f"KEY_{key_index + 1}")
-            state = GeminiKeyState.query.filter_by(key_index=key_index).first()
-            
-            if not state:
-                state = GeminiKeyState(key_index=key_index, key_name=key_name)
-                db.session.add(state)
-            
-            for field, value in updates.items():
-                if hasattr(state, field):
-                    setattr(state, field, value)
-            
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            logging.warning(f"[GeminiManager] Could not save key state: {e}")
-    
-    def _log_usage_to_db(self, key_index, operation, is_retry, success, error_type=None, duration_minutes=None):
-        """Log usage to database for dashboard analytics."""
-        try:
-            current_hour = datetime.utcnow().hour
-            log_entry = GeminiUsageLog(
-                key_index=key_index,
-                operation_type=operation,
-                is_retry=is_retry,
-                success=success,
-                error_type=error_type,
-                content_duration_minutes=duration_minutes,
-                session_id=self._get_session_id(),
-                hour_bucket=current_hour
-            )
-            db.session.add(log_entry)
-            
-            today = date.today()
-            daily = DailyStats.query.filter_by(date=today).first()
-            if not daily:
-                daily = DailyStats(date=today)
-                db.session.add(daily)
-            
-            daily.total_requests += 1
-            if success:
-                daily.successful_requests += 1
-            else:
-                daily.failed_requests += 1
-                if error_type == 'quota':
-                    daily.quota_errors += 1
-            
-            if 'text' in operation.lower():
-                daily.text_requests += 1
-            elif 'vision' in operation.lower() or 'image' in operation.lower():
-                daily.vision_requests += 1
-            elif 'audio' in operation.lower() or 'transcription' in operation.lower():
-                daily.audio_requests += 1
-            elif 'video' in operation.lower():
-                daily.video_requests += 1
-            
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            logging.debug(f"[GeminiManager] Could not log to DB: {e}")
-    
-    def _get_session_id(self):
-        """Get current session/IP identifier for rate limiting."""
-        try:
-            if request:
-                return request.remote_addr or 'unknown'
-        except:
-            pass
-        return 'system'
-    
-    def _check_rate_limit(self, session_id):
-        """Check if session has exceeded rate limit. Returns (allowed, remaining, reset_time)."""
-        current_time = time.time()
-        
-        with self._lock:
-            self.session_usage[session_id] = [
-                t for t in self.session_usage[session_id]
-                if current_time - t < self.RATE_LIMIT_WINDOW_SECONDS
-            ]
-            
-            request_count = len(self.session_usage[session_id])
-            remaining = max(0, self.RATE_LIMIT_REQUESTS - request_count)
-            
-            if request_count >= self.RATE_LIMIT_REQUESTS:
-                oldest_request = min(self.session_usage[session_id])
-                reset_time = int((oldest_request + self.RATE_LIMIT_WINDOW_SECONDS - current_time) / 60)
-                return False, remaining, reset_time
-            
-            return True, remaining, 0
-    
-    def _record_session_request(self, session_id):
-        """Record a request for rate limiting."""
-        with self._lock:
-            self.session_usage[session_id].append(time.time())
-    
-    def _get_available_key_index(self):
-        """Get an available (non-exhausted, non-disabled) key index using round-robin."""
-        current_time = time.time()
-        
-        with self._lock:
-            expired_keys = [
-                k for k, t in self.exhausted_keys.items()
-                if current_time - t > self.KEY_COOLDOWN_SECONDS
-            ]
-            for k in expired_keys:
-                del self.exhausted_keys[k]
-                logging.info(f"[GeminiManager] Key {k + 1} cooldown expired, now available")
-            
-            available = [
-                i for i in range(len(self.keys))
-                if i not in self.exhausted_keys and i not in self.manually_disabled_keys
-            ]
-            
-            if not available:
-                return None
-            
-            start_index = self.current_key_index % len(self.keys)
-            for offset in range(len(self.keys)):
-                candidate = (start_index + offset) % len(self.keys)
-                if candidate in available:
-                    self.current_key_index = candidate + 1
-                    self.key_usage_count[candidate] += 1
-                    self.key_last_used[candidate] = current_time
-                    return candidate
-            
-            selected = available[0]
-            self.current_key_index = selected + 1
-            self.key_usage_count[selected] += 1
-            self.key_last_used[selected] = current_time
-            return selected
-    
-    def _mark_key_exhausted(self, key_index):
-        """Mark a key as exhausted with timestamp and update cooldown count."""
-        with self._lock:
-            self.exhausted_keys[key_index] = time.time()
-            self.key_cooldown_count[key_index] += 1
-            self.daily_stats['quota_errors'] += 1
-            logging.warning(f"[GeminiManager] Key {key_index + 1} marked as exhausted (cooldown: 1 hour)")
-        
-        try:
-            self._save_key_state_to_db(
-                key_index,
-                last_cooldown_at=datetime.utcnow(),
-                cooldown_count=self.key_cooldown_count[key_index]
-            )
-        except:
-            pass
-    
-    def set_key_disabled(self, key_index, disabled, reason=None):
-        """Manually enable/disable a key."""
-        with self._lock:
-            if disabled:
-                self.manually_disabled_keys.add(key_index)
-                logging.info(f"[GeminiManager] Key {key_index + 1} manually disabled: {reason}")
-            else:
-                self.manually_disabled_keys.discard(key_index)
-                logging.info(f"[GeminiManager] Key {key_index + 1} manually enabled")
-        
-        try:
-            self._save_key_state_to_db(
-                key_index,
-                is_manually_disabled=disabled,
-                disabled_at=datetime.utcnow() if disabled else None,
-                disabled_reason=reason
-            )
-        except:
-            pass
-    
-    def get_key_status(self, key_index):
-        """Get the status of a specific key."""
-        current_time = time.time()
-        
-        with self._lock:
-            if key_index in self.manually_disabled_keys:
-                return 'disabled'
-            elif key_index in self.exhausted_keys:
-                cooldown_remaining = self.KEY_COOLDOWN_SECONDS - (current_time - self.exhausted_keys[key_index])
-                if cooldown_remaining > 0:
-                    return 'cooldown'
-                else:
-                    del self.exhausted_keys[key_index]
-                    return 'active'
-            else:
-                return 'active'
-    
-    def get_all_keys_info(self):
-        """Get detailed info about all keys for dashboard."""
-        current_time = time.time()
-        keys_info = []
-        
-        with self._lock:
-            for i in range(len(self.keys)):
-                status = 'active'
-                cooldown_remaining = 0
-                
-                if i in self.manually_disabled_keys:
-                    status = 'disabled'
-                elif i in self.exhausted_keys:
-                    cooldown_remaining = self.KEY_COOLDOWN_SECONDS - (current_time - self.exhausted_keys[i])
-                    if cooldown_remaining > 0:
-                        status = 'cooldown'
-                    else:
-                        del self.exhausted_keys[i]
-                
-                keys_info.append({
-                    'index': i,
-                    'name': self.key_names.get(i, f"KEY_{i + 1}"),
-                    'display_name': f"Key #{i + 1}",
-                    'status': status,
-                    'usage_count': self.key_usage_count.get(i, 0),
-                    'cooldown_count': self.key_cooldown_count.get(i, 0),
-                    'last_used': self.key_last_used.get(i),
-                    'cooldown_remaining_minutes': max(0, int(cooldown_remaining / 60)) if status == 'cooldown' else 0
-                })
-        
-        return keys_info
-    
-    def get_dashboard_stats(self):
-        """Get comprehensive stats for admin dashboard."""
-        current_time = time.time()
-        
-        with self._lock:
-            active_count = len([
-                i for i in range(len(self.keys))
-                if i not in self.exhausted_keys and i not in self.manually_disabled_keys
-            ])
-            cooldown_count = len([
-                i for i in self.exhausted_keys
-                if current_time - self.exhausted_keys[i] < self.KEY_COOLDOWN_SECONDS
-            ])
-            disabled_count = len(self.manually_disabled_keys)
-            
-            return {
-                'total_keys': len(self.keys),
-                'active_keys': active_count,
-                'cooldown_keys': cooldown_count,
-                'disabled_keys': disabled_count,
-                'total_requests_today': self.daily_stats['total_requests'],
-                'successful_requests_today': self.daily_stats['successful_requests'],
-                'quota_errors_today': self.daily_stats['quota_errors'],
-                'other_errors_today': self.daily_stats['other_errors'],
-                'requests_by_operation': dict(self.daily_stats['requests_by_operation']),
-                'requests_by_key': dict(self.daily_stats['requests_by_key'])
-            }
-    
-    def check_long_video_limit(self, session_id, duration_minutes):
-        """Check if session has exceeded long video transcription limit."""
-        if duration_minutes < self.LONG_VIDEO_THRESHOLD_MINUTES:
-            return True, None
-        
-        with self._lock:
-            current_time = time.time()
-            window_start = current_time - self.RATE_LIMIT_WINDOW_SECONDS
-            
-            if self.session_long_video_count.get(session_id, 0) >= self.MAX_LONG_VIDEO_PER_SESSION:
-                return False, (
-                    f"لقد وصلت إلى الحد الأقصى من عمليات تحويل الفيديو الطويل "
-                    f"({self.MAX_LONG_VIDEO_PER_SESSION} عمليات). "
-                    f"الرجاء الانتظار قليلاً قبل المحاولة مرة أخرى."
-                )
-            
-            return True, None
-    
-    def record_long_video(self, session_id):
-        """Record a long video transcription for rate limiting."""
-        with self._lock:
-            self.session_long_video_count[session_id] = self.session_long_video_count.get(session_id, 0) + 1
-    
-    def _is_quota_error(self, error_str):
-        """Check if error is related to quota/rate limiting."""
-        quota_indicators = ['429', 'quota', 'rate', 'limit', 'exhausted', 'resource_exhausted']
-        return any(ind in error_str for ind in quota_indicators)
-    
-    def _is_auth_error(self, error_str):
-        """Check if error is related to authentication/authorization."""
-        auth_indicators = ['400', '401', '403', 'invalid', 'unauthorized', 'permission', 'api_key']
-        return any(ind in error_str for ind in auth_indicators)
-    
-    def _log_request(self, operation, key_index, is_retry, success, error_type=None, duration_minutes=None):
-        """Log API request for monitoring."""
-        current_hour = datetime.utcnow().hour
-        
-        with self._lock:
-            self.daily_stats['total_requests'] += 1
-            self.daily_stats['requests_by_operation'][operation] += 1
-            self.daily_stats['requests_by_key'][key_index + 1] += 1
-            self.hourly_stats[current_hour]['total'] += 1
-            self.hourly_stats[current_hour][operation] += 1
-            
-            if success:
-                self.daily_stats['successful_requests'] += 1
-                self.hourly_stats[current_hour]['success'] += 1
-            elif error_type:
-                if 'quota' in error_type:
-                    self.daily_stats['quota_errors'] += 1
-                    self.hourly_stats[current_hour]['quota_errors'] += 1
-                else:
-                    self.daily_stats['other_errors'] += 1
-                    self.hourly_stats[current_hour]['other_errors'] += 1
-        
-        retry_str = " (retry)" if is_retry else ""
-        status = "SUCCESS" if success else f"FAILED ({error_type})"
-        duration_str = f" [{duration_minutes:.1f} min]" if duration_minutes else ""
-        logging.info(f"[GeminiManager] [{operation}] Key {key_index + 1}{retry_str}{duration_str} - {status}")
-        
-        try:
-            self._log_usage_to_db(key_index, operation, is_retry, success, error_type, duration_minutes)
-        except:
-            pass
-    
-    def get_hourly_stats(self):
-        """Get hourly statistics for the last 24 hours."""
-        with self._lock:
-            return dict(self.hourly_stats)
-    
-    def get_stats(self):
-        """Get current API usage statistics."""
-        with self._lock:
-            available_keys = len(self.keys) - len(self.exhausted_keys)
-            return {
-                'total_keys': len(self.keys),
-                'available_keys': available_keys,
-                'exhausted_keys': len(self.exhausted_keys),
-                **dict(self.daily_stats)
-            }
-    
-    def get_available_keys_count(self):
-        """Get count of currently available (non-exhausted) keys."""
-        current_time = time.time()
-        with self._lock:
-            available = len([
-                k for k in range(len(self.keys))
-                if k not in self.exhausted_keys or 
-                current_time - self.exhausted_keys[k] > self.KEY_COOLDOWN_SECONDS
-            ])
-            return available
-    
-    def get_time_until_key_available(self):
-        """Get seconds until earliest exhausted key becomes available."""
-        with self._lock:
-            if not self.exhausted_keys:
-                return 0
-            current_time = time.time()
-            earliest = min(self.exhausted_keys.values())
-            remaining = self.KEY_COOLDOWN_SECONDS - (current_time - earliest)
-            return max(0, remaining)
-    
-    def has_keys(self):
-        """Check if any API keys are configured."""
-        return len(self.keys) > 0
-    
-    def call_text(self, prompt, operation='text', use_heavy_model=False, session_id=None):
-        """
-        Call Gemini for text prompts - tries ALL available keys instantly.
-        
-        Args:
-            prompt: Text prompt
-            operation: Operation name for logging (e.g., 'podcast_identify', 'anime_search')
-            use_heavy_model: Whether to use the heavier model (for complex tasks)
-            session_id: Optional session ID for rate limiting
-        
-        Returns:
-            str or None: Response text or None on failure
-        
-        Raises:
-            ValueError: If rate limit exceeded or quota exhausted with Arabic message
-        """
-        if not self.keys:
-            logging.warning("[GeminiManager] No API keys configured")
-            return None
-        
-        if session_id is None:
-            session_id = self._get_session_id()
-        
-        allowed, remaining, reset_time = self._check_rate_limit(session_id)
-        if not allowed:
-            raise ValueError(
-                f"تم بلوغ الحد المسموح به من الطلبات. الرجاء الانتظار {reset_time} دقيقة."
-            )
-        
-        model_name = self.MODEL_HEAVY if use_heavy_model else self.MODEL_LIGHT
-        keys_tried = []
-        errors_log = []
-        
-        while True:
-            key_index = self._get_available_key_index()
-            
-            if key_index is None:
-                if keys_tried:
-                    logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
-                    raise ValueError(
-                        "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
-                    )
-                else:
-                    time_remaining = int(self.get_time_until_key_available() / 60)
-                    raise ValueError(
-                        f"تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة بعد {time_remaining} دقيقة."
-                    )
-            
-            if key_index in keys_tried:
-                logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
-                raise ValueError(
-                    "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
-                )
-            
-            keys_tried.append(key_index)
-            is_retry = len(keys_tried) > 1
-            
-            try:
-                genai.configure(api_key=self.keys[key_index])
-                model = genai.GenerativeModel(model_name)
-                response = model.generate_content(prompt)
-                
-                if response and response.text:
-                    self._record_session_request(session_id)
-                    self._log_request(operation, key_index, is_retry, success=True)
-                    return response.text.strip()
-                
-                self._log_request(operation, key_index, is_retry, success=False, error_type='empty_response')
-                errors_log.append(f"Key{key_index+1}:empty_response")
-                continue
-                
-            except Exception as e:
-                error_str = str(e).lower()
-                
-                if self._is_quota_error(error_str):
-                    self._mark_key_exhausted(key_index)
-                    self._log_request(operation, key_index, is_retry, success=False, error_type='quota')
-                    errors_log.append(f"Key{key_index+1}:quota")
-                    continue
-                elif self._is_auth_error(error_str):
-                    self._log_request(operation, key_index, is_retry, success=False, error_type='auth')
-                    errors_log.append(f"Key{key_index+1}:auth")
-                    logging.error(f"[GeminiManager] Auth error on key {key_index + 1}: {e}")
-                    continue
-                else:
-                    self._log_request(operation, key_index, is_retry, success=False, error_type='other')
-                    errors_log.append(f"Key{key_index+1}:other({str(e)[:50]})")
-                    logging.error(f"[GeminiManager] API error: {e}")
-                    continue
-    
-    def call_vision(self, image_or_path, prompt, operation='vision', use_heavy_model=False, session_id=None):
-        """
-        Call Gemini Vision - tries ALL available keys instantly.
-        
-        Args:
-            image_or_path: PIL Image object or path to image file
-            prompt: Text prompt
-            operation: Operation name for logging
-            use_heavy_model: Whether to use the heavier model
-            session_id: Optional session ID for rate limiting
-        
-        Returns:
-            str or None: Response text or None on failure
-        
-        Raises:
-            ValueError: If rate limit exceeded or quota exhausted
-        """
-        if not self.keys:
-            logging.warning("[GeminiManager] No API keys configured")
-            return None
-        
-        if session_id is None:
-            session_id = self._get_session_id()
-        
-        allowed, remaining, reset_time = self._check_rate_limit(session_id)
-        if not allowed:
-            raise ValueError(
-                f"تم بلوغ الحد المسموح به من الطلبات. الرجاء الانتظار {reset_time} دقيقة."
-            )
-        
-        if isinstance(image_or_path, str):
-            img = Image.open(image_or_path)
-        else:
-            img = image_or_path
-        
-        model_name = self.MODEL_HEAVY if use_heavy_model else self.MODEL_LIGHT
-        keys_tried = []
-        errors_log = []
-        
-        while True:
-            key_index = self._get_available_key_index()
-            
-            if key_index is None:
-                if keys_tried:
-                    logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
-                    raise ValueError(
-                        "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
-                    )
-                else:
-                    time_remaining = int(self.get_time_until_key_available() / 60)
-                    raise ValueError(
-                        f"تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة بعد {time_remaining} دقيقة."
-                    )
-            
-            if key_index in keys_tried:
-                logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
-                raise ValueError(
-                    "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
-                )
-            
-            keys_tried.append(key_index)
-            is_retry = len(keys_tried) > 1
-            
-            try:
-                genai.configure(api_key=self.keys[key_index])
-                model = genai.GenerativeModel(model_name)
-                response = model.generate_content([prompt, img])
-                
-                if response and response.text:
-                    self._record_session_request(session_id)
-                    self._log_request(operation, key_index, is_retry, success=True)
-                    return response.text.strip()
-                
-                self._log_request(operation, key_index, is_retry, success=False, error_type='empty_response')
-                errors_log.append(f"Key{key_index+1}:empty_response")
-                continue
-                
-            except Exception as e:
-                error_str = str(e).lower()
-                
-                if self._is_quota_error(error_str):
-                    self._mark_key_exhausted(key_index)
-                    self._log_request(operation, key_index, is_retry, success=False, error_type='quota')
-                    errors_log.append(f"Key{key_index+1}:quota")
-                    continue
-                elif self._is_auth_error(error_str):
-                    self._log_request(operation, key_index, is_retry, success=False, error_type='auth')
-                    errors_log.append(f"Key{key_index+1}:auth")
-                    logging.error(f"[GeminiManager] Auth error on key {key_index + 1}: {e}")
-                    continue
-                else:
-                    self._log_request(operation, key_index, is_retry, success=False, error_type='other')
-                    errors_log.append(f"Key{key_index+1}:vision_error({str(e)[:50]})")
-                    logging.error(f"[GeminiManager] Vision API error: {e}")
-                    continue
-    
-    def call_audio_transcription(self, audio_path, prompt, operation='transcription', session_id=None):
-        """
-        Call Gemini for audio transcription - tries ALL available keys instantly.
-        
-        Args:
-            audio_path: Path to audio file
-            prompt: Transcription prompt
-            operation: Operation name for logging
-            session_id: Optional session ID for rate limiting
-        
-        Returns:
-            str or None: Transcription text or None on failure
-        
-        Raises:
-            ValueError: If rate limit exceeded, quota exhausted, or file too large
-        """
-        if not self.keys:
-            raise ValueError(
-                "لم يتم إعداد مفاتيح Gemini API. يرجى إضافة GEMINI_API_KEY في الإعدادات."
-            )
-        
-        if session_id is None:
-            session_id = self._get_session_id()
-        
-        allowed, remaining, reset_time = self._check_rate_limit(session_id)
-        if not allowed:
-            raise ValueError(
-                f"تم بلوغ الحد المسموح به من الطلبات. الرجاء الانتظار {reset_time} دقيقة."
-            )
-        
-        keys_tried = []
-        errors_log = []
-        
-        while True:
-            key_index = self._get_available_key_index()
-            
-            if key_index is None:
-                if keys_tried:
-                    logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
-                    raise ValueError(
-                        "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
-                    )
-                else:
-                    time_remaining = int(self.get_time_until_key_available() / 60)
-                    raise ValueError(
-                        f"تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة بعد {time_remaining} دقيقة."
-                    )
-            
-            if key_index in keys_tried:
-                logging.warning(f"[GeminiManager] All keys exhausted for {operation}. Tried: {keys_tried}. Errors: {errors_log}")
-                raise ValueError(
-                    "تم استنفاد حصة جميع مفاتيح الذكاء الاصطناعي المتاحة حاليًا. يرجى المحاولة لاحقًا."
-                )
-            
-            keys_tried.append(key_index)
-            is_retry = len(keys_tried) > 1
-            audio_file = None
-            
-            try:
-                genai.configure(api_key=self.keys[key_index])
-                
-                logging.info(f"[GeminiManager] [{operation}] Key {key_index + 1} - Uploading audio...")
-                audio_file = genai.upload_file(audio_path)
-                
-                model = genai.GenerativeModel(self.MODEL_LIGHT)
-                logging.info(f"[GeminiManager] [{operation}] Key {key_index + 1} - Transcribing (timeout: 30 min)...")
-                
-                response = model.generate_content(
-                    [prompt, audio_file],
-                    request_options={"timeout": 1800}
-                )
-                
-                try:
-                    genai.delete_file(audio_file.name)
-                except:
-                    pass
-                
-                if response and response.text:
-                    self._record_session_request(session_id)
-                    self._log_request(operation, key_index, is_retry, success=True)
-                    text = response.text.strip()
-                    word_count = len(text.split())
-                    logging.info(f"[GeminiManager] [{operation}] Success: {len(text)} chars, ~{word_count} words")
-                    return text
-                
-                self._log_request(operation, key_index, is_retry, success=False, error_type='empty_response')
-                errors_log.append(f"Key{key_index+1}:empty_response")
-                continue
-                
-            except Exception as e:
-                error_str = str(e).lower()
-                
-                try:
-                    if audio_file:
-                        genai.delete_file(audio_file.name)
-                except:
-                    pass
-                
-                if self._is_quota_error(error_str):
-                    self._mark_key_exhausted(key_index)
-                    self._log_request(operation, key_index, is_retry, success=False, error_type='quota')
-                    errors_log.append(f"Key{key_index+1}:quota")
-                    continue
-                elif 'timeout' in error_str or 'deadline' in error_str:
-                    self._log_request(operation, key_index, is_retry, success=False, error_type='timeout')
-                    errors_log.append(f"Key{key_index+1}:timeout")
-                    logging.warning(f"[GeminiManager] Timeout on key {key_index + 1}")
-                    continue
-                elif self._is_auth_error(error_str):
-                    self._log_request(operation, key_index, is_retry, success=False, error_type='auth')
-                    errors_log.append(f"Key{key_index+1}:auth")
-                    logging.error(f"[GeminiManager] Invalid API key {key_index + 1}")
-                    continue
-                else:
-                    self._log_request(operation, key_index, is_retry, success=False, error_type='other')
-                    errors_log.append(f"Key{key_index+1}:transcription_error({str(e)[:50]})")
-                    logging.error(f"[GeminiManager] Transcription error: {e}")
-                    continue
-    
-    def check_audio_duration_limit(self, audio_path):
-        """
-        Check if audio/video duration is within allowed limits (2 hours max).
-        
-        Returns:
-            tuple: (allowed: bool, duration_minutes: float, error_message: str or None)
-        """
-        try:
-            audio = AudioSegment.from_file(audio_path)
-            duration_minutes = len(audio) / 60000
-            
-            if duration_minutes > self.MAX_AUDIO_DURATION_MINUTES:
-                hours = duration_minutes / 60
-                max_hours = self.MAX_AUDIO_DURATION_MINUTES / 60
-                return False, duration_minutes, (
-                    f"مدة الملف ({hours:.1f} ساعة / {duration_minutes:.0f} دقيقة) أكبر من الحد الأقصى المسموح "
-                    f"({max_hours:.0f} ساعة). يُنصح بتقسيم الملف إلى أجزاء أقصر."
-                )
-            
-            return True, duration_minutes, None
-            
-        except Exception as e:
-            logging.error(f"[GeminiManager] Could not check audio duration: {e}")
-            return True, 0, None
-
-
-gemini_manager = GeminiAPIManager()
-
-GEMINI_KEYS = gemini_manager.keys
-
+def is_ai_provider_configured():
+    """Check if any AI provider is configured (backward compatibility for GEMINI_KEYS checks)."""
+    return ai_manager.groq.is_configured or ai_manager.huggingface.is_configured
 
 def get_available_keys_count():
-    """Get count of currently available (non-exhausted) keys - backward compatibility."""
-    return gemini_manager.get_available_keys_count()
+    """Get count of available AI providers (backward compatibility)."""
+    count = 0
+    if ai_manager.groq.is_configured:
+        count += 1
+    if ai_manager.huggingface.is_configured:
+        count += 1
+    return count
 
+GEMINI_KEYS = is_ai_provider_configured()
 
-def get_time_until_key_available():
-    """Get seconds until earliest key available - backward compatibility."""
-    return gemini_manager.get_time_until_key_available()
+MAX_AUDIO_DURATION_MINUTES = 120
+MAX_LONG_VIDEO_PER_SESSION = 3
+
+def check_audio_duration_limit(audio_path):
+    """
+    Check if audio/video duration is within allowed limits (2 hours max).
+    
+    Returns:
+        tuple: (allowed: bool, duration_minutes: float, error_message: str or None)
+    """
+    try:
+        audio = AudioSegment.from_file(audio_path)
+        duration_minutes = len(audio) / 60000
+        
+        if duration_minutes > MAX_AUDIO_DURATION_MINUTES:
+            hours = duration_minutes / 60
+            max_hours = MAX_AUDIO_DURATION_MINUTES / 60
+            return False, duration_minutes, (
+                f"مدة الملف ({hours:.1f} ساعة / {duration_minutes:.0f} دقيقة) أكبر من الحد الأقصى المسموح "
+                f"({max_hours:.0f} ساعة). يُنصح بتقسيم الملف إلى أجزاء أقصر."
+            )
+        
+        return True, duration_minutes, None
+        
+    except Exception as e:
+        logging.error(f"[AIManager] Could not check audio duration: {e}")
+        return True, 0, None
 
 
 def call_gemini_text(prompt, max_retries=None, operation='text'):
     """
-    Call Gemini API for text-only prompts - backward compatible wrapper.
-    Now uses 2-key-max retry policy instead of rotating through all keys.
+    Call LLM for text-only prompts - backward compatible wrapper.
+    Now uses Groq Llama instead of Gemini.
     
     Args:
         prompt: The text prompt to send to the model
@@ -1157,32 +396,42 @@ def call_gemini_text(prompt, max_retries=None, operation='text'):
         operation: Operation name for logging
     
     Returns:
-        str: Response text or None if all keys exhausted
+        str: Response text or None if failed
     """
     try:
-        return gemini_manager.call_text(prompt, operation=operation)
-    except ValueError as e:
+        return ai_manager.call_llm(prompt)
+    except AIProviderError as e:
         logging.warning(f"[call_gemini_text] {e}")
         return None
 
 
 def call_gemini_vision(image_or_path, prompt, max_retries=None, operation='vision'):
     """
-    Call Gemini Vision API - backward compatible wrapper.
-    Now uses 2-key-max retry policy instead of rotating through all keys.
+    Call Vision API - backward compatible wrapper.
+    Now uses HuggingFace Vision instead of Gemini.
     
     Args:
-        image_or_path: Either a PIL Image object or path to image file
-        prompt: The prompt to send to the model
+        image_or_path: Path to image file (PIL Image not supported with HuggingFace)
+        prompt: The prompt/question to send to the model
         max_retries: Ignored (kept for backward compatibility)
         operation: Operation name for logging
     
     Returns:
-        str: Response text or None if all keys exhausted
+        str: Response text or None if failed
     """
     try:
-        return gemini_manager.call_vision(image_or_path, prompt, operation=operation)
-    except ValueError as e:
+        # If it's a PIL Image, save it temporarily
+        if hasattr(image_or_path, 'save'):
+            import tempfile
+            temp_path = tempfile.mktemp(suffix='.png')
+            image_or_path.save(temp_path)
+            try:
+                return ai_manager.analyze_image(temp_path, question=prompt)
+            finally:
+                safe_remove_file(temp_path)
+        else:
+            return ai_manager.analyze_image(image_or_path, question=prompt)
+    except AIProviderError as e:
         logging.warning(f"[call_gemini_vision] {e}")
         return None
 
@@ -1283,16 +532,16 @@ LANGUAGE_NAMES = {
 
 def transcribe_audio_with_gemini(audio_path, language='ar'):
     """
-    Use Gemini to transcribe audio file with centralized API management.
+    Transcribe audio file using Groq Whisper.
     
     Features:
-    - Uses centralized GeminiAPIManager with 2-key-max retry policy
-    - Duration limit: 15 minutes max (protects API quota)
+    - Uses Groq Whisper for fast, accurate transcription
+    - Duration limit: 2 hours max
     - Session-based rate limiting
     - Comprehensive logging for monitoring
     - Graceful error handling with Arabic messages
     """
-    allowed, duration_minutes, error_msg = gemini_manager.check_audio_duration_limit(audio_path)
+    allowed, duration_minutes, error_msg = check_audio_duration_limit(audio_path)
     if not allowed:
         raise ValueError(error_msg)
     
@@ -1301,43 +550,20 @@ def transcribe_audio_with_gemini(audio_path, language='ar'):
     compressed_path = compress_audio_for_upload(audio_path)
     upload_path = compressed_path if compressed_path != audio_path else audio_path
     
-    language_name = LANGUAGE_NAMES.get(language, 'Arabic')
-    if language == 'auto':
-        language_instruction = "Auto-detect the language spoken in the audio and transcribe in that same language."
-    else:
-        language_instruction = f"The audio is in {language_name}. Transcribe in {language_name} exactly as spoken - do NOT translate to any other language."
-    
-    prompt = f"""Transcribe this entire audio file completely and accurately. This is a FULL transcription request - transcribe EVERYTHING up to 22,000 words.
-
-{language_instruction}
-
-Instructions:
-- Transcribe ALL speech in the audio from start to finish, word by word
-- Do NOT skip any parts - transcribe the ENTIRE audio file completely
-- Keep the original language - do NOT translate
-- If Arabic, preserve Arabic diacritics if present
-- Maintain paragraph breaks for different speakers or topics
-- If there are multiple speakers, indicate speaker changes with new paragraphs
-- Output ONLY the transcription text, no commentary, no timestamps, no summaries
-- If the audio is unclear in parts, transcribe what you can hear
-- Maximum output: 22,000 words - use all of it if needed"""
-    
     try:
-        result = gemini_manager.call_audio_transcription(
-            upload_path, 
-            prompt, 
-            operation='audio_transcription'
-        )
+        lang_code = language if language != 'auto' else None
+        result = ai_manager.transcribe_audio(upload_path, language=lang_code)
         
         if compressed_path != audio_path:
             safe_remove_file(compressed_path)
         
         return result
         
-    except ValueError:
+    except AIProviderError as e:
         if compressed_path != audio_path:
             safe_remove_file(compressed_path)
-        raise
+        logging.error(f"[Transcription] AI error: {e}")
+        raise ValueError(str(e))
     except Exception as e:
         if compressed_path != audio_path:
             safe_remove_file(compressed_path)
@@ -3528,7 +2754,7 @@ def transcribe_video():
             f"Video transcription started - input_type: {input_type}, language: {language}"
         )
         logging.info(
-            f"Available Gemini keys: {get_available_keys_count()}/{len(GEMINI_KEYS)}"
+            f"Available AI providers: {get_available_keys_count()}/2"
         )
 
         if input_type == 'url':
@@ -4315,62 +3541,65 @@ def admin_logout():
 @app.route(ADMIN_DASHBOARD_PATH)
 @login_required
 def admin_dashboard():
-    """Admin dashboard for Gemini API key management."""
+    """Admin dashboard for AI providers management."""
     if not current_user.is_admin:
         flash('ليس لديك صلاحية الوصول إلى لوحة التحكم', 'error')
         return redirect(url_for('admin_login'))
     
-    gemini_manager.init_db_state()
-    
-    stats = gemini_manager.get_dashboard_stats()
-    keys_info = gemini_manager.get_all_keys_info()
-    hourly_stats = gemini_manager.get_hourly_stats()
+    stats = ai_manager.get_stats()
     
     today = date.today()
     daily_db_stats = DailyStats.query.filter_by(date=today).first()
     
+    providers_info = [
+        {
+            'name': 'Groq',
+            'type': 'LLM + Audio',
+            'status': 'active' if ai_manager.groq.is_configured else 'not_configured',
+            'is_configured': ai_manager.groq.is_configured,
+            'models': ['Llama 3.3 70B', 'Whisper Large V3']
+        },
+        {
+            'name': 'HuggingFace',
+            'type': 'Vision',
+            'status': 'active' if ai_manager.huggingface.is_configured else 'not_configured',
+            'is_configured': ai_manager.huggingface.is_configured,
+            'models': ['BLIP Image Captioning', 'ViLT VQA']
+        }
+    ]
+    
     hourly_data = []
     for hour in range(24):
-        hour_stats = hourly_stats.get(hour, {})
         hourly_data.append({
             'hour': hour,
-            'total': hour_stats.get('total', 0),
-            'success': hour_stats.get('success', 0),
-            'quota_errors': hour_stats.get('quota_errors', 0)
+            'total': stats.get('hourly', {}).get(hour, {}).get('total', 0),
+            'success': stats.get('hourly', {}).get(hour, {}).get('success', 0),
+            'failed': stats.get('hourly', {}).get(hour, {}).get('failed', 0)
         })
     
-    show_warning = stats['quota_errors_today'] > 10
+    show_warning = stats.get('failed_today', 0) > 10
     
     return render_template('admin_dashboard.html',
                            stats=stats,
-                           keys_info=keys_info,
+                           providers_info=providers_info,
                            hourly_data=hourly_data,
                            daily_stats=daily_db_stats,
-                           show_warning=show_warning)
+                           show_warning=show_warning,
+                           cache_stats=ai_manager.cache.stats())
 
 
-@app.route('/admin/api/toggle-key', methods=['POST'])
+@app.route('/admin/api/clear-cache', methods=['POST'])
 @login_required
-def admin_toggle_key():
-    """API endpoint to toggle key enabled/disabled state."""
+def admin_clear_cache():
+    """API endpoint to clear the AI response cache."""
     if not current_user.is_admin:
         return jsonify({'error': 'Unauthorized'}), 403
     
-    data = request.get_json()
-    key_index = data.get('key_index')
-    disabled = data.get('disabled', True)
-    reason = data.get('reason', 'تعطيل يدوي من لوحة التحكم')
-    
-    if key_index is None or key_index < 0 or key_index >= len(gemini_manager.keys):
-        return jsonify({'error': 'Invalid key index'}), 400
-    
-    gemini_manager.set_key_disabled(key_index, disabled, reason)
+    ai_manager.cache.clear()
     
     return jsonify({
         'success': True,
-        'key_index': key_index,
-        'disabled': disabled,
-        'status': gemini_manager.get_key_status(key_index)
+        'message': 'تم مسح ذاكرة التخزين المؤقت بنجاح'
     })
 
 
@@ -4381,10 +3610,27 @@ def admin_api_stats():
     if not current_user.is_admin:
         return jsonify({'error': 'Unauthorized'}), 403
     
+    stats = ai_manager.get_stats()
+    
+    providers_info = [
+        {
+            'name': 'Groq',
+            'type': 'LLM + Audio',
+            'status': 'active' if ai_manager.groq.is_configured else 'not_configured',
+            'is_configured': ai_manager.groq.is_configured
+        },
+        {
+            'name': 'HuggingFace', 
+            'type': 'Vision',
+            'status': 'active' if ai_manager.huggingface.is_configured else 'not_configured',
+            'is_configured': ai_manager.huggingface.is_configured
+        }
+    ]
+    
     return jsonify({
-        'stats': gemini_manager.get_dashboard_stats(),
-        'keys_info': gemini_manager.get_all_keys_info(),
-        'hourly_stats': gemini_manager.get_hourly_stats()
+        'stats': stats,
+        'providers_info': providers_info,
+        'cache_stats': ai_manager.cache.stats()
     })
 
 
@@ -4475,10 +3721,11 @@ with app.app_context():
         else:
             logging.info(f"[DB] Database already initialized with {len(existing_tables)} tables")
         init_admin_user()
-        gemini_manager.init_db_state()
         logging.info("=" * 60)
-        logging.info(f"Admin dashboard for Gemini keys is available at: {ADMIN_DASHBOARD_PATH} (requires admin login)")
+        logging.info(f"Admin dashboard for AI providers is available at: {ADMIN_DASHBOARD_PATH} (requires admin login)")
         logging.info("Default admin credentials: username=admin, password=admin123")
+        logging.info(f"Groq provider configured: {ai_manager.groq.is_configured}")
+        logging.info(f"HuggingFace provider configured: {ai_manager.huggingface.is_configured}")
         logging.info("=" * 60)
     except Exception as e:
         logging.warning(f"[DB] Initialization handled by another worker or already complete: {e}")

@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Keys Dashboard - ARKAN AI</title>
+    <title>AI Providers Dashboard - ARKAN AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --gold-primary: #d4a853;
             --gold-secondary: #c4943f;
-            --gold-dark: #9a7230;
             --turquoise-primary: #40e0d0;
-            --turquoise-dark: #2ab5a8;
             --dark-bg: #0a0f1a;
             --dark-surface: #111827;
             --dark-card: #1a2332;
@@ -22,7 +20,6 @@
             background: linear-gradient(135deg, var(--dark-bg) 0%, #0f172a 50%, var(--dark-bg) 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            perspective: 1200px;
         }
         
         .glass-card {
@@ -30,104 +27,48 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(212, 168, 83, 0.2);
             border-radius: 20px;
-            box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(212, 168, 83, 0.1),
-                0 0 60px rgba(212, 168, 83, 0.05);
-            transform-style: preserve-3d;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             transition: all 0.3s ease;
         }
         
         .glass-card:hover {
             transform: translateY(-2px);
-            box-shadow: 
-                0 12px 40px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(212, 168, 83, 0.15),
-                0 0 80px rgba(212, 168, 83, 0.08);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
         }
         
         .stat-card {
             background: linear-gradient(145deg, rgba(26, 35, 50, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
-            backdrop-filter: blur(10px);
             border: 1px solid rgba(212, 168, 83, 0.15);
             border-radius: 16px;
-            box-shadow: 
-                0 6px 24px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            transform-style: preserve-3d;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
             transition: all 0.25s ease;
         }
         
         .stat-card:hover {
-            transform: perspective(1000px) rotateX(-3deg) translateY(-4px);
+            transform: translateY(-4px);
             border-color: rgba(212, 168, 83, 0.4);
-            box-shadow: 
-                0 10px 30px rgba(0, 0, 0, 0.4),
-                0 0 40px rgba(212, 168, 83, 0.1);
         }
         
-        .stat-card-3d {
+        .provider-card {
             background: linear-gradient(145deg, rgba(26, 35, 50, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(64, 224, 208, 0.15);
-            border-radius: 16px;
-            box-shadow: 
-                0 6px 24px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            transform-style: preserve-3d;
-            transition: all 0.25s ease;
+            border: 2px solid rgba(212, 168, 83, 0.2);
+            border-radius: 20px;
+            transition: all 0.3s ease;
         }
         
-        .stat-card-3d:hover {
-            transform: perspective(1000px) rotateX(-3deg) translateY(-4px);
-            border-color: rgba(64, 224, 208, 0.4);
-            box-shadow: 
-                0 10px 30px rgba(0, 0, 0, 0.4),
-                0 0 40px rgba(64, 224, 208, 0.1);
+        .provider-card.configured {
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+        
+        .provider-card.not-configured {
+            border-color: rgba(239, 68, 68, 0.4);
         }
         
         .status-active { background: #22c55e; }
-        .status-cooldown { background: #f59e0b; }
-        .status-disabled { background: #ef4444; }
-        
-        .btn-toggle {
-            transition: all 0.3s ease;
-        }
-        .btn-toggle:hover {
-            transform: scale(1.05);
-        }
-        
-        .warning-banner {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            border-radius: 16px;
-        }
+        .status-inactive { background: #ef4444; }
         
         .gold-text { color: var(--gold-primary); }
-        .gold-border { border-color: var(--gold-primary); }
-        .gold-bg { background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%); }
         .turquoise-text { color: var(--turquoise-primary); }
-        .turquoise-bg { background: linear-gradient(135deg, var(--turquoise-primary) 0%, var(--turquoise-dark) 100%); }
-        
-        table th { 
-            position: sticky; 
-            top: 0; 
-            background: rgba(17, 24, 39, 0.98);
-            z-index: 10;
-        }
-        
-        .filter-btn {
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-        }
-        .filter-btn:hover {
-            border-color: rgba(212, 168, 83, 0.3);
-        }
-        .filter-btn.active {
-            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
-            color: var(--dark-bg);
-            font-weight: 600;
-        }
         
         .pharaonic-header {
             background: linear-gradient(135deg, rgba(212, 168, 83, 0.1) 0%, transparent 50%, rgba(64, 224, 208, 0.1) 100%);
@@ -151,51 +92,10 @@
             background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
         }
         
-        .icon-turquoise {
-            background: linear-gradient(135deg, rgba(64, 224, 208, 0.2) 0%, rgba(64, 224, 208, 0.1) 100%);
-        }
-        
-        .session-row {
-            transition: all 0.2s ease;
-        }
-        .session-row:hover {
-            background: rgba(212, 168, 83, 0.05);
-        }
-        
-        .pulse-active {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .device-badge {
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 0.7rem;
-            font-weight: 500;
-        }
-        
-        .device-desktop { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-        .device-mobile { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-        .device-tablet { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
-        
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(17, 24, 39, 0.5);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(212, 168, 83, 0.3);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(212, 168, 83, 0.5);
+        .warning-banner {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 16px;
         }
     </style>
 </head>
@@ -205,9 +105,9 @@
             <div>
                 <h1 class="text-3xl font-bold text-white flex items-center gap-3">
                     <span class="gold-text">ARKAN</span>
-                    <span>لوحة تحكم Gemini</span>
+                    <span>لوحة تحكم AI</span>
                 </h1>
-                <p class="text-gray-400 mt-1">مراقبة وإدارة مفاتيح API والجلسات النشطة</p>
+                <p class="text-gray-400 mt-1">مراقبة وإدارة مزودي الذكاء الاصطناعي</p>
             </div>
             <div class="flex items-center gap-4">
                 <button onclick="refreshStats()" class="px-4 py-2 bg-slate-700/80 hover:bg-slate-600 text-white rounded-lg transition flex items-center gap-2 border border-slate-600">
@@ -227,20 +127,73 @@
             <svg class="w-6 h-6 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
-            <span class="text-red-400 font-medium">تحذير: عدد كبير من أخطاء quota اليوم ({{ stats.quota_errors_today }}). قد تحتاج إلى زيادة عدد المفاتيح أو ضبط الحدود.</span>
+            <span class="text-red-400 font-medium">تحذير: عدد كبير من الأخطاء اليوم. يرجى التحقق من إعدادات مزودي AI.</span>
         </div>
         {% endif %}
+
+        <h2 class="text-xl font-bold text-white mb-4">مزودو الذكاء الاصطناعي</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {% for provider in providers_info %}
+            <div class="provider-card p-6 {{ 'configured' if provider.is_configured else 'not-configured' }}">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-4">
+                        <div class="icon-container {{ 'bg-green-500/20' if provider.is_configured else 'bg-red-500/20' }}">
+                            {% if provider.name == 'Groq' %}
+                            <svg class="w-6 h-6 {{ 'text-green-400' if provider.is_configured else 'text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                            {% else %}
+                            <svg class="w-6 h-6 {{ 'text-green-400' if provider.is_configured else 'text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white">{{ provider.name }}</h3>
+                            <p class="text-gray-400 text-sm">{{ provider.type }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full {{ 'status-active' if provider.is_configured else 'status-inactive' }}"></span>
+                        <span class="text-sm {{ 'text-green-400' if provider.is_configured else 'text-red-400' }}">
+                            {{ 'مُفعّل' if provider.is_configured else 'غير مُعد' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-gray-400 text-sm mb-2">النماذج المتاحة:</p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for model in provider.models %}
+                        <span class="px-3 py-1 bg-slate-700/50 text-gray-300 text-xs rounded-full">{{ model }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if not provider.is_configured %}
+                <div class="mt-4 p-3 bg-red-900/20 rounded-lg border border-red-500/30">
+                    <p class="text-red-400 text-sm">
+                        {% if provider.name == 'Groq' %}
+                        يرجى إضافة GROQ_API_KEY في متغيرات البيئة
+                        {% else %}
+                        يرجى إضافة HUGGINGFACE_API_KEY في متغيرات البيئة
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div class="stat-card p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-400 text-sm">إجمالي المفاتيح</p>
-                        <p class="text-3xl font-bold text-white mt-1" id="stat-total">{{ stats.total_keys }}</p>
+                        <p class="text-gray-400 text-sm">طلبات اليوم</p>
+                        <p class="text-3xl font-bold text-white mt-1" id="stat-total">{{ stats.get('total_today', 0) }}</p>
                     </div>
                     <div class="icon-container icon-gold">
                         <svg class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
                         </svg>
                     </div>
                 </div>
@@ -249,8 +202,8 @@
             <div class="stat-card p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-400 text-sm">المفاتيح النشطة</p>
-                        <p class="text-3xl font-bold text-green-400 mt-1" id="stat-active">{{ stats.active_keys }}</p>
+                        <p class="text-gray-400 text-sm">ناجحة</p>
+                        <p class="text-3xl font-bold text-green-400 mt-1" id="stat-success">{{ stats.get('success_today', 0) }}</p>
                     </div>
                     <div class="icon-container bg-green-500/20">
                         <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,78 +216,28 @@
             <div class="stat-card p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-400 text-sm">في حالة Cooldown</p>
-                        <p class="text-3xl font-bold text-amber-400 mt-1" id="stat-cooldown">{{ stats.cooldown_keys }}</p>
-                    </div>
-                    <div class="icon-container bg-amber-500/20">
-                        <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-400 text-sm">معطلة يدوياً</p>
-                        <p class="text-3xl font-bold text-red-400 mt-1" id="stat-disabled">{{ stats.disabled_keys }}</p>
+                        <p class="text-gray-400 text-sm">فاشلة</p>
+                        <p class="text-3xl font-bold text-red-400 mt-1" id="stat-failed">{{ stats.get('failed_today', 0) }}</p>
                     </div>
                     <div class="icon-container bg-red-500/20">
                         <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
             <div class="stat-card p-6">
-                <p class="text-gray-400 text-sm">طلبات اليوم</p>
-                <p class="text-2xl font-bold text-white mt-1" id="stat-requests">{{ stats.total_requests_today }}</p>
-                <div class="mt-2 flex items-center gap-2 text-sm">
-                    <span class="text-green-400">{{ stats.successful_requests_today }} ناجح</span>
-                    <span class="text-gray-500">|</span>
-                    <span class="text-red-400">{{ stats.quota_errors_today }} خطأ</span>
-                </div>
-            </div>
-
-            <div class="stat-card-3d p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-400 text-sm">الجلسات النشطة الآن</p>
-                        <p class="text-2xl font-bold turquoise-text mt-1" id="active-now">
-                            <span class="pulse-active inline-block w-2 h-2 rounded-full bg-green-400 ml-2"></span>
-                            0
-                        </p>
+                        <p class="text-gray-400 text-sm">ذاكرة التخزين</p>
+                        <p class="text-3xl font-bold turquoise-text mt-1" id="stat-cache">{{ cache_stats.size }}</p>
+                        <p class="text-gray-500 text-xs mt-1">نسبة الإصابة: {{ cache_stats.hit_rate }}</p>
                     </div>
-                    <div class="icon-container icon-turquoise">
-                        <svg class="w-6 h-6 turquoise-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    <div class="icon-container bg-cyan-500/20">
+                        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
                         </svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card p-6 lg:col-span-2">
-                <p class="text-gray-400 text-sm mb-4">الطلبات حسب النوع</p>
-                <div class="grid grid-cols-4 gap-4 text-center">
-                    <div>
-                        <p class="text-xl font-bold text-blue-400">{{ daily_stats.text_requests if daily_stats else 0 }}</p>
-                        <p class="text-gray-500 text-xs">نص</p>
-                    </div>
-                    <div>
-                        <p class="text-xl font-bold text-purple-400">{{ daily_stats.vision_requests if daily_stats else 0 }}</p>
-                        <p class="text-gray-500 text-xs">رؤية</p>
-                    </div>
-                    <div>
-                        <p class="text-xl font-bold text-cyan-400">{{ daily_stats.audio_requests if daily_stats else 0 }}</p>
-                        <p class="text-gray-500 text-xs">صوت</p>
-                    </div>
-                    <div>
-                        <p class="text-xl font-bold text-pink-400">{{ daily_stats.video_requests if daily_stats else 0 }}</p>
-                        <p class="text-gray-500 text-xs">فيديو</p>
                     </div>
                 </div>
             </div>
@@ -352,268 +255,127 @@
             </div>
 
             <div class="glass-card p-6">
-                <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <span class="turquoise-text">الجلسات النشطة</span>
-                    <span class="text-gray-400 text-sm font-normal">(آخر ساعة)</span>
-                </h2>
-                <div class="h-64 overflow-y-auto" id="sessions-container">
-                    <div class="text-center text-gray-400 py-8">
-                        <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
-                        <p>جاري تحميل الجلسات...</p>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-white">
+                        <span class="gold-text">ذاكرة التخزين المؤقت</span>
+                    </h2>
+                    <button onclick="clearCache()" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition text-sm">
+                        مسح الذاكرة
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">العناصر المخزنة</p>
+                        <p class="text-2xl font-bold text-white">{{ cache_stats.size }} / {{ cache_stats.max_size }}</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">الإصابات</p>
+                        <p class="text-2xl font-bold text-green-400">{{ cache_stats.hits }}</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">الأخطاء</p>
+                        <p class="text-2xl font-bold text-amber-400">{{ cache_stats.misses }}</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">نسبة الإصابة</p>
+                        <p class="text-2xl font-bold turquoise-text">{{ cache_stats.hit_rate }}</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="glass-card p-6">
-            <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
-                <h2 class="text-xl font-bold text-white">قائمة المفاتيح</h2>
-                <div class="flex flex-wrap gap-2">
-                    <button onclick="filterKeys('all')" class="filter-btn active px-3 py-1 rounded-lg bg-slate-700 text-white text-sm" data-filter="all">الكل</button>
-                    <button onclick="filterKeys('active')" class="filter-btn px-3 py-1 rounded-lg bg-slate-700 text-white text-sm" data-filter="active">نشط</button>
-                    <button onclick="filterKeys('cooldown')" class="filter-btn px-3 py-1 rounded-lg bg-slate-700 text-white text-sm" data-filter="cooldown">Cooldown</button>
-                    <button onclick="filterKeys('disabled')" class="filter-btn px-3 py-1 rounded-lg bg-slate-700 text-white text-sm" data-filter="disabled">معطل</button>
+            <h2 class="text-xl font-bold text-white mb-4">
+                <span class="gold-text">معلومات المتغيرات البيئية المطلوبة</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-800/50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-white mb-2">Groq (مطلوب)</h3>
+                    <code class="text-green-400 text-sm block mb-2">GROQ_API_KEY</code>
+                    <p class="text-gray-400 text-xs">للحصول على المفتاح: <a href="https://console.groq.com" target="_blank" class="text-cyan-400 hover:underline">console.groq.com</a></p>
                 </div>
-                <div class="flex gap-2">
-                    <select id="sortBy" onchange="sortKeys()" class="px-3 py-1 rounded-lg bg-slate-700 text-white text-sm border border-slate-600">
-                        <option value="index">ترتيب حسب: الرقم</option>
-                        <option value="usage">الأكثر استخداماً</option>
-                        <option value="cooldown">الأكثر cooldown</option>
-                        <option value="last_used">آخر استخدام</option>
-                    </select>
+                <div class="bg-slate-800/50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-white mb-2">HuggingFace (مطلوب)</h3>
+                    <code class="text-green-400 text-sm block mb-2">HUGGINGFACE_API_KEY</code>
+                    <p class="text-gray-400 text-xs">للحصول على المفتاح: <a href="https://huggingface.co/settings/tokens" target="_blank" class="text-cyan-400 hover:underline">huggingface.co/settings/tokens</a></p>
                 </div>
-            </div>
-
-            <div class="overflow-x-auto max-h-96 overflow-y-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="text-gray-400 text-sm border-b border-slate-700">
-                            <th class="text-right py-3 px-4">المفتاح</th>
-                            <th class="text-right py-3 px-4">الحالة</th>
-                            <th class="text-right py-3 px-4">الاستخدام</th>
-                            <th class="text-right py-3 px-4">مرات Cooldown</th>
-                            <th class="text-right py-3 px-4">آخر استخدام</th>
-                            <th class="text-right py-3 px-4">الإجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="keysTableBody">
-                        {% for key in keys_info %}
-                        <tr class="key-row border-b border-slate-700/50 hover:bg-slate-800/50 transition-colors" data-status="{{ key.status }}" data-usage="{{ key.usage_count }}" data-cooldown-count="{{ key.cooldown_count }}" data-index="{{ key.index }}">
-                            <td class="py-3 px-4">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-white font-medium">{{ key.display_name }}</span>
-                                    <span class="text-gray-500 text-xs">({{ key.name }})</span>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full status-{{ key.status }}"></span>
-                                    <span class="{% if key.status == 'active' %}text-green-400{% elif key.status == 'cooldown' %}text-amber-400{% else %}text-red-400{% endif %}">
-                                        {% if key.status == 'active' %}نشط{% elif key.status == 'cooldown' %}Cooldown ({{ key.cooldown_remaining_minutes }} د){% else %}معطل{% endif %}
-                                    </span>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-white">{{ key.usage_count }}</td>
-                            <td class="py-3 px-4 text-white">{{ key.cooldown_count }}</td>
-                            <td class="py-3 px-4 text-gray-400">
-                                {% if key.last_used %}
-                                    {{ key.last_used | int }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td class="py-3 px-4">
-                                {% if key.status == 'disabled' %}
-                                <button onclick="toggleKey({{ key.index }}, false)" class="btn-toggle px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">
-                                    تفعيل
-                                </button>
-                                {% else %}
-                                <button onclick="toggleKey({{ key.index }}, true)" class="btn-toggle px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm">
-                                    تعطيل
-                                </button>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
             </div>
         </div>
-
-        <footer class="mt-8 text-center text-gray-500 text-sm">
-            <p class="gold-text font-medium">ARKAN AI</p>
-            <p>Gemini Keys Management Dashboard</p>
-        </footer>
     </div>
 
     <script>
-        const hourlyData = {{ hourly_data | tojson }};
+        const hourlyData = {{ hourly_data | tojson | safe }};
         
         const ctx = document.getElementById('hourlyChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: hourlyData.map(h => h.hour + ':00'),
+                labels: hourlyData.map(d => d.hour + ':00'),
                 datasets: [
                     {
-                        label: 'ناجح',
-                        data: hourlyData.map(h => h.success),
-                        backgroundColor: 'rgba(34, 197, 94, 0.8)',
-                        borderRadius: 4
+                        label: 'ناجحة',
+                        data: hourlyData.map(d => d.success),
+                        backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                        borderColor: 'rgba(34, 197, 94, 1)',
+                        borderWidth: 1
                     },
                     {
-                        label: 'أخطاء Quota',
-                        data: hourlyData.map(h => h.quota_errors),
-                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                        borderRadius: 4
+                        label: 'فاشلة',
+                        data: hourlyData.map(d => d.failed),
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { color: '#9ca3af' }
-                    }
-                },
                 scales: {
                     x: {
+                        stacked: true,
                         ticks: { color: '#9ca3af' },
-                        grid: { color: 'rgba(255,255,255,0.05)' }
+                        grid: { color: 'rgba(75, 85, 99, 0.3)' }
                     },
                     y: {
+                        stacked: true,
+                        beginAtZero: true,
                         ticks: { color: '#9ca3af' },
-                        grid: { color: 'rgba(255,255,255,0.05)' }
+                        grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: '#9ca3af' }
                     }
                 }
             }
         });
 
-        function toggleKey(keyIndex, disabled) {
-            fetch('/admin/api/toggle-key', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key_index: keyIndex, disabled: disabled })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('خطأ: ' + data.error);
-                }
-            })
-            .catch(err => alert('خطأ في الاتصال'));
-        }
-
-        function filterKeys(status) {
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.filter === status) btn.classList.add('active');
-            });
-
-            document.querySelectorAll('.key-row').forEach(row => {
-                if (status === 'all' || row.dataset.status === status) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        }
-
-        function sortKeys() {
-            const sortBy = document.getElementById('sortBy').value;
-            const tbody = document.getElementById('keysTableBody');
-            const rows = Array.from(tbody.querySelectorAll('.key-row'));
-
-            rows.sort((a, b) => {
-                if (sortBy === 'index') {
-                    return parseInt(a.dataset.index) - parseInt(b.dataset.index);
-                } else if (sortBy === 'usage') {
-                    return parseInt(b.dataset.usage) - parseInt(a.dataset.usage);
-                } else if (sortBy === 'cooldown') {
-                    return parseInt(b.dataset.cooldownCount) - parseInt(a.dataset.cooldownCount);
-                }
-                return 0;
-            });
-
-            rows.forEach(row => tbody.appendChild(row));
-        }
-
         function refreshStats() {
             fetch('/admin/api/stats')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('stat-total').textContent = data.stats.total_keys;
-                document.getElementById('stat-active').textContent = data.stats.active_keys;
-                document.getElementById('stat-cooldown').textContent = data.stats.cooldown_keys;
-                document.getElementById('stat-disabled').textContent = data.stats.disabled_keys;
-                document.getElementById('stat-requests').textContent = data.stats.total_requests_today;
-            })
-            .catch(err => console.error('Refresh failed:', err));
-            
-            loadActiveSessions();
-        }
-
-        function loadActiveSessions() {
-            fetch('/admin/api/active-sessions')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('active-now').innerHTML = `
-                    <span class="pulse-active inline-block w-2 h-2 rounded-full bg-green-400 ml-2"></span>
-                    ${data.active_now}
-                `;
-                
-                const container = document.getElementById('sessions-container');
-                if (data.sessions.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center text-gray-400 py-8">
-                            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                            </svg>
-                            <p>لا توجد جلسات نشطة</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                let html = '<div class="space-y-2">';
-                data.sessions.forEach(s => {
-                    const deviceClass = s.device_type === 'mobile' ? 'device-mobile' : 
-                                       s.device_type === 'tablet' ? 'device-tablet' : 'device-desktop';
-                    const isActiveClass = s.is_active ? 'border-r-2 border-green-400' : '';
-                    
-                    html += `
-                        <div class="session-row p-3 rounded-lg bg-slate-800/50 ${isActiveClass}">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <span class="device-badge ${deviceClass}">${s.device_type}</span>
-                                    <span class="text-white text-sm">${s.browser} / ${s.os_name}</span>
-                                </div>
-                                <span class="text-gray-400 text-xs">${s.page_views} مشاهدة</span>
-                            </div>
-                            <div class="text-gray-500 text-xs mt-1">${s.ip_address}</div>
-                        </div>
-                    `;
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-total').textContent = data.stats.total_today || 0;
+                    document.getElementById('stat-success').textContent = data.stats.success_today || 0;
+                    document.getElementById('stat-failed').textContent = data.stats.failed_today || 0;
+                    document.getElementById('stat-cache').textContent = data.cache_stats.size;
                 });
-                html += '</div>';
-                container.innerHTML = html;
-            })
-            .catch(err => {
-                console.error('Sessions load failed:', err);
-                document.getElementById('sessions-container').innerHTML = `
-                    <div class="text-center text-gray-400 py-8">
-                        <p>لا يمكن تحميل الجلسات</p>
-                    </div>
-                `;
-            });
         }
 
-        loadActiveSessions();
+        function clearCache() {
+            if (confirm('هل أنت متأكد من مسح ذاكرة التخزين المؤقت؟')) {
+                fetch('/admin/api/clear-cache', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            refreshStats();
+                        }
+                    });
+            }
+        }
+
         setInterval(refreshStats, 30000);
     </script>
 </body>
