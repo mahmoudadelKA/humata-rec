@@ -180,7 +180,15 @@ app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 app.secret_key = os.environ.get("SESSION_SECRET") or "dev-secret-key-change-in-production"
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 * 1024
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+
+database_url = os.environ.get("DATABASE_URL")
+if not database_url:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is not set. "
+        "Please set it to your PostgreSQL connection string. "
+        "Example: postgresql://user:password@host:port/database"
+    )
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -4286,7 +4294,14 @@ def init_admin_user():
 
 
 with app.app_context():
-    db.create_all()
+    from sqlalchemy import inspect
+    inspector = inspect(db.engine)
+    existing_tables = inspector.get_table_names()
+    if not existing_tables:
+        db.create_all()
+        logging.info("[DB] Database tables created successfully")
+    else:
+        logging.info(f"[DB] Database already initialized with {len(existing_tables)} tables")
     init_admin_user()
     gemini_manager.init_db_state()
     logging.info("=" * 60)
