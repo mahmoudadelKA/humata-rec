@@ -2668,8 +2668,8 @@
                     </svg>
                 </div>
                 <div class="tool-card-content">
-                    <h3 class="tool-card-title">حذف الموسيقى من الصوت</h3>
-                    <p class="tool-card-desc">عزل الصوت البشري من الخلفية</p>
+                    <h3 class="tool-card-title">حذف الموسيقى</h3>
+                    <p class="tool-card-desc">عزل الصوت البشري من الصوت أو الفيديو</p>
                 </div>
             </div>
         </div>
@@ -4412,9 +4412,9 @@
                                     <path d="M8 8L56 56" stroke="#f43f5e" stroke-width="3" stroke-linecap="round"/>
                                 </svg>
                             </span>
-                            <span>إزالة الموسيقى من الصوت</span>
+                            <span>إزالة الموسيقى من الصوت أو الفيديو</span>
                         </h2>
-                        <p class="text-slate-400">استخراج الأصوات البشرية وإزالة الموسيقى الخلفية من الملفات الصوتية</p>
+                        <p class="text-slate-400">استخراج الأصوات البشرية وإزالة الموسيقى الخلفية من ملفات الصوت والفيديو</p>
                     </div>
 
                     <div class="mb-6 p-4 rounded-xl bg-gradient-to-r from-rose-900/30 to-pink-900/30 border border-rose-500/30">
@@ -4428,17 +4428,18 @@
                             مميزات الأداة:
                         </h3>
                         <ul class="text-slate-300 text-sm space-y-1 mr-6">
-                            <li>يدعم الملفات حتى 50MB و 30 دقيقة</li>
-                            <li>صيغ مدعومة: MP3, WAV, M4A, OGG, FLAC, AAC</li>
+                            <li>يدعم الملفات حتى 100MB و 30 دقيقة</li>
+                            <li>صيغ الصوت: MP3, WAV, M4A, OGG, FLAC, AAC</li>
+                            <li>صيغ الفيديو: MP4, MKV, MOV, AVI, WEBM</li>
                             <li>وضع عادي (لطيف) أو قوي (مكثف)</li>
-                            <li>مثالي للبودكاست والمقابلات والتسجيلات الصوتية</li>
+                            <li>للفيديو: تحميل الفيديو المعالج أو الصوت فقط</li>
                         </ul>
                     </div>
 
-                    <form id="remove-music-form" onsubmit="removeMusicFromAudio(event)">
+                    <form id="remove-music-form" onsubmit="removeMusicFromMedia(event)">
                         <div class="file-upload rounded-xl p-6 text-center cursor-pointer mb-4"
                             onclick="document.getElementById('remove_music_file').click()">
-                            <input type="file" id="remove_music_file" name="audio" accept=".mp3,.wav,.m4a,.ogg,.flac,.aac,.wma,.webm" required class="hidden"
+                            <input type="file" id="remove_music_file" name="audio" accept=".mp3,.wav,.m4a,.ogg,.flac,.aac,.wma,.webm,.mp4,.mkv,.mov,.avi,.flv,.wmv" required class="hidden"
                                 onchange="handleRemoveMusicUpload(event)">
                             <div id="remove-music-upload-icon">
                                 <span class="icon-pharaonic icon-xl block mx-auto mb-3">
@@ -4447,8 +4448,8 @@
                                         <path d="M12 44V52H52V44" stroke="#fda4af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                 </span>
-                                <p class="text-slate-300 font-medium">ارفع ملف الصوت</p>
-                                <p class="text-slate-500 text-sm mt-1">MP3, WAV, M4A, OGG, FLAC (حتى 50MB)</p>
+                                <p class="text-slate-300 font-medium">ارفع ملف صوت أو فيديو</p>
+                                <p class="text-slate-500 text-sm mt-1">MP3, WAV, M4A, MP4, MKV, MOV (حتى 100MB)</p>
                             </div>
                             <div id="remove-music-file-info" class="hidden">
                                 <span class="icon-pharaonic icon-xl block mx-auto mb-3">
@@ -4458,6 +4459,7 @@
                                     </svg>
                                 </span>
                                 <p id="remove-music-file-name" class="text-slate-200 font-medium"></p>
+                                <p id="remove-music-file-type" class="text-slate-400 text-sm mt-1"></p>
                                 <p class="text-slate-500 text-sm mt-1">اضغط لاختيار ملف آخر</p>
                             </div>
                         </div>
@@ -4472,19 +4474,39 @@
                                 وضع المعالجة:
                             </label>
                             <select id="remove-music-mode" name="mode" class="w-full p-4 rounded-xl border-2 border-gray-700 bg-slate-800/50 text-slate-200 focus:border-rose-400 focus:outline-none transition-all">
-                                <option value="normal">عادي - إزالة لطيفة للموسيقى (موصى به)</option>
-                                <option value="strong">قوي - إزالة مكثفة للموسيقى</option>
+                                <option value="normal">عادي - تقليل الموسيقى مع الحفاظ على جودة الصوت (موصى به)</option>
+                                <option value="strong">قوي - حذف الموسيقى قدر الإمكان (قد يؤثر على الصوت)</option>
                             </select>
-                            <p class="text-slate-500 text-xs mt-2">الوضع العادي يحافظ على جودة الصوت، الوضع القوي يزيل المزيد من الموسيقى لكن قد يؤثر على الجودة</p>
+                            <p class="text-slate-500 text-xs mt-2">الوضع العادي يحافظ على جودة الصوت البشري، الوضع القوي يحاول إزالة الموسيقى بالكامل لكن قد يؤثر قليلاً على وضوح الكلام</p>
+                        </div>
+
+                        <div id="remove-music-video-options" class="hidden mb-6">
+                            <label class="block text-slate-200 font-medium mb-2">
+                                <span class="icon-pharaonic icon-sm inline-flex ml-2">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="8" y="16" width="48" height="32" rx="4" stroke="#f43f5e" stroke-width="2.5" fill="none"/>
+                                        <polygon points="28,26 28,38 40,32" fill="#f43f5e"/>
+                                    </svg>
+                                </span>
+                                نوع الإخراج للفيديو:
+                            </label>
+                            <select id="remove-music-output" name="output_type" class="w-full p-4 rounded-xl border-2 border-gray-700 bg-slate-800/50 text-slate-200 focus:border-rose-400 focus:outline-none transition-all">
+                                <option value="video">فيديو كامل - الفيديو مع الصوت المعالج (MP4)</option>
+                                <option value="audio_only">صوت فقط - تحميل الصوت المعالج (MP3)</option>
+                            </select>
+                            <p class="text-slate-500 text-xs mt-2">اختر "فيديو كامل" للحصول على الفيديو بصوت نقي، أو "صوت فقط" لتحميل الصوت المستخرج</p>
                         </div>
 
                         <div id="remove-music-progress" class="hidden mb-4">
                             <div class="p-4 rounded-xl bg-slate-800/50 border border-rose-500/30">
-                                <div class="flex items-center justify-center gap-3 mb-3">
-                                    <div class="w-6 h-6 border-2 border-rose-400 border-t-transparent rounded-full animate-spin"></div>
-                                    <span class="text-slate-300">جارٍ معالجة الصوت وإزالة الموسيقى...</span>
+                                <div class="flex items-center justify-between mb-3">
+                                    <span id="remove-music-progress-status" class="text-slate-300">جارٍ الرفع...</span>
+                                    <span id="remove-music-progress-percent" class="text-rose-400 font-bold">0%</span>
                                 </div>
-                                <p class="text-center text-slate-500 text-sm">قد يستغرق الأمر بعض الوقت حسب حجم الملف</p>
+                                <div class="w-full bg-slate-700 rounded-full h-2 mb-2">
+                                    <div id="remove-music-progress-bar" class="bg-gradient-to-r from-rose-500 to-pink-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <p id="remove-music-progress-detail" class="text-center text-slate-500 text-sm">قد يستغرق الأمر بعض الوقت حسب حجم الملف</p>
                             </div>
                         </div>
 
@@ -4517,7 +4539,7 @@
                                 <path d="M20 32L28 40L44 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </span>
-                        <span>تمت إزالة الموسيقى بنجاح وجارٍ التحميل...</span>
+                        <span id="remove-music-success-text">تمت إزالة الموسيقى بنجاح وجارٍ التحميل...</span>
                     </div>
                 </div>
             </div>
@@ -6869,10 +6891,22 @@
         }
         
         // =====================================================
-        // Music Removal Functions
+        // Music Removal Functions (Audio & Video Support)
         // =====================================================
         
         let uploadedRemoveMusicFile = null;
+        const videoExtensions = ['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv'];
+        
+        function isVideoFile(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            return videoExtensions.includes(ext);
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
         
         function handleRemoveMusicUpload(event) {
             const file = event.target.files[0];
@@ -6883,19 +6917,44 @@
                 document.getElementById('remove-music-file-name').textContent = file.name;
                 document.getElementById('remove-music-error').classList.add('hidden');
                 document.getElementById('remove-music-success').classList.add('hidden');
+                
+                const isVideo = isVideoFile(file.name);
+                const fileTypeEl = document.getElementById('remove-music-file-type');
+                const videoOptionsEl = document.getElementById('remove-music-video-options');
+                
+                if (isVideo) {
+                    fileTypeEl.textContent = `فيديو - ${formatFileSize(file.size)}`;
+                    videoOptionsEl.classList.remove('hidden');
+                } else {
+                    fileTypeEl.textContent = `صوت - ${formatFileSize(file.size)}`;
+                    videoOptionsEl.classList.add('hidden');
+                }
             }
         }
         
-        async function removeMusicFromAudio(event) {
+        function updateRemoveMusicProgress(status, percent, detail = '') {
+            document.getElementById('remove-music-progress-status').textContent = status;
+            document.getElementById('remove-music-progress-percent').textContent = percent + '%';
+            document.getElementById('remove-music-progress-bar').style.width = percent + '%';
+            if (detail) {
+                document.getElementById('remove-music-progress-detail').textContent = detail;
+            }
+        }
+        
+        async function removeMusicFromMedia(event) {
             event.preventDefault();
             
             const fileInput = document.getElementById('remove_music_file');
             const mode = document.getElementById('remove-music-mode').value;
+            const outputType = document.getElementById('remove-music-output')?.value || 'video';
             
             if (!fileInput.files[0]) {
-                showToast('الرجاء اختيار ملف صوتي أولاً', 'error');
+                showToast('الرجاء اختيار ملف صوت أو فيديو أولاً', 'error');
                 return;
             }
+            
+            const file = fileInput.files[0];
+            const isVideo = isVideoFile(file.name);
             
             const submitBtn = document.getElementById('remove-music-btn');
             const progressDiv = document.getElementById('remove-music-progress');
@@ -6907,46 +6966,110 @@
             errorDiv.classList.add('hidden');
             successDiv.classList.add('hidden');
             
+            updateRemoveMusicProgress('جارٍ الرفع...', 0, `جارٍ رفع ${file.name}`);
+            
             const formData = new FormData();
-            formData.append('audio', fileInput.files[0]);
+            formData.append('audio', file);
             formData.append('mode', mode);
+            if (isVideo) {
+                formData.append('output_type', outputType);
+            }
             
             try {
-                const response = await fetch('/api/remove-music', {
-                    method: 'POST',
-                    body: formData
+                const xhr = new XMLHttpRequest();
+                let processingInterval = null;
+                
+                const uploadPromise = new Promise((resolve, reject) => {
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 30);
+                            updateRemoveMusicProgress('جارٍ الرفع...', percent, `${formatFileSize(e.loaded)} من ${formatFileSize(e.total)}`);
+                        }
+                    };
+                    
+                    xhr.upload.onload = () => {
+                        updateRemoveMusicProgress('جارٍ المعالجة...', 35, isVideo ? 'جارٍ استخراج ومعالجة الصوت من الفيديو...' : 'جارٍ إزالة الموسيقى من الصوت...');
+                        
+                        let processingPercent = 35;
+                        processingInterval = setInterval(() => {
+                            if (processingPercent < 90) {
+                                processingPercent += Math.random() * 5;
+                                updateRemoveMusicProgress('جارٍ المعالجة...', Math.round(processingPercent), isVideo ? 'جارٍ معالجة الفيديو...' : 'جارٍ تنقية الصوت...');
+                            }
+                        }, 1500);
+                    };
+                    
+                    xhr.onload = () => {
+                        if (processingInterval) clearInterval(processingInterval);
+                        
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(xhr.response);
+                        } else {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                try {
+                                    const errorData = JSON.parse(reader.result);
+                                    reject(new Error(errorData.error || 'حدث خطأ أثناء المعالجة'));
+                                } catch (e) {
+                                    reject(new Error('حدث خطأ أثناء المعالجة'));
+                                }
+                            };
+                            reader.onerror = () => reject(new Error('حدث خطأ أثناء المعالجة'));
+                            reader.readAsText(xhr.response);
+                        }
+                    };
+                    
+                    xhr.onerror = () => {
+                        if (processingInterval) clearInterval(processingInterval);
+                        reject(new Error('فشل الاتصال بالخادم'));
+                    };
+                    
+                    xhr.ontimeout = () => {
+                        if (processingInterval) clearInterval(processingInterval);
+                        reject(new Error('انتهى وقت الطلب'));
+                    };
+                    
+                    xhr.open('POST', '/api/remove-music');
+                    xhr.responseType = 'blob';
+                    xhr.timeout = 600000;
+                    xhr.send(formData);
                 });
                 
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    
-                    const originalName = fileInput.files[0].name.replace(/\.[^/.]+$/, '');
-                    a.download = originalName + '_صوت_نقي.mp3';
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    a.remove();
-                    
-                    successDiv.classList.remove('hidden');
-                    showToast('تمت إزالة الموسيقى بنجاح!');
+                const blob = await uploadPromise;
+                updateRemoveMusicProgress('اكتمل!', 100, 'جارٍ التحميل...');
+                
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                const originalName = file.name.replace(/\.[^/.]+$/, '');
+                const isAudioOutput = !isVideo || outputType === 'audio_only';
+                a.download = originalName + '_صوت_نقي' + (isAudioOutput ? '.mp3' : '.mp4');
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+                
+                const successText = document.getElementById('remove-music-success-text');
+                if (isVideo && outputType !== 'audio_only') {
+                    successText.textContent = 'تمت إزالة الموسيقى من الفيديو بنجاح وجارٍ التحميل...';
                 } else {
-                    let errorMsg = 'حدث خطأ أثناء المعالجة';
-                    try {
-                        const data = await response.json();
-                        errorMsg = data.error || errorMsg;
-                    } catch (e) {}
-                    throw new Error(errorMsg);
+                    successText.textContent = 'تمت إزالة الموسيقى بنجاح وجارٍ التحميل...';
                 }
+                successDiv.classList.remove('hidden');
+                showToast('تمت إزالة الموسيقى بنجاح!');
+                
             } catch (error) {
+                updateRemoveMusicProgress('فشل!', 0, '');
                 document.getElementById('remove-music-error-text').textContent = error.message;
                 errorDiv.classList.remove('hidden');
                 showToast(error.message, 'error');
             } finally {
                 submitBtn.disabled = false;
-                progressDiv.classList.add('hidden');
+                setTimeout(() => {
+                    progressDiv.classList.add('hidden');
+                    updateRemoveMusicProgress('جارٍ الرفع...', 0, 'قد يستغرق الأمر بعض الوقت حسب حجم الملف');
+                }, 2000);
             }
         }
 
