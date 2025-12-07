@@ -3964,6 +3964,7 @@ def admin_unified_dashboard():
     active_hour = ActiveSession.query.filter(ActiveSession.last_seen >= one_hour_ago).count()
     
     hourly_data = []
+    groq_hourly_data = []
     for hour in range(24):
         hourly_stats = HourlyStats.query.filter_by(date=today, hour=hour).first()
         if hourly_stats:
@@ -3973,6 +3974,11 @@ def admin_unified_dashboard():
                 'success': hourly_stats.successful_requests,
                 'failed': hourly_stats.failed_requests
             })
+            groq_hourly_data.append({
+                'hour': hour,
+                'groq': hourly_stats.groq_requests or 0,
+                'huggingface': hourly_stats.huggingface_requests or 0
+            })
         else:
             in_memory_hourly = stats.get('hourly', {}).get(hour, {})
             hourly_data.append({
@@ -3981,6 +3987,69 @@ def admin_unified_dashboard():
                 'success': in_memory_hourly.get('success', 0),
                 'failed': in_memory_hourly.get('failed', 0)
             })
+            groq_hourly_data.append({
+                'hour': hour,
+                'groq': 0,
+                'huggingface': 0
+            })
+    
+    groq_usage_logs = AIUsageLog.query.filter(
+        AIUsageLog.timestamp >= datetime.utcnow() - timedelta(hours=24),
+        AIUsageLog.provider == 'groq'
+    ).all()
+    for log in groq_usage_logs:
+        if log.timestamp:
+            hour = log.timestamp.hour
+            groq_hourly_data[hour]['groq'] += 1
+    
+    hf_usage_logs = AIUsageLog.query.filter(
+        AIUsageLog.timestamp >= datetime.utcnow() - timedelta(hours=24),
+        AIUsageLog.provider == 'huggingface'
+    ).all()
+    for log in hf_usage_logs:
+        if log.timestamp:
+            hour = log.timestamp.hour
+            groq_hourly_data[hour]['huggingface'] += 1
+    
+    groq_errors_today = ErrorLog.query.filter(
+        ErrorLog.timestamp >= datetime.combine(today, datetime.min.time()),
+        ErrorLog.provider == 'groq'
+    ).count()
+    hf_errors_today = ErrorLog.query.filter(
+        ErrorLog.timestamp >= datetime.combine(today, datetime.min.time()),
+        ErrorLog.provider == 'huggingface'
+    ).count()
+    
+    provider_errors = {
+        'groq': groq_errors_today,
+        'huggingface': hf_errors_today
+    }
+    
+    groq_success_today = AIUsageLog.query.filter(
+        AIUsageLog.timestamp >= datetime.combine(today, datetime.min.time()),
+        AIUsageLog.provider == 'groq',
+        AIUsageLog.success == True
+    ).count()
+    groq_failed_today = AIUsageLog.query.filter(
+        AIUsageLog.timestamp >= datetime.combine(today, datetime.min.time()),
+        AIUsageLog.provider == 'groq',
+        AIUsageLog.success == False
+    ).count()
+    hf_success_today = AIUsageLog.query.filter(
+        AIUsageLog.timestamp >= datetime.combine(today, datetime.min.time()),
+        AIUsageLog.provider == 'huggingface',
+        AIUsageLog.success == True
+    ).count()
+    hf_failed_today = AIUsageLog.query.filter(
+        AIUsageLog.timestamp >= datetime.combine(today, datetime.min.time()),
+        AIUsageLog.provider == 'huggingface',
+        AIUsageLog.success == False
+    ).count()
+    
+    provider_stats = {
+        'groq': {'success': groq_success_today, 'failed': groq_failed_today, 'errors': groq_errors_today},
+        'huggingface': {'success': hf_success_today, 'failed': hf_failed_today, 'errors': hf_errors_today}
+    }
     
     request_type_data = {
         'LLM (نص)': stats.get('llm_requests', 0),
@@ -4047,9 +4116,10 @@ def admin_unified_dashboard():
             'models': ['Llama 3.3 70B', 'Whisper Large V3'],
             'avg_latency': stats.get('groq_latency_ms', 0),
             'stats': {
-                'total': stats.get('llm_requests', 0) + stats.get('whisper_requests', 0),
-                'success': stats.get('success_today', 0),
-                'failed': stats.get('failed_today', 0)
+                'total': provider_stats['groq']['success'] + provider_stats['groq']['failed'],
+                'success': provider_stats['groq']['success'],
+                'failed': provider_stats['groq']['failed'],
+                'errors': provider_stats['groq']['errors']
             }
         },
         {
@@ -4060,9 +4130,10 @@ def admin_unified_dashboard():
             'models': ['BLIP Image Captioning', 'ViLT VQA'],
             'avg_latency': stats.get('huggingface_latency_ms', 0),
             'stats': {
-                'total': stats.get('vision_requests', 0),
-                'success': stats.get('vision_requests', 0),
-                'failed': 0
+                'total': provider_stats['huggingface']['success'] + provider_stats['huggingface']['failed'],
+                'success': provider_stats['huggingface']['success'],
+                'failed': provider_stats['huggingface']['failed'],
+                'errors': provider_stats['huggingface']['errors']
             }
         }
     ]
@@ -4100,6 +4171,24 @@ def admin_unified_dashboard():
         'is_current': a.id == current_user.id
     } for a in all_admins]
     
+    tool_names = db.session.query(ActivityLog.tool_name).distinct().all()
+    tool_names = [t[0] for t in tool_names if t[0]]
+    
+    tool_stats_all = ToolStats.query.filter_by(date=today).order_by(ToolStats.usage_count.desc()).all()
+    tool_stats_data = [{
+        'name': t.tool_name,
+        'usage_count': t.usage_count,
+        'success_count': t.success_count,
+        'error_count': t.error_count,
+        'avg_duration_ms': t.avg_duration_ms
+    } for t in tool_stats_all]
+    
+    settings = {
+        'rate_limit': 15,
+        'max_audio_minutes': MAX_AUDIO_DURATION_MINUTES,
+        'cache_ttl': 3600
+    }
+    
     return render_template('admin.html',
         stats={
             'total_today': stats.get('total_today', 0),
@@ -4109,19 +4198,25 @@ def admin_unified_dashboard():
         },
         active_sessions={'now': active_now, 'hour': active_hour, 'total': total_sessions},
         hourly_data=hourly_data,
+        groq_hourly_data=groq_hourly_data,
+        provider_errors=provider_errors,
+        provider_stats=provider_stats,
         request_type_data=request_type_data,
         device_data=device_data,
         browser_data=browser_data,
         os_data=os_data,
         top_tools=top_tools,
-        activities=activities,
-        errors=errors,
+        activities=recent_activities,
+        errors=recent_errors,
         providers_info=providers_info,
-        sessions_list=sessions_list,
-        admins=admins_list,
+        sessions=recent_sessions,
+        admins=all_admins,
         cache_stats=ai_manager.cache.stats(),
         latency=latency,
-        page_views_today=page_views_today
+        page_views_today=page_views_today,
+        tool_names=tool_names,
+        tool_stats=tool_stats_data,
+        settings=settings
     )
 
 
