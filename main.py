@@ -24,7 +24,7 @@ from fuzzywuzzy import fuzz
 from docx import Document
 from docx.shared import Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from models import db, AdminUser, AIProviderState, AIUsageLog, DailyStats, ActiveSession
+from models import db, AdminUser, AIProviderState, AIUsageLog, DailyStats, ActiveSession, ActivityLog, ToolStats, HourlyStats, ErrorLog
 from services.ai_providers import ai_manager, AIProviderError, RateLimitError, ProviderNotConfiguredError
 
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
@@ -3541,51 +3541,8 @@ def admin_logout():
 @app.route(ADMIN_DASHBOARD_PATH)
 @login_required
 def admin_dashboard():
-    """Admin dashboard for AI providers management."""
-    if not current_user.is_admin:
-        flash('ليس لديك صلاحية الوصول إلى لوحة التحكم', 'error')
-        return redirect(url_for('admin_login'))
-    
-    stats = ai_manager.get_stats()
-    
-    today = date.today()
-    daily_db_stats = DailyStats.query.filter_by(date=today).first()
-    
-    providers_info = [
-        {
-            'name': 'Groq',
-            'type': 'LLM + Audio',
-            'status': 'active' if ai_manager.groq.is_configured else 'not_configured',
-            'is_configured': ai_manager.groq.is_configured,
-            'models': ['Llama 3.3 70B', 'Whisper Large V3']
-        },
-        {
-            'name': 'HuggingFace',
-            'type': 'Vision',
-            'status': 'active' if ai_manager.huggingface.is_configured else 'not_configured',
-            'is_configured': ai_manager.huggingface.is_configured,
-            'models': ['BLIP Image Captioning', 'ViLT VQA']
-        }
-    ]
-    
-    hourly_data = []
-    for hour in range(24):
-        hourly_data.append({
-            'hour': hour,
-            'total': stats.get('hourly', {}).get(hour, {}).get('total', 0),
-            'success': stats.get('hourly', {}).get(hour, {}).get('success', 0),
-            'failed': stats.get('hourly', {}).get(hour, {}).get('failed', 0)
-        })
-    
-    show_warning = stats.get('failed_today', 0) > 10
-    
-    return render_template('admin_dashboard.html',
-                           stats=stats,
-                           providers_info=providers_info,
-                           hourly_data=hourly_data,
-                           daily_stats=daily_db_stats,
-                           show_warning=show_warning,
-                           cache_stats=ai_manager.cache.stats())
+    """Redirect old admin/keys route to new unified admin dashboard."""
+    return redirect(url_for('admin_unified_dashboard'))
 
 
 @app.route('/admin/api/clear-cache', methods=['POST'])
@@ -3687,6 +3644,444 @@ def admin_api_active_sessions():
         'device_stats': dict(device_stats),
         'browser_stats': dict(browser_stats)
     })
+
+
+@app.route('/admin')
+@login_required
+def admin_unified_dashboard():
+    """Unified admin dashboard with all features."""
+    if not current_user.is_admin:
+        flash('ليس لديك صلاحية الوصول إلى لوحة التحكم', 'error')
+        return redirect(url_for('admin_login'))
+    
+    stats = ai_manager.get_stats()
+    today = date.today()
+    one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+    five_minutes_ago = datetime.utcnow() - timedelta(minutes=5)
+    
+    active_now = ActiveSession.query.filter(ActiveSession.last_seen >= five_minutes_ago).count()
+    active_hour = ActiveSession.query.filter(ActiveSession.last_seen >= one_hour_ago).count()
+    
+    hourly_data = []
+    for hour in range(24):
+        hourly_stats = HourlyStats.query.filter_by(date=today, hour=hour).first()
+        if hourly_stats:
+            hourly_data.append({
+                'hour': hour,
+                'total': hourly_stats.total_requests,
+                'success': hourly_stats.successful_requests,
+                'failed': hourly_stats.failed_requests
+            })
+        else:
+            in_memory_hourly = stats.get('hourly', {}).get(hour, {})
+            hourly_data.append({
+                'hour': hour,
+                'total': in_memory_hourly.get('total', 0),
+                'success': in_memory_hourly.get('success', 0),
+                'failed': in_memory_hourly.get('failed', 0)
+            })
+    
+    request_type_data = {
+        'LLM (نص)': stats.get('llm_requests', 0),
+        'Whisper (صوت)': stats.get('whisper_requests', 0),
+        'Vision (صور)': stats.get('vision_requests', 0),
+        'مخزنة مؤقتاً': stats.get('cached_requests', 0)
+    }
+    
+    device_stats = db.session.query(
+        ActiveSession.device_type,
+        db.func.count(ActiveSession.id)
+    ).filter(ActiveSession.last_seen >= one_hour_ago).group_by(ActiveSession.device_type).all()
+    
+    browser_stats = db.session.query(
+        ActiveSession.browser,
+        db.func.count(ActiveSession.id)
+    ).filter(ActiveSession.last_seen >= one_hour_ago).group_by(ActiveSession.browser).all()
+    
+    os_stats = db.session.query(
+        ActiveSession.os_name,
+        db.func.count(ActiveSession.id)
+    ).filter(ActiveSession.last_seen >= one_hour_ago).group_by(ActiveSession.os_name).all()
+    
+    device_data = dict(device_stats) if device_stats else {'desktop': 0, 'mobile': 0, 'tablet': 0}
+    browser_data = dict(browser_stats) if browser_stats else {'Chrome': 0, 'Firefox': 0, 'Safari': 0}
+    os_data = dict(os_stats) if os_stats else {'Windows': 0, 'macOS': 0, 'Linux': 0}
+    
+    tool_stats_today = ToolStats.query.filter_by(date=today).order_by(ToolStats.usage_count.desc()).limit(10).all()
+    top_tools = [{'name': t.tool_name, 'count': t.usage_count} for t in tool_stats_today]
+    if not top_tools:
+        top_tools = [
+            {'name': 'تحويل الصوت للنص', 'count': 0},
+            {'name': 'كاشف الأنمي', 'count': 0},
+            {'name': 'كاشف البودكاست', 'count': 0}
+        ]
+    
+    recent_activities = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(20).all()
+    activities = [{
+        'id': a.id,
+        'timestamp': a.timestamp.isoformat() if a.timestamp else None,
+        'tool_name': a.tool_name,
+        'action': a.action,
+        'status': a.status,
+        'duration_ms': a.duration_ms,
+        'session_id': a.session_id[:8] + '...' if a.session_id else 'N/A'
+    } for a in recent_activities]
+    
+    recent_errors = ErrorLog.query.filter_by(resolved=False).order_by(ErrorLog.timestamp.desc()).limit(10).all()
+    errors = [{
+        'id': e.id,
+        'timestamp': e.timestamp.isoformat() if e.timestamp else None,
+        'error_type': e.error_type,
+        'error_message': e.error_message[:100] if e.error_message else '',
+        'tool_name': e.tool_name,
+        'resolved': e.resolved
+    } for e in recent_errors]
+    
+    providers_info = [
+        {
+            'name': 'Groq',
+            'type': 'LLM + Audio',
+            'status': 'active' if ai_manager.groq.is_configured else 'not_configured',
+            'is_configured': ai_manager.groq.is_configured,
+            'models': ['Llama 3.3 70B', 'Whisper Large V3'],
+            'avg_latency': stats.get('groq_latency_ms', 0),
+            'stats': {
+                'total': stats.get('llm_requests', 0) + stats.get('whisper_requests', 0),
+                'success': stats.get('success_today', 0),
+                'failed': stats.get('failed_today', 0)
+            }
+        },
+        {
+            'name': 'HuggingFace',
+            'type': 'Vision',
+            'status': 'active' if ai_manager.huggingface.is_configured else 'not_configured',
+            'is_configured': ai_manager.huggingface.is_configured,
+            'models': ['BLIP Image Captioning', 'ViLT VQA'],
+            'avg_latency': stats.get('huggingface_latency_ms', 0),
+            'stats': {
+                'total': stats.get('vision_requests', 0),
+                'success': stats.get('vision_requests', 0),
+                'failed': 0
+            }
+        }
+    ]
+    
+    latency = {
+        'groq_llm': stats.get('groq_llm_latency_ms', 0),
+        'groq_whisper': stats.get('groq_whisper_latency_ms', 0),
+        'hf_vision': stats.get('huggingface_latency_ms', 0)
+    }
+    
+    total_sessions = ActiveSession.query.count()
+    page_views_today = db.session.query(db.func.sum(ActiveSession.page_views)).filter(
+        ActiveSession.last_seen >= datetime.utcnow() - timedelta(days=1)
+    ).scalar() or 0
+    
+    recent_sessions = ActiveSession.query.filter(
+        ActiveSession.last_seen >= one_hour_ago
+    ).order_by(ActiveSession.last_seen.desc()).limit(50).all()
+    sessions_list = [{
+        'session_id': s.session_id[:8] + '...',
+        'ip_address': s.ip_address,
+        'device_type': s.device_type,
+        'browser': s.browser,
+        'os_name': s.os_name,
+        'page_views': s.page_views,
+        'last_seen': s.last_seen.isoformat() if s.last_seen else None,
+        'is_active': s.last_seen >= five_minutes_ago if s.last_seen else False
+    } for s in recent_sessions]
+    
+    all_admins = AdminUser.query.all()
+    admins_list = [{
+        'id': a.id,
+        'username': a.username,
+        'last_login': a.last_login.isoformat() if a.last_login else None,
+        'is_current': a.id == current_user.id
+    } for a in all_admins]
+    
+    return render_template('admin.html',
+        stats={
+            'total_today': stats.get('total_today', 0),
+            'success_today': stats.get('success_today', 0),
+            'failed_today': stats.get('failed_today', 0),
+            'cached_today': stats.get('cached_requests', 0)
+        },
+        active_sessions={'now': active_now, 'hour': active_hour, 'total': total_sessions},
+        hourly_data=hourly_data,
+        request_type_data=request_type_data,
+        device_data=device_data,
+        browser_data=browser_data,
+        os_data=os_data,
+        top_tools=top_tools,
+        activities=activities,
+        errors=errors,
+        providers_info=providers_info,
+        sessions_list=sessions_list,
+        admins=admins_list,
+        cache_stats=ai_manager.cache.stats(),
+        latency=latency,
+        page_views_today=page_views_today
+    )
+
+
+@app.route('/admin/api/dashboard-stats')
+@login_required
+def admin_api_dashboard_stats():
+    """API endpoint for dashboard stats refresh."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    stats = ai_manager.get_stats()
+    five_minutes_ago = datetime.utcnow() - timedelta(minutes=5)
+    one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+    
+    active_now = ActiveSession.query.filter(ActiveSession.last_seen >= five_minutes_ago).count()
+    active_hour = ActiveSession.query.filter(ActiveSession.last_seen >= one_hour_ago).count()
+    
+    return jsonify({
+        'stats': {
+            'total_today': stats.get('total_today', 0),
+            'success_today': stats.get('success_today', 0),
+            'failed_today': stats.get('failed_today', 0),
+            'cached_today': stats.get('cached_requests', 0)
+        },
+        'active_sessions': {'now': active_now, 'hour': active_hour},
+        'cache_stats': ai_manager.cache.stats()
+    })
+
+
+@app.route('/admin/api/sessions')
+@login_required
+def admin_api_sessions():
+    """API endpoint for sessions tab data."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    five_minutes_ago = datetime.utcnow() - timedelta(minutes=5)
+    one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+    
+    active_now = ActiveSession.query.filter(ActiveSession.last_seen >= five_minutes_ago).count()
+    active_hour = ActiveSession.query.filter(ActiveSession.last_seen >= one_hour_ago).count()
+    total_sessions = ActiveSession.query.count()
+    
+    recent_sessions = ActiveSession.query.filter(
+        ActiveSession.last_seen >= one_hour_ago
+    ).order_by(ActiveSession.last_seen.desc()).limit(50).all()
+    
+    sessions_data = [{
+        'session_id': s.session_id[:8] + '...',
+        'ip_address': s.ip_address,
+        'device_type': s.device_type,
+        'browser': s.browser,
+        'os_name': s.os_name,
+        'page_views': s.page_views,
+        'first_seen': s.first_seen.isoformat() if s.first_seen else None,
+        'last_seen': s.last_seen.isoformat() if s.last_seen else None,
+        'is_active': s.last_seen >= five_minutes_ago if s.last_seen else False
+    } for s in recent_sessions]
+    
+    device_stats = db.session.query(
+        ActiveSession.device_type,
+        db.func.count(ActiveSession.id)
+    ).filter(ActiveSession.last_seen >= one_hour_ago).group_by(ActiveSession.device_type).all()
+    
+    return jsonify({
+        'active_now': active_now,
+        'active_hour': active_hour,
+        'total_sessions': total_sessions,
+        'sessions': sessions_data,
+        'device_stats': dict(device_stats)
+    })
+
+
+@app.route('/admin/api/activities')
+@login_required
+def admin_api_activities():
+    """API endpoint for activity logs with filters."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    tool_filter = request.args.get('tool', '')
+    status_filter = request.args.get('status', '')
+    limit = min(int(request.args.get('limit', 50)), 200)
+    
+    query = ActivityLog.query
+    if tool_filter:
+        query = query.filter(ActivityLog.tool_name == tool_filter)
+    if status_filter:
+        query = query.filter(ActivityLog.status == status_filter)
+    
+    activities = query.order_by(ActivityLog.timestamp.desc()).limit(limit).all()
+    
+    return jsonify({
+        'activities': [{
+            'id': a.id,
+            'timestamp': a.timestamp.isoformat() if a.timestamp else None,
+            'tool_name': a.tool_name,
+            'action': a.action,
+            'status': a.status,
+            'duration_ms': a.duration_ms,
+            'session_id': a.session_id[:8] + '...' if a.session_id else 'N/A',
+            'details': a.details
+        } for a in activities],
+        'total': ActivityLog.query.count()
+    })
+
+
+@app.route('/admin/api/errors')
+@login_required
+def admin_api_errors():
+    """API endpoint for error logs."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    show_resolved = request.args.get('resolved', 'false') == 'true'
+    limit = min(int(request.args.get('limit', 50)), 200)
+    
+    query = ErrorLog.query
+    if not show_resolved:
+        query = query.filter_by(resolved=False)
+    
+    errors = query.order_by(ErrorLog.timestamp.desc()).limit(limit).all()
+    
+    return jsonify({
+        'errors': [{
+            'id': e.id,
+            'timestamp': e.timestamp.isoformat() if e.timestamp else None,
+            'error_type': e.error_type,
+            'error_message': e.error_message,
+            'stack_trace': e.stack_trace[:500] if e.stack_trace else None,
+            'tool_name': e.tool_name,
+            'provider': e.provider,
+            'resolved': e.resolved
+        } for e in errors],
+        'total': ErrorLog.query.filter_by(resolved=False).count()
+    })
+
+
+@app.route('/admin/api/errors/<int:error_id>/resolve', methods=['POST'])
+@login_required
+def admin_api_resolve_error(error_id):
+    """API endpoint to mark an error as resolved."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    error = ErrorLog.query.get(error_id)
+    if not error:
+        return jsonify({'error': 'Error not found'}), 404
+    
+    error.resolved = True
+    error.resolved_at = datetime.utcnow()
+    error.resolution_notes = request.json.get('notes', '')
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+
+@app.route('/admin/api/settings', methods=['GET', 'POST'])
+@login_required
+def admin_api_settings():
+    """API endpoint for AI settings management."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    if request.method == 'GET':
+        return jsonify({
+            'rate_limit': 15,
+            'max_audio_minutes': MAX_AUDIO_DURATION_MINUTES,
+            'cache_ttl': 3600
+        })
+    
+    data = request.json
+    logging.info(f"[Admin] Settings update: {data}")
+    
+    return jsonify({'success': True, 'message': 'تم حفظ الإعدادات'})
+
+
+@app.route('/admin/api/admins', methods=['POST'])
+@login_required
+def admin_api_add_admin():
+    """API endpoint to add new admin user."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.json
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    
+    if not username or not password:
+        return jsonify({'error': 'اسم المستخدم وكلمة المرور مطلوبان'}), 400
+    
+    if len(password) < 6:
+        return jsonify({'error': 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'}), 400
+    
+    existing = AdminUser.query.filter_by(username=username).first()
+    if existing:
+        return jsonify({'error': 'اسم المستخدم موجود مسبقاً'}), 400
+    
+    new_admin = AdminUser(username=username, is_admin=True)
+    new_admin.set_password(password)
+    db.session.add(new_admin)
+    db.session.commit()
+    
+    logging.info(f"[Admin] New admin user created: {username}")
+    
+    return jsonify({'success': True, 'message': 'تم إضافة المسؤول بنجاح'})
+
+
+@app.route('/admin/api/admins/<int:admin_id>', methods=['DELETE'])
+@login_required
+def admin_api_delete_admin(admin_id):
+    """API endpoint to delete an admin user."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    if admin_id == current_user.id:
+        return jsonify({'error': 'لا يمكنك حذف حسابك الخاص'}), 400
+    
+    admin = AdminUser.query.get(admin_id)
+    if not admin:
+        return jsonify({'error': 'المسؤول غير موجود'}), 404
+    
+    admin_count = AdminUser.query.filter_by(is_admin=True).count()
+    if admin_count <= 1:
+        return jsonify({'error': 'يجب أن يبقى مسؤول واحد على الأقل'}), 400
+    
+    username = admin.username
+    db.session.delete(admin)
+    db.session.commit()
+    
+    logging.info(f"[Admin] Admin user deleted: {username}")
+    
+    return jsonify({'success': True, 'message': 'تم حذف المسؤول'})
+
+
+@app.route('/admin/api/change-password', methods=['POST'])
+@login_required
+def admin_api_change_password():
+    """API endpoint to change current admin's password."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.json
+    current_password = data.get('current_password', '')
+    new_password = data.get('new_password', '')
+    
+    if not current_password or not new_password:
+        return jsonify({'error': 'جميع الحقول مطلوبة'}), 400
+    
+    if not current_user.check_password(current_password):
+        return jsonify({'error': 'كلمة المرور الحالية غير صحيحة'}), 400
+    
+    if len(new_password) < 6:
+        return jsonify({'error': 'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل'}), 400
+    
+    current_user.set_password(new_password)
+    db.session.commit()
+    
+    logging.info(f"[Admin] Password changed for user: {current_user.username}")
+    
+    return jsonify({'success': True, 'message': 'تم تغيير كلمة المرور بنجاح'})
 
 
 def init_admin_user():
