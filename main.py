@@ -3812,7 +3812,7 @@ ADMIN_DASHBOARD_PATH = '/admin/keys'
 def admin_login():
     """Admin login page."""
     if current_user.is_authenticated:
-        return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('admin_unified_dashboard'))
     
     if request.method == 'POST':
         username = request.form.get('username')
@@ -3824,7 +3824,7 @@ def admin_login():
             db.session.commit()
             login_user(user)
             logging.info(f"[Admin] User '{username}' logged in successfully")
-            return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('admin_unified_dashboard'))
         
         flash('اسم المستخدم أو كلمة المرور غير صحيحة', 'error')
     
@@ -4478,6 +4478,264 @@ def admin_api_change_password():
     logging.info(f"[Admin] Password changed for user: {current_user.username}")
     
     return jsonify({'success': True, 'message': 'تم تغيير كلمة المرور بنجاح'})
+
+
+# =============================================================================
+# VIDEO TO MP3 CONVERTER TOOL
+# =============================================================================
+# Converts video files to MP3 audio using ffmpeg only (no AI)
+# Supports: mp4, mkv, mov, avi, webm, flv, wmv
+# =============================================================================
+
+ALLOWED_VIDEO_EXTENSIONS_CONVERT = {'mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv', 'm4v', '3gp'}
+MAX_VIDEO_SIZE_MB_CONVERT = 100
+MAX_VIDEO_DURATION_CONVERT = 30  # minutes
+
+def allowed_video_convert(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS_CONVERT
+
+def get_video_duration_seconds(filepath):
+    """Get video duration in seconds using ffprobe."""
+    try:
+        cmd = [
+            'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+            '-of', 'default=noprint_wrappers=1:nokey=1', filepath
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode == 0:
+            return float(result.stdout.strip())
+    except Exception as e:
+        logging.warning(f"Could not get video duration: {e}")
+    return 0
+
+
+@app.route('/api/video-to-mp3', methods=['POST'])
+def video_to_mp3():
+    """Convert uploaded video to MP3 audio."""
+    start_time = time.time()
+    temp_video = None
+    temp_audio = None
+    
+    try:
+        if 'video' not in request.files:
+            return jsonify({'error': 'لم يتم رفع أي ملف فيديو'}), 400
+        
+        video_file = request.files['video']
+        if video_file.filename == '':
+            return jsonify({'error': 'اسم الملف فارغ'}), 400
+        
+        if not allowed_video_convert(video_file.filename):
+            return jsonify({'error': 'صيغة الفيديو غير مدعومة. الصيغ المدعومة: MP4, MKV, MOV, AVI, WEBM, FLV, WMV'}), 400
+        
+        # Check file size
+        video_file.seek(0, 2)
+        file_size = video_file.tell()
+        video_file.seek(0)
+        
+        if file_size > MAX_VIDEO_SIZE_MB_CONVERT * 1024 * 1024:
+            return jsonify({'error': f'حجم الملف أكبر من الحد الأقصى المسموح ({MAX_VIDEO_SIZE_MB_CONVERT}MB)'}), 400
+        
+        # Get quality setting
+        quality = request.form.get('quality', 'normal')
+        bitrate = '192k' if quality == 'high' else '128k'
+        
+        # Save video temporarily
+        ext = video_file.filename.rsplit('.', 1)[1].lower()
+        temp_video = os.path.join(tempfile.gettempdir(), f"video_convert_{uuid.uuid4().hex}.{ext}")
+        video_file.save(temp_video)
+        
+        # Check duration
+        duration = get_video_duration_seconds(temp_video)
+        if duration > MAX_VIDEO_DURATION_CONVERT * 60:
+            safe_remove_file(temp_video)
+            return jsonify({'error': f'مدة الفيديو أطول من الحد الأقصى المسموح ({MAX_VIDEO_DURATION_CONVERT} دقيقة)'}), 400
+        
+        # Convert to MP3
+        temp_audio = os.path.join(tempfile.gettempdir(), f"audio_convert_{uuid.uuid4().hex}.mp3")
+        
+        cmd = [
+            'ffmpeg', '-i', temp_video,
+            '-vn', '-acodec', 'libmp3lame',
+            '-ab', bitrate,
+            '-ar', '44100',
+            '-y', temp_audio
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        
+        if result.returncode != 0:
+            logging.error(f"FFmpeg error: {result.stderr}")
+            safe_remove_file(temp_video)
+            return jsonify({'error': 'فشل في تحويل الفيديو إلى صوت'}), 500
+        
+        safe_remove_file(temp_video)
+        
+        if not os.path.exists(temp_audio):
+            return jsonify({'error': 'فشل في إنشاء ملف الصوت'}), 500
+        
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('video_to_mp3', 'convert', 'success', duration_ms=duration_ms, file_size=file_size)
+        
+        original_name = os.path.splitext(video_file.filename)[0]
+        
+        @after_this_request
+        def cleanup(response):
+            safe_remove_file(temp_audio)
+            return response
+        
+        return send_file(
+            temp_audio,
+            mimetype='audio/mpeg',
+            as_attachment=True,
+            download_name=f"{original_name}.mp3"
+        )
+        
+    except subprocess.TimeoutExpired:
+        safe_remove_files(temp_video, temp_audio)
+        log_activity('video_to_mp3', 'convert', 'error', error_message='Timeout')
+        return jsonify({'error': 'انتهى الوقت المسموح للتحويل. جرب ملف أصغر.'}), 408
+        
+    except Exception as e:
+        safe_remove_files(temp_video, temp_audio)
+        log_activity('video_to_mp3', 'convert', 'error', error_message=str(e))
+        log_error('Exception', str(e), traceback.format_exc(), tool_name='video_to_mp3')
+        logging.error(f"Video to MP3 error: {e}")
+        return jsonify({'error': f'حدث خطأ: {str(e)}'}), 500
+
+
+# =============================================================================
+# MUSIC REMOVAL FROM AUDIO TOOL
+# =============================================================================
+# Removes background music to isolate human voice using ffmpeg filters
+# Uses frequency filtering (no AI/ML required)
+# =============================================================================
+
+ALLOWED_AUDIO_EXTENSIONS_CLEAN = {'mp3', 'wav', 'm4a', 'ogg', 'flac', 'aac', 'wma', 'webm'}
+MAX_AUDIO_SIZE_MB_CLEAN = 50
+MAX_AUDIO_DURATION_CLEAN = 30  # minutes
+
+def allowed_audio_clean(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_AUDIO_EXTENSIONS_CLEAN
+
+
+@app.route('/api/remove-music', methods=['POST'])
+def remove_music():
+    """Remove background music from audio, keeping human voice."""
+    start_time = time.time()
+    temp_audio_in = None
+    temp_audio_out = None
+    
+    try:
+        if 'audio' not in request.files:
+            return jsonify({'error': 'لم يتم رفع أي ملف صوتي'}), 400
+        
+        audio_file = request.files['audio']
+        if audio_file.filename == '':
+            return jsonify({'error': 'اسم الملف فارغ'}), 400
+        
+        if not allowed_audio_clean(audio_file.filename):
+            return jsonify({'error': 'صيغة الصوت غير مدعومة. الصيغ المدعومة: MP3, WAV, M4A, OGG, FLAC, AAC'}), 400
+        
+        # Check file size
+        audio_file.seek(0, 2)
+        file_size = audio_file.tell()
+        audio_file.seek(0)
+        
+        if file_size > MAX_AUDIO_SIZE_MB_CLEAN * 1024 * 1024:
+            return jsonify({'error': f'حجم الملف أكبر من الحد الأقصى المسموح ({MAX_AUDIO_SIZE_MB_CLEAN}MB)'}), 400
+        
+        # Get processing mode
+        mode = request.form.get('mode', 'normal')
+        
+        # Save audio temporarily
+        ext = audio_file.filename.rsplit('.', 1)[1].lower()
+        temp_audio_in = os.path.join(tempfile.gettempdir(), f"audio_clean_{uuid.uuid4().hex}.{ext}")
+        audio_file.save(temp_audio_in)
+        
+        # Check duration
+        try:
+            audio = AudioSegment.from_file(temp_audio_in)
+            duration_minutes = len(audio) / 60000
+            if duration_minutes > MAX_AUDIO_DURATION_CLEAN:
+                safe_remove_file(temp_audio_in)
+                return jsonify({'error': f'مدة الصوت أطول من الحد الأقصى المسموح ({MAX_AUDIO_DURATION_CLEAN} دقيقة)'}), 400
+        except Exception as e:
+            logging.warning(f"Could not check audio duration: {e}")
+        
+        temp_audio_out = os.path.join(tempfile.gettempdir(), f"audio_cleaned_{uuid.uuid4().hex}.mp3")
+        
+        # Apply frequency filters to isolate human voice (300Hz - 3000Hz)
+        # Normal mode: gentle filtering
+        # Strong mode: aggressive filtering
+        if mode == 'strong':
+            # Aggressive: narrow band, stronger filtering
+            filter_complex = (
+                "highpass=f=400:poles=2,"
+                "lowpass=f=2800:poles=2,"
+                "equalizer=f=1000:t=q:w=1:g=3,"
+                "equalizer=f=100:t=q:w=1:g=-10,"
+                "equalizer=f=5000:t=q:w=1:g=-10,"
+                "compand=attacks=0.1:decays=0.3:points=-80/-80|-45/-30|-20/-15|0/-10|20/-5"
+            )
+        else:
+            # Normal: gentle filtering to preserve quality
+            filter_complex = (
+                "highpass=f=300:poles=1,"
+                "lowpass=f=3400:poles=1,"
+                "equalizer=f=1200:t=q:w=2:g=2,"
+                "equalizer=f=80:t=q:w=1:g=-6,"
+                "equalizer=f=6000:t=q:w=1:g=-6"
+            )
+        
+        cmd = [
+            'ffmpeg', '-i', temp_audio_in,
+            '-af', filter_complex,
+            '-acodec', 'libmp3lame',
+            '-ab', '192k',
+            '-ar', '44100',
+            '-y', temp_audio_out
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        
+        if result.returncode != 0:
+            logging.error(f"FFmpeg error: {result.stderr}")
+            safe_remove_file(temp_audio_in)
+            return jsonify({'error': 'فشل في معالجة الصوت'}), 500
+        
+        safe_remove_file(temp_audio_in)
+        
+        if not os.path.exists(temp_audio_out):
+            return jsonify({'error': 'فشل في إنشاء ملف الصوت المعالج'}), 500
+        
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('remove_music', 'process', 'success', duration_ms=duration_ms, file_size=file_size)
+        
+        original_name = os.path.splitext(audio_file.filename)[0]
+        
+        @after_this_request
+        def cleanup(response):
+            safe_remove_file(temp_audio_out)
+            return response
+        
+        return send_file(
+            temp_audio_out,
+            mimetype='audio/mpeg',
+            as_attachment=True,
+            download_name=f"{original_name}_صوت_نقي.mp3"
+        )
+        
+    except subprocess.TimeoutExpired:
+        safe_remove_files(temp_audio_in, temp_audio_out)
+        log_activity('remove_music', 'process', 'error', error_message='Timeout')
+        return jsonify({'error': 'انتهى الوقت المسموح للمعالجة. جرب ملف أصغر.'}), 408
+        
+    except Exception as e:
+        safe_remove_files(temp_audio_in, temp_audio_out)
+        log_activity('remove_music', 'process', 'error', error_message=str(e))
+        log_error('Exception', str(e), traceback.format_exc(), tool_name='remove_music')
+        logging.error(f"Remove music error: {e}")
+        return jsonify({'error': f'حدث خطأ: {str(e)}'}), 500
 
 
 def init_admin_user():
