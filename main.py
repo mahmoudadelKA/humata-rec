@@ -9,6 +9,8 @@ import gc
 import time
 import glob
 import threading
+import json
+import traceback
 from datetime import datetime, date, timedelta
 from collections import defaultdict
 from flask import Flask, render_template, request, jsonify, send_file, after_this_request, redirect, url_for, flash
@@ -333,6 +335,119 @@ ALLOWED_AUDIO_EXTENSIONS = {'mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma'}
 
 ANIME_SIMILARITY_THRESHOLD = 0.85
 PODCAST_NAME_SIMILARITY_THRESHOLD = 90
+
+# =============================================================================
+# ACTIVITY LOGGING HELPER
+# =============================================================================
+# Logs all tool activities (AI and non-AI) to the ActivityLog table
+# for the unified admin dashboard.
+# =============================================================================
+
+def log_activity(tool_name, action, status, duration_ms=None, file_size=None, 
+                 error_message=None, details=None):
+    """
+    Log tool activity to the database for admin dashboard.
+    
+    Args:
+        tool_name: Name of the tool (e.g., 'video_transcription', 'pdf_converter')
+        action: Action performed (e.g., 'transcribe', 'convert', 'download')
+        status: Status of the operation ('success', 'error', 'warning')
+        duration_ms: How long the operation took in milliseconds
+        file_size: Size of the processed file in bytes
+        error_message: Error message if status is 'error'
+        details: Additional details as JSON string
+    """
+    try:
+        session_id = request.cookies.get('arkan_session', 'unknown')
+        ip_address = request.remote_addr or 'unknown'
+        user_agent = request.headers.get('User-Agent', '')
+        device_type, _, _ = parse_user_agent(user_agent)
+        
+        activity = ActivityLog(
+            session_id=session_id,
+            ip_address=ip_address,
+            tool_name=tool_name,
+            action=action,
+            status=status,
+            duration_ms=duration_ms,
+            file_size=file_size,
+            error_message=error_message[:500] if error_message else None,
+            details=details,
+            user_agent=user_agent[:500] if user_agent else None,
+            device_type=device_type
+        )
+        db.session.add(activity)
+        
+        # Update ToolStats
+        today = date.today()
+        tool_stat = ToolStats.query.filter_by(date=today, tool_name=tool_name).first()
+        if tool_stat:
+            tool_stat.usage_count += 1
+            if status == 'success':
+                tool_stat.success_count += 1
+            else:
+                tool_stat.error_count += 1
+            if duration_ms:
+                # Calculate new average
+                total_duration = tool_stat.avg_duration_ms * (tool_stat.usage_count - 1) + duration_ms
+                tool_stat.avg_duration_ms = total_duration / tool_stat.usage_count
+            if file_size:
+                tool_stat.total_file_size += file_size
+        else:
+            tool_stat = ToolStats(
+                date=today,
+                tool_name=tool_name,
+                usage_count=1,
+                success_count=1 if status == 'success' else 0,
+                error_count=1 if status != 'success' else 0,
+                avg_duration_ms=duration_ms or 0,
+                total_file_size=file_size or 0
+            )
+            db.session.add(tool_stat)
+        
+        db.session.commit()
+    except Exception as e:
+        logger.debug(f"Activity logging error: {e}")
+        try:
+            db.session.rollback()
+        except:
+            pass
+
+
+def log_error(error_type, error_message, stack_trace=None, provider=None, 
+              tool_name=None, request_data=None):
+    """
+    Log errors to the ErrorLog table for debugging.
+    
+    Args:
+        error_type: Type of error (e.g., 'AIError', 'FileError', 'ValidationError')
+        error_message: The error message
+        stack_trace: Full stack trace if available
+        provider: AI provider name if applicable
+        tool_name: Name of the tool where error occurred
+        request_data: Request data for debugging
+    """
+    try:
+        session_id = request.cookies.get('arkan_session', 'unknown')
+        
+        error_log = ErrorLog(
+            error_type=error_type,
+            error_message=error_message[:1000] if error_message else 'Unknown error',
+            stack_trace=stack_trace,
+            provider=provider,
+            tool_name=tool_name,
+            session_id=session_id,
+            request_data=request_data
+        )
+        db.session.add(error_log)
+        db.session.commit()
+    except Exception as e:
+        logger.debug(f"Error logging failed: {e}")
+        try:
+            db.session.rollback()
+        except:
+            pass
+
 
 # =============================================================================
 # AI MANAGER WRAPPER FUNCTIONS
@@ -1035,8 +1150,10 @@ def process_video():
     - quality: الجودة (اختياري - افتراضي 720p)
     - download_type: نوع التحميل video أو audio (اختياري - افتراضي video)
     """
+    start_time_log = time.time()
     temp_media = None
     output_file = None
+    file_size = 0
 
     try:
         data = request.get_json()
@@ -1108,6 +1225,11 @@ def process_video():
             download_name = f'clip_{start_time.replace(":", "-")}_{end_time.replace(":", "-")}_{quality}.mp4'
             mimetype = 'video/mp4'
 
+        file_size = os.path.getsize(output_file) if os.path.exists(output_file) else 0
+        duration_ms = int((time.time() - start_time_log) * 1000)
+        log_activity('video_cutter', 'cut', 'success', duration_ms=duration_ms, file_size=file_size,
+                    details=json.dumps({'quality': quality, 'type': download_type}))
+
         return send_file(
             output_file,
             as_attachment=True,
@@ -1117,19 +1239,28 @@ def process_video():
     except subprocess.CalledProcessError as e:
         logging.error(f"خطأ في معالجة الفيديو: {e}")
         safe_remove_files(temp_media, output_file)
+        duration_ms = int((time.time() - start_time_log) * 1000)
+        error_msg = e.stderr.decode() if e.stderr else str(e)
+        log_activity('video_cutter', 'cut', 'error', duration_ms=duration_ms, error_message=error_msg)
+        log_error('SubprocessError', error_msg, traceback.format_exc(), tool_name='video_cutter')
         return jsonify({
             'error':
-            f'خطأ في معالجة الفيديو: {e.stderr.decode() if e.stderr else str(e)}'
+            f'خطأ في معالجة الفيديو: {error_msg}'
         }), 500
     except Exception as e:
         logging.error(f"خطأ عام: {str(e)}")
         safe_remove_files(temp_media, output_file)
+        duration_ms = int((time.time() - start_time_log) * 1000)
+        log_activity('video_cutter', 'cut', 'error', duration_ms=duration_ms, error_message=str(e))
+        log_error('Exception', str(e), traceback.format_exc(), tool_name='video_cutter')
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
 @app.route('/search-anime', methods=['POST'])
 def search_anime():
+    start_time = time.time()
     temp_path = None
+    file_size = 0
     try:
         if 'image' not in request.files:
             return jsonify({'error': 'الرجاء تحميل صورة'}), 400
@@ -1180,6 +1311,10 @@ def search_anime():
                 'youtube':
                 f"https://www.youtube.com/results?search_query={quote(anime_name + ' anime')}"
             }
+
+            duration_ms = int((time.time() - start_time) * 1000)
+            log_activity('anime_detection_image', 'search', 'success', duration_ms=duration_ms, 
+                        file_size=file_size, details=json.dumps({'method': 'gemini_ai', 'anime': anime_name}))
 
             return jsonify({
                 'found': True,
@@ -1296,19 +1431,31 @@ def search_anime():
             'image_preview': top_result.get('image', '')
         }
 
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('anime_detection_image', 'search', 'success', duration_ms=duration_ms, 
+                    file_size=file_size, details=json.dumps({'method': 'trace.moe', 'anime': anime_name}))
+
         return jsonify(result)
 
     except requests.Timeout:
         safe_remove_file(temp_path)
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('anime_detection_image', 'search', 'error', duration_ms=duration_ms, 
+                    file_size=file_size, error_message='Connection timeout')
         return jsonify(
             {'error': 'انتهت مهلة الاتصال. الرجاء المحاولة مرة أخرى.'}), 500
     except Exception as e:
         safe_remove_file(temp_path)
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('anime_detection_image', 'search', 'error', duration_ms=duration_ms, 
+                    file_size=file_size, error_message=str(e))
+        log_error('Exception', str(e), traceback.format_exc(), tool_name='anime_detection_image')
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
 @app.route('/search-anime-by-name', methods=['POST'])
 def search_anime_by_name():
+    start_time = time.time()
     try:
         data = request.get_json()
         name = data.get('name', '').strip()
@@ -1445,6 +1592,10 @@ def search_anime_by_name():
                 }
             })
 
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('anime_detection_name', 'search', 'success', duration_ms=duration_ms, 
+                    details=json.dumps({'search_term': search_term, 'results_count': len(results)}))
+
         return jsonify({
             'found': True,
             'results': results,
@@ -1452,20 +1603,30 @@ def search_anime_by_name():
         })
 
     except requests.Timeout:
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('anime_detection_name', 'search', 'error', duration_ms=duration_ms, 
+                    error_message='Connection timeout')
         return jsonify(
             {'error': 'انتهت مهلة الاتصال. الرجاء المحاولة مرة أخرى.'}), 500
     except Exception as e:
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('anime_detection_name', 'search', 'error', duration_ms=duration_ms, 
+                    error_message=str(e))
+        log_error('Exception', str(e), traceback.format_exc(), tool_name='anime_detection_name')
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
 @app.route('/transcribe-file', methods=['POST'])
 def transcribe_file():
+    start_time = time.time()
     temp_audio = None
     temp_wav = None
     chunk_files = []
+    file_size = 0
 
     try:
         if 'audio' not in request.files:
+            log_activity('audio_transcription', 'transcribe', 'error', error_message='No audio file uploaded')
             return jsonify({'error': 'الرجاء تحميل ملف صوتي'}), 400
 
         file = request.files['audio']
@@ -1488,6 +1649,7 @@ def transcribe_file():
         temp_wav = os.path.join(UPLOAD_FOLDER, f'audio_{unique_id}.wav')
 
         file.save(temp_audio)
+        file_size = os.path.getsize(temp_audio) if os.path.exists(temp_audio) else 0
 
         try:
             audio = AudioSegment.from_file(temp_audio)
@@ -1500,6 +1662,9 @@ def transcribe_file():
             )
         except Exception as e:
             logging.error(f"Audio loading error: {str(e)}")
+            duration_ms = int((time.time() - start_time) * 1000)
+            log_activity('audio_transcription', 'transcribe', 'error', duration_ms=duration_ms, 
+                        file_size=file_size, error_message=f'Audio loading error: {str(e)}')
             return jsonify({'error':
                             f'خطأ في قراءة الملف الصوتي: {str(e)}'}), 400
 
@@ -1531,6 +1696,10 @@ def transcribe_file():
             if text:
                 safe_remove_file(temp_audio)
                 run_garbage_collection()
+                duration_ms = int((time.time() - start_time) * 1000)
+                log_activity('audio_transcription', 'transcribe', 'success', 
+                            duration_ms=duration_ms, file_size=file_size,
+                            details=json.dumps({'method': 'gemini_ai', 'audio_duration': round(duration_seconds, 1)}))
 
                 return jsonify({
                     'success': True,
@@ -1638,8 +1807,12 @@ def transcribe_file():
 
         safe_remove_files(temp_audio, temp_wav, *chunk_files)
         run_garbage_collection()
+        duration_ms = int((time.time() - start_time) * 1000)
 
         if not text:
+            log_activity('audio_transcription', 'transcribe', 'warning', 
+                        duration_ms=duration_ms, file_size=file_size,
+                        details=json.dumps({'method': transcription_method, 'result': 'no_speech_detected'}))
             return jsonify({
                 'success':
                 True,
@@ -1649,6 +1822,9 @@ def transcribe_file():
                 'لم يتم التعرف على أي كلام في الملف الصوتي. تأكد من إعداد مفاتيح Gemini API للملفات الطويلة.'
             })
 
+        log_activity('audio_transcription', 'transcribe', 'success', 
+                    duration_ms=duration_ms, file_size=file_size,
+                    details=json.dumps({'method': transcription_method, 'audio_duration': round(duration_seconds, 1)}))
         return jsonify({
             'success': True,
             'text': text,
@@ -1660,12 +1836,19 @@ def transcribe_file():
         logging.error(f"Transcription ValueError: {str(ve)}")
         safe_remove_files(temp_audio, temp_wav, *chunk_files)
         run_garbage_collection()
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('audio_transcription', 'transcribe', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message=str(ve))
         return jsonify({'error': str(ve)}), 400
     except Exception as e:
         error_message = str(e)
         logging.error(f"Transcription error: {error_message}")
         safe_remove_files(temp_audio, temp_wav, *chunk_files)
         run_garbage_collection()
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('audio_transcription', 'transcribe', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message=error_message[:200])
+        log_error('TranscriptionError', error_message, traceback.format_exc(), tool_name='audio_transcription')
 
         if 'timeout' in error_message.lower(
         ) or 'timed out' in error_message.lower():
@@ -1688,6 +1871,8 @@ def transcribe_file():
 
 @app.route('/ocr-image', methods=['POST'])
 def ocr_image():
+    start_time = time.time()
+    file_size = 0
     temp_image = None
 
     try:
@@ -1710,6 +1895,7 @@ def ocr_image():
         temp_image = os.path.join(UPLOAD_FOLDER, f'ocr_{unique_id}.{ext}')
 
         file.save(temp_image)
+        file_size = os.path.getsize(temp_image) if os.path.exists(temp_image) else 0
 
         image = Image.open(temp_image)
 
@@ -1720,22 +1906,35 @@ def ocr_image():
 
         safe_remove_file(temp_image)
 
+        duration_ms = int((time.time() - start_time) * 1000)
         if not text.strip():
+            log_activity('ocr_extraction', 'extract', 'success', 
+                        duration_ms=duration_ms, file_size=file_size,
+                        details=json.dumps({'text_length': 0}))
             return jsonify({
                 'success': True,
                 'text': '',
                 'message': 'لم يتم العثور على نص في الصورة'
             })
 
+        log_activity('ocr_extraction', 'extract', 'success', 
+                    duration_ms=duration_ms, file_size=file_size,
+                    details=json.dumps({'text_length': len(text.strip())}))
         return jsonify({'success': True, 'text': text.strip()})
 
     except Exception as e:
         safe_remove_file(temp_image)
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('ocr_extraction', 'extract', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message=str(e))
+        log_error('OCRError', str(e), traceback.format_exc(), tool_name='ocr_extraction')
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
 @app.route('/search-podcast-by-image', methods=['POST'])
 def search_podcast_by_image():
+    start_time = time.time()
+    file_size = 0
     temp_image = None
 
     try:
@@ -1759,6 +1958,7 @@ def search_podcast_by_image():
                                   f'podcast_ocr_{unique_id}.{ext}')
 
         file.save(temp_image)
+        file_size = os.path.getsize(temp_image) if os.path.exists(temp_image) else 0
 
         search_term = None
         extracted_text = ''
@@ -1948,19 +2148,32 @@ def search_podcast_by_image():
             'search_links': final_smart_links
         }
 
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('podcast_detection_image', 'detect', 'success', 
+                    duration_ms=duration_ms, file_size=file_size,
+                    details=json.dumps({'podcast': podcast_name, 'method': detection_method}))
         return jsonify(result)
 
     except requests.Timeout:
         safe_remove_file(temp_image)
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('podcast_detection_image', 'detect', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message='Connection timeout')
         return jsonify(
             {'error': 'انتهت مهلة الاتصال. الرجاء المحاولة مرة أخرى.'}), 500
     except Exception as e:
         safe_remove_file(temp_image)
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('podcast_detection_image', 'detect', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message=str(e))
+        log_error('PodcastImageError', str(e), traceback.format_exc(), tool_name='podcast_detection_image')
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
 @app.route('/search-podcast-by-audio', methods=['POST'])
 def search_podcast_by_audio():
+    start_time = time.time()
+    file_size = 0
     temp_audio = None
     temp_wav = None
 
@@ -1987,6 +2200,7 @@ def search_podcast_by_audio():
                                 f'podcast_audio_{unique_id}.wav')
 
         file.save(temp_audio)
+        file_size = os.path.getsize(temp_audio) if os.path.exists(temp_audio) else 0
 
         try:
             audio = AudioSegment.from_file(temp_audio)
@@ -2096,6 +2310,10 @@ def search_podcast_by_audio():
                 podcast_links
             })
 
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('podcast_detection_audio', 'detect', 'success', 
+                    duration_ms=duration_ms, file_size=file_size,
+                    details=json.dumps({'found': True, 'method': detection_method}))
         return jsonify({
             'found': True,
             'transcribed_text': transcribed_text,
@@ -2106,10 +2324,17 @@ def search_podcast_by_audio():
         })
 
     except requests.Timeout:
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('podcast_detection_audio', 'detect', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message='Connection timeout')
         return jsonify(
             {'error': 'انتهت مهلة الاتصال. الرجاء المحاولة مرة أخرى.'}), 500
     except Exception as e:
         safe_remove_files(temp_audio, temp_wav)
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('podcast_detection_audio', 'detect', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message=str(e))
+        log_error('PodcastAudioError', str(e), traceback.format_exc(), tool_name='podcast_detection_audio')
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
@@ -2126,6 +2351,8 @@ def cleanup_download_files(output_template, output_file):
 
 @app.route('/download-video', methods=['POST'])
 def download_video():
+    start_time = time.time()
+    file_size = 0
     output_file = None
     output_template = None
     media_title = 'media'
@@ -2427,12 +2654,17 @@ def download_video():
 
         final_output = output_file
         final_template = output_template
+        file_size = os.path.getsize(output_file) if os.path.exists(output_file) else 0
 
         @after_this_request
         def cleanup(response):
             cleanup_download_files(final_template, final_output)
             return response
 
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('media_download', 'download', 'success', 
+                    duration_ms=duration_ms, file_size=file_size,
+                    details=json.dumps({'format': download_format, 'title': media_title[:50]}))
         if download_format == 'audio':
             return send_file(output_file,
                              as_attachment=True,
@@ -2447,6 +2679,9 @@ def download_video():
     except yt_dlp.utils.DownloadError as e:
         cleanup_download_files(output_template, output_file)
         error_msg = str(e).lower()
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('media_download', 'download', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message=str(e)[:200])
         if 'private' in error_msg:
             return jsonify({'error': 'هذا الفيديو خاص ولا يمكن تحميله.'}), 400
         elif 'unavailable' in error_msg or 'removed' in error_msg or 'deleted' in error_msg:
@@ -2469,6 +2704,10 @@ def download_video():
             return jsonify({'error': f'خطأ في التحميل: {str(e)[:100]}'}), 400
     except Exception as e:
         cleanup_download_files(output_template, output_file)
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('media_download', 'download', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message=str(e)[:200])
+        log_error('DownloadError', str(e), traceback.format_exc(), tool_name='media_download')
         return jsonify({'error': f'خطأ غير متوقع: {str(e)[:100]}'}), 500
 
 
@@ -2573,6 +2812,8 @@ def has_arabic_text_issues(text):
 
 @app.route('/convert-pdf', methods=['POST'])
 def convert_pdf():
+    start_time = time.time()
+    file_size = 0
     pdf_path = None
     docx_path = None
 
@@ -2595,6 +2836,7 @@ def convert_pdf():
         docx_path = os.path.join(UPLOAD_FOLDER, f'output_{unique_id}.docx')
 
         pdf_file.save(pdf_path)
+        file_size = os.path.getsize(pdf_path) if os.path.exists(pdf_path) else 0
 
         conversion_success = False
         use_ocr = extraction_method == 'ocr' or extraction_method == 'auto'
@@ -2694,6 +2936,10 @@ def convert_pdf():
             safe_remove_files(final_pdf, final_docx)
             return response
 
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('pdf_converter', 'convert', 'success', 
+                    duration_ms=duration_ms, file_size=file_size,
+                    details=json.dumps({'mode': mode, 'method': extraction_method}))
         return send_file(
             docx_path,
             as_attachment=True,
@@ -2704,6 +2950,10 @@ def convert_pdf():
 
     except Exception as e:
         safe_remove_files(pdf_path, docx_path)
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('pdf_converter', 'convert', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message=str(e))
+        log_error('PDFConvertError', str(e), traceback.format_exc(), tool_name='pdf_converter')
         return jsonify({'error': f'خطأ غير متوقع: {str(e)[:100]}'}), 500
 
 
@@ -2740,6 +2990,8 @@ def extract_audio_from_video(video_path, output_audio_path):
 
 @app.route('/transcribe-video', methods=['POST'])
 def transcribe_video():
+    start_time = time.time()
+    file_size = 0
     temp_video = None
     temp_audio = None
     compressed_audio = None
@@ -2948,8 +3200,12 @@ def transcribe_video():
         safe_remove_file(temp_audio)
         run_garbage_collection()
 
+        duration_ms = int((time.time() - start_time) * 1000)
         if text:
             word_count = len(text.split())
+            log_activity('video_transcription', 'transcribe', 'success', 
+                        duration_ms=duration_ms, file_size=file_size,
+                        details=json.dumps({'language': language, 'word_count': word_count, 'input_type': input_type}))
             return jsonify({
                 'success': True,
                 'text': text,
@@ -2958,6 +3214,8 @@ def transcribe_video():
                 'keys_available': get_available_keys_count()
             })
         else:
+            log_activity('video_transcription', 'transcribe', 'error', 
+                        duration_ms=duration_ms, file_size=file_size, error_message='No text returned')
             return jsonify({
                 'error':
                 'فشل في تحويل الفيديو إلى نص. تأكد من إعداد مفاتيح Gemini API أو جرب ملف أقصر.'
@@ -2966,12 +3224,19 @@ def transcribe_video():
     except ValueError as ve:
         safe_remove_files(temp_video, temp_audio)
         run_garbage_collection()
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('video_transcription', 'transcribe', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message=str(ve))
         return jsonify({'error': str(ve)}), 400
     except Exception as e:
         logging.error(f"Video transcription error: {e}")
         safe_remove_files(temp_video, temp_audio)
         run_garbage_collection()
+        duration_ms = int((time.time() - start_time) * 1000)
         error_message = str(e)
+        log_activity('video_transcription', 'transcribe', 'error', 
+                    duration_ms=duration_ms, file_size=file_size, error_message=error_message[:200])
+        log_error('VideoTranscriptionError', error_message, traceback.format_exc(), tool_name='video_transcription')
         if 'timeout' in error_message.lower(
         ) or 'timed out' in error_message.lower():
             return jsonify({
@@ -3352,112 +3617,136 @@ def format_document_ai():
     AI-powered document formatting endpoint.
     Accepts: main document (DOCX/PDF), optional formatting instructions, optional reference file (image/DOCX/PDF)
     """
-    uploaded = request.files.get("file")
-    reference_file = request.files.get("reference_file")
-    instructions = request.form.get("instructions", "").strip()
+    start_time = time.time()
+    file_size = 0
     
-    if not uploaded or uploaded.filename == "":
-        return jsonify({'error': 'من فضلك ارفع ملف للتنسيق'}), 400
-    
-    filename = uploaded.filename.lower()
-    if not filename.endswith((".docx", ".pdf")):
-        return jsonify({'error': 'يدعم ملفات Word (.docx) و PDF فقط'}), 400
-    
-    if not instructions and not reference_file:
-        return jsonify({'error': 'يرجى إدخال وصف التنسيق أو رفع ملف مرجعي'}), 400
-    
-    with tempfile.TemporaryDirectory() as tmpdir:
-        in_path = os.path.join(tmpdir, "input" + os.path.splitext(uploaded.filename)[1])
-        docx_path = os.path.join(tmpdir, "document.docx")
-        out_path = os.path.join(tmpdir, "formatted.docx")
+    try:
+        uploaded = request.files.get("file")
+        reference_file = request.files.get("reference_file")
+        instructions = request.form.get("instructions", "").strip()
         
-        uploaded.save(in_path)
+        if not uploaded or uploaded.filename == "":
+            return jsonify({'error': 'من فضلك ارفع ملف للتنسيق'}), 400
         
-        if filename.endswith(".pdf"):
-            logging.info("Converting PDF to DOCX for formatting...")
-            if not convert_pdf_to_docx_for_formatting(in_path, docx_path):
-                return jsonify({'error': 'فشل في تحويل ملف PDF. جرب ملف Word مباشرة.'}), 500
-        else:
-            docx_path = in_path
+        filename = uploaded.filename.lower()
+        if not filename.endswith((".docx", ".pdf")):
+            return jsonify({'error': 'يدعم ملفات Word (.docx) و PDF فقط'}), 400
         
-        reference_image = None
-        if reference_file and reference_file.filename:
-            ref_filename = reference_file.filename.lower()
-            ref_path = os.path.join(tmpdir, "reference" + os.path.splitext(reference_file.filename)[1])
-            reference_file.save(ref_path)
+        if not instructions and not reference_file:
+            return jsonify({'error': 'يرجى إدخال وصف التنسيق أو رفع ملف مرجعي'}), 400
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            in_path = os.path.join(tmpdir, "input" + os.path.splitext(uploaded.filename)[1])
+            docx_path = os.path.join(tmpdir, "document.docx")
+            out_path = os.path.join(tmpdir, "formatted.docx")
             
-            if ref_filename.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
-                reference_image = ref_path
-            elif ref_filename.endswith(".pdf"):
-                try:
-                    import fitz
-                    pdf_doc = fitz.open(ref_path)
-                    page = pdf_doc[0]
-                    pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-                    img_path = os.path.join(tmpdir, "ref_screenshot.png")
-                    pix.save(img_path)
-                    pdf_doc.close()
-                    reference_image = img_path
-                    logging.info("Successfully extracted image from reference PDF")
-                except Exception as e:
-                    logging.error(f"Failed to extract image from reference PDF: {e}")
-                    instructions += "\n\nالملف المرجعي هو PDF. استخدم تنسيق بحثي أكاديمي مشابه."
-            elif ref_filename.endswith(".docx"):
-                try:
-                    ref_doc = Document(ref_path)
-                    ref_format_info = []
-                    
-                    if ref_doc.sections:
-                        section = ref_doc.sections[0]
-                        margins = {
-                            "top": round(section.top_margin.cm, 1) if section.top_margin else 2.5,
-                            "bottom": round(section.bottom_margin.cm, 1) if section.bottom_margin else 2.5,
-                            "left": round(section.left_margin.cm, 1) if section.left_margin else 2.5,
-                            "right": round(section.right_margin.cm, 1) if section.right_margin else 2.5
-                        }
-                        ref_format_info.append(f"الهوامش: أعلى {margins['top']}سم، أسفل {margins['bottom']}سم، يسار {margins['left']}سم، يمين {margins['right']}سم")
-                    
-                    for para in ref_doc.paragraphs[:5]:
-                        if para.runs:
-                            run = para.runs[0]
-                            if run.font.name:
-                                ref_format_info.append(f"الخط: {run.font.name}")
-                            if run.font.size:
-                                ref_format_info.append(f"حجم الخط: {run.font.size.pt} نقطة")
-                            break
-                    
-                    for para in ref_doc.paragraphs[:5]:
-                        if para.paragraph_format.line_spacing:
-                            ref_format_info.append(f"تباعد الأسطر: {para.paragraph_format.line_spacing}")
-                            break
-                    
-                    if ref_format_info:
-                        instructions += "\n\nالتنسيق المستخرج من الملف المرجعي:\n" + "\n".join(ref_format_info)
-                    else:
+            uploaded.save(in_path)
+            file_size = os.path.getsize(in_path) if os.path.exists(in_path) else 0
+            
+            if filename.endswith(".pdf"):
+                logging.info("Converting PDF to DOCX for formatting...")
+                if not convert_pdf_to_docx_for_formatting(in_path, docx_path):
+                    duration_ms = int((time.time() - start_time) * 1000)
+                    log_activity('document_formatter', 'format', 'error', duration_ms=duration_ms, 
+                                file_size=file_size, error_message='PDF conversion failed')
+                    return jsonify({'error': 'فشل في تحويل ملف PDF. جرب ملف Word مباشرة.'}), 500
+            else:
+                docx_path = in_path
+            
+            reference_image = None
+            if reference_file and reference_file.filename:
+                ref_filename = reference_file.filename.lower()
+                ref_path = os.path.join(tmpdir, "reference" + os.path.splitext(reference_file.filename)[1])
+                reference_file.save(ref_path)
+                
+                if ref_filename.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
+                    reference_image = ref_path
+                elif ref_filename.endswith(".pdf"):
+                    try:
+                        import fitz
+                        pdf_doc = fitz.open(ref_path)
+                        page = pdf_doc[0]
+                        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+                        img_path = os.path.join(tmpdir, "ref_screenshot.png")
+                        pix.save(img_path)
+                        pdf_doc.close()
+                        reference_image = img_path
+                        logging.info("Successfully extracted image from reference PDF")
+                    except Exception as e:
+                        logging.error(f"Failed to extract image from reference PDF: {e}")
+                        instructions += "\n\nالملف المرجعي هو PDF. استخدم تنسيق بحثي أكاديمي مشابه."
+                elif ref_filename.endswith(".docx"):
+                    try:
+                        ref_doc = Document(ref_path)
+                        ref_format_info = []
+                        
+                        if ref_doc.sections:
+                            section = ref_doc.sections[0]
+                            margins = {
+                                "top": round(section.top_margin.cm, 1) if section.top_margin else 2.5,
+                                "bottom": round(section.bottom_margin.cm, 1) if section.bottom_margin else 2.5,
+                                "left": round(section.left_margin.cm, 1) if section.left_margin else 2.5,
+                                "right": round(section.right_margin.cm, 1) if section.right_margin else 2.5
+                            }
+                            ref_format_info.append(f"الهوامش: أعلى {margins['top']}سم، أسفل {margins['bottom']}سم، يسار {margins['left']}سم، يمين {margins['right']}سم")
+                        
+                        for para in ref_doc.paragraphs[:5]:
+                            if para.runs:
+                                run = para.runs[0]
+                                if run.font.name:
+                                    ref_format_info.append(f"الخط: {run.font.name}")
+                                if run.font.size:
+                                    ref_format_info.append(f"حجم الخط: {run.font.size.pt} نقطة")
+                                break
+                        
+                        for para in ref_doc.paragraphs[:5]:
+                            if para.paragraph_format.line_spacing:
+                                ref_format_info.append(f"تباعد الأسطر: {para.paragraph_format.line_spacing}")
+                                break
+                        
+                        if ref_format_info:
+                            instructions += "\n\nالتنسيق المستخرج من الملف المرجعي:\n" + "\n".join(ref_format_info)
+                        else:
+                            instructions += "\n\nالملف المرجعي هو مستند Word. استخدم تنسيق بحثي أكاديمي مشابه."
+                        
+                        logging.info(f"Extracted formatting from reference DOCX: {ref_format_info}")
+                    except Exception as e:
+                        logging.error(f"Failed to extract formatting from reference DOCX: {e}")
                         instructions += "\n\nالملف المرجعي هو مستند Word. استخدم تنسيق بحثي أكاديمي مشابه."
-                    
-                    logging.info(f"Extracted formatting from reference DOCX: {ref_format_info}")
-                except Exception as e:
-                    logging.error(f"Failed to extract formatting from reference DOCX: {e}")
-                    instructions += "\n\nالملف المرجعي هو مستند Word. استخدم تنسيق بحثي أكاديمي مشابه."
-        
-        logging.info(f"Extracting formatting specs from AI... Instructions: {instructions[:100] if instructions else 'None'}, Reference: {bool(reference_image)}")
-        format_spec = extract_formatting_from_ai(instructions, reference_image)
-        logging.info(f"AI format spec: {format_spec}")
-        
-        doc = Document(docx_path)
-        apply_ai_format(doc, format_spec)
-        doc.save(out_path)
-        
-        original_name = os.path.splitext(uploaded.filename)[0]
-        download_name = f"formatted_{original_name}.docx"
-        
-        return send_file(out_path, as_attachment=True, download_name=download_name)
+            
+            logging.info(f"Extracting formatting specs from AI... Instructions: {instructions[:100] if instructions else 'None'}, Reference: {bool(reference_image)}")
+            format_spec = extract_formatting_from_ai(instructions, reference_image)
+            logging.info(f"AI format spec: {format_spec}")
+            
+            doc = Document(docx_path)
+            apply_ai_format(doc, format_spec)
+            doc.save(out_path)
+            
+            original_name = os.path.splitext(uploaded.filename)[0]
+            download_name = f"formatted_{original_name}.docx"
+            
+            output_size = os.path.getsize(out_path) if os.path.exists(out_path) else 0
+            duration_ms = int((time.time() - start_time) * 1000)
+            log_activity('document_formatter', 'format', 'success', duration_ms=duration_ms, 
+                        file_size=file_size, details=json.dumps({'output_size': output_size}))
+            
+            return send_file(out_path, as_attachment=True, download_name=download_name)
+    
+    except Exception as e:
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('document_formatter', 'format', 'error', duration_ms=duration_ms, 
+                    file_size=file_size, error_message=str(e))
+        log_error('Exception', str(e), traceback.format_exc(), tool_name='document_formatter')
+        logging.error(f"Document formatting error: {e}")
+        return jsonify({'error': f'خطأ في التنسيق: {str(e)}'}), 500
 
 
 # Extract audio from YouTube for background
 @app.route('/get-audio', methods=['POST'])
 def get_audio():
+    start_time = time.time()
+    file_size = 0
+    
     data = request.get_json()
     url = data.get('url')
     
@@ -3483,6 +3772,11 @@ def get_audio():
             audio_file = os.path.join(temp_dir, f"arkan_audio_{info['id']}.mp3")
             
             if os.path.exists(audio_file):
+                file_size = os.path.getsize(audio_file)
+                duration_ms = int((time.time() - start_time) * 1000)
+                log_activity('audio_download', 'extract', 'success', duration_ms=duration_ms, 
+                            file_size=file_size, details=json.dumps({'video_id': info['id']}))
+                
                 @after_this_request
                 def cleanup(response):
                     safe_remove_file(audio_file)
@@ -3490,9 +3784,16 @@ def get_audio():
                 
                 return send_file(audio_file, mimetype='audio/mpeg', as_attachment=False, download_name=f"audio_{info['id']}.mp3")
             else:
+                duration_ms = int((time.time() - start_time) * 1000)
+                log_activity('audio_download', 'extract', 'error', duration_ms=duration_ms, 
+                            error_message='Failed to extract audio')
                 return jsonify({'error': 'Failed to extract audio'}), 500
     
     except Exception as e:
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('audio_download', 'extract', 'error', duration_ms=duration_ms, 
+                    file_size=file_size, error_message=str(e))
+        log_error('Exception', str(e), traceback.format_exc(), tool_name='audio_download')
         logging.error(f"Audio extraction error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
