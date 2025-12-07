@@ -181,10 +181,10 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 app.secret_key = os.environ.get("SESSION_SECRET") or "dev-secret-key-change-in-production"
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 * 1024
 
-database_url = os.environ.get("DATABASE_URL")
+database_url = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_URL")
 if not database_url:
     raise RuntimeError(
-        "DATABASE_URL environment variable is not set. "
+        "DATABASE_URL or SUPABASE_URL environment variable is not set. "
         "Please set it to your PostgreSQL connection string. "
         "Example: postgresql://user:password@host:port/database"
     )
