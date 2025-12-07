@@ -479,7 +479,7 @@
                             <span class="text-gray-300">{{ tool.name }}</span>
                             <div class="flex items-center gap-2">
                                 <div class="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
-                                    <div class="h-full bg-gradient-to-r from-amber-500 to-amber-600 rounded-full" style="width: {{ (tool.count / top_tools[0].count * 100) if top_tools else 0 }}%"></div>
+                                    <div class="h-full bg-gradient-to-r from-amber-500 to-amber-600 rounded-full" style="width: {{ (tool.count / top_tools[0].count * 100) if (top_tools and top_tools[0].count > 0) else 0 }}%"></div>
                                 </div>
                                 <span class="text-gray-400 text-sm w-8">{{ tool.count }}</span>
                             </div>
