@@ -9,9 +9,11 @@ import gc
 import time
 import glob
 import threading
+from datetime import datetime, date, timedelta
 from collections import defaultdict
-from flask import Flask, render_template, request, jsonify, send_file, after_this_request
+from flask import Flask, render_template, request, jsonify, send_file, after_this_request, redirect, url_for, flash
 from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import yt_dlp
 import requests
 import speech_recognition as sr
@@ -23,6 +25,7 @@ import google.generativeai as genai
 from docx import Document
 from docx.shared import Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from models import db, AdminUser, GeminiKeyState, GeminiUsageLog, DailyStats
 
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
 # هذا يحمي حسابك بدلاً من رفع الملف على GitHub
@@ -175,8 +178,26 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
-app.secret_key = os.environ.get("SESSION_SECRET")
+app.secret_key = os.environ.get("SESSION_SECRET") or "dev-secret-key-change-in-production"
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 * 1024
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'admin_login'
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return AdminUser.query.get(int(user_id))
+
 
 @app.after_request
 def after_request_cleanup(response):
@@ -195,29 +216,42 @@ PODCAST_NAME_SIMILARITY_THRESHOLD = 90
 # CENTRALIZED GEMINI API MANAGER
 # =============================================================================
 # Unified layer for all Gemini API calls with:
+# - Support for up to 50 API keys (GEMINI_KEY_1 to GEMINI_KEY_50)
+# - Smart round-robin distribution with cooldown
 # - 2-key-max retry policy (protects API keys from exhaustion)
 # - Session-based rate limiting (15 requests per 20 minutes)
-# - Comprehensive logging for consumption monitoring
+# - Comprehensive logging with database persistence
 # - Graceful quota exhaustion handling with Arabic error messages
-# - File duration limits for audio/video transcription (15 minutes max)
+# - Video transcription support up to 2 hours (120 minutes)
+# - Admin dashboard with key management
 # =============================================================================
 
 class GeminiAPIManager:
     """Centralized Gemini API manager with intelligent key protection and rate limiting."""
     
+    MAX_KEYS = 50
     RATE_LIMIT_REQUESTS = 15
     RATE_LIMIT_WINDOW_SECONDS = 1200
     KEY_COOLDOWN_SECONDS = 3600
     MAX_KEYS_PER_REQUEST = 2
-    MAX_AUDIO_DURATION_MINUTES = 15
+    MAX_AUDIO_DURATION_MINUTES = 120
+    MAX_LONG_VIDEO_PER_SESSION = 3
+    LONG_VIDEO_THRESHOLD_MINUTES = 60
     MODEL_LIGHT = 'gemini-2.0-flash'
     MODEL_HEAVY = 'gemini-2.0-flash'
     
     def __init__(self):
         self.keys = self._load_keys()
+        self.key_names = self._get_key_names()
         self.exhausted_keys = {}
+        self.manually_disabled_keys = set()
         self.key_usage_count = defaultdict(int)
+        self.key_last_used = {}
+        self.key_cooldown_count = defaultdict(int)
         self.session_usage = defaultdict(list)
+        self.session_long_video_count = defaultdict(int)
+        self.current_key_index = 0
+        self.hourly_stats = defaultdict(lambda: defaultdict(int))
         self.daily_stats = {
             'total_requests': 0,
             'successful_requests': 0,
@@ -227,22 +261,132 @@ class GeminiAPIManager:
             'requests_by_key': defaultdict(int)
         }
         self._lock = threading.Lock()
+        self._db_initialized = False
         
-        logging.info(f"[GeminiManager] Initialized with {len(self.keys)} API keys")
+        logging.info(f"[GeminiManager] Initialized with {len(self.keys)} API keys (max supported: {self.MAX_KEYS})")
+        logging.info(f"[GeminiManager] Video transcription limit: {self.MAX_AUDIO_DURATION_MINUTES} minutes (2 hours)")
     
     def _load_keys(self):
-        """Load all available Gemini API keys from environment."""
+        """Load all available Gemini API keys from environment (up to 50 keys)."""
         keys = []
-        for i in range(1, 12):
+        for i in range(1, self.MAX_KEYS + 1):
             key = os.environ.get(f"GEMINI_KEY_{i}")
-            if key:
-                keys.append(key)
+            if key and key.strip():
+                keys.append(key.strip())
         
         main_key = os.environ.get("GEMINI_API_KEY")
-        if main_key and main_key not in keys:
-            keys.append(main_key)
+        if main_key and main_key.strip() and main_key.strip() not in keys:
+            keys.append(main_key.strip())
         
         return keys
+    
+    def _get_key_names(self):
+        """Get the environment variable names for each key."""
+        names = {}
+        key_index = 0
+        for i in range(1, self.MAX_KEYS + 1):
+            key = os.environ.get(f"GEMINI_KEY_{i}")
+            if key and key.strip():
+                names[key_index] = f"GEMINI_KEY_{i}"
+                key_index += 1
+        
+        main_key = os.environ.get("GEMINI_API_KEY")
+        if main_key and main_key.strip():
+            found = False
+            for idx, name in names.items():
+                if self.keys[idx] == main_key.strip():
+                    found = True
+                    break
+            if not found:
+                names[len(names)] = "GEMINI_API_KEY"
+        
+        return names
+    
+    def init_db_state(self):
+        """Initialize database state for keys - call after app context is available."""
+        if self._db_initialized:
+            return
+        
+        try:
+            self._load_disabled_keys_from_db()
+            self._db_initialized = True
+            logging.info("[GeminiManager] Database state initialized")
+        except Exception as e:
+            logging.warning(f"[GeminiManager] Could not initialize DB state: {e}")
+    
+    def _load_disabled_keys_from_db(self):
+        """Load manually disabled keys from database."""
+        try:
+            disabled_states = GeminiKeyState.query.filter_by(is_manually_disabled=True).all()
+            for state in disabled_states:
+                if state.key_index < len(self.keys):
+                    self.manually_disabled_keys.add(state.key_index)
+                    logging.info(f"[GeminiManager] Key {state.key_index + 1} loaded as manually disabled")
+        except Exception as e:
+            logging.warning(f"[GeminiManager] Could not load disabled keys: {e}")
+    
+    def _save_key_state_to_db(self, key_index, **updates):
+        """Save key state to database."""
+        try:
+            key_name = self.key_names.get(key_index, f"KEY_{key_index + 1}")
+            state = GeminiKeyState.query.filter_by(key_index=key_index).first()
+            
+            if not state:
+                state = GeminiKeyState(key_index=key_index, key_name=key_name)
+                db.session.add(state)
+            
+            for field, value in updates.items():
+                if hasattr(state, field):
+                    setattr(state, field, value)
+            
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logging.warning(f"[GeminiManager] Could not save key state: {e}")
+    
+    def _log_usage_to_db(self, key_index, operation, is_retry, success, error_type=None, duration_minutes=None):
+        """Log usage to database for dashboard analytics."""
+        try:
+            current_hour = datetime.utcnow().hour
+            log_entry = GeminiUsageLog(
+                key_index=key_index,
+                operation_type=operation,
+                is_retry=is_retry,
+                success=success,
+                error_type=error_type,
+                content_duration_minutes=duration_minutes,
+                session_id=self._get_session_id(),
+                hour_bucket=current_hour
+            )
+            db.session.add(log_entry)
+            
+            today = date.today()
+            daily = DailyStats.query.filter_by(date=today).first()
+            if not daily:
+                daily = DailyStats(date=today)
+                db.session.add(daily)
+            
+            daily.total_requests += 1
+            if success:
+                daily.successful_requests += 1
+            else:
+                daily.failed_requests += 1
+                if error_type == 'quota':
+                    daily.quota_errors += 1
+            
+            if 'text' in operation.lower():
+                daily.text_requests += 1
+            elif 'vision' in operation.lower() or 'image' in operation.lower():
+                daily.vision_requests += 1
+            elif 'audio' in operation.lower() or 'transcription' in operation.lower():
+                daily.audio_requests += 1
+            elif 'video' in operation.lower():
+                daily.video_requests += 1
+            
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logging.debug(f"[GeminiManager] Could not log to DB: {e}")
     
     def _get_session_id(self):
         """Get current session/IP identifier for rate limiting."""
@@ -279,7 +423,7 @@ class GeminiAPIManager:
             self.session_usage[session_id].append(time.time())
     
     def _get_available_key_index(self):
-        """Get an available (non-exhausted) key index."""
+        """Get an available (non-exhausted, non-disabled) key index using round-robin."""
         current_time = time.time()
         
         with self._lock:
@@ -289,30 +433,167 @@ class GeminiAPIManager:
             ]
             for k in expired_keys:
                 del self.exhausted_keys[k]
-                self.key_usage_count[k] = 0
                 logging.info(f"[GeminiManager] Key {k + 1} cooldown expired, now available")
             
             available = [
                 i for i in range(len(self.keys))
-                if i not in self.exhausted_keys
+                if i not in self.exhausted_keys and i not in self.manually_disabled_keys
             ]
             
             if not available:
                 return None
             
-            min_usage = min(self.key_usage_count.get(i, 0) for i in available)
-            least_used = [i for i in available if self.key_usage_count.get(i, 0) == min_usage]
+            start_index = self.current_key_index % len(self.keys)
+            for offset in range(len(self.keys)):
+                candidate = (start_index + offset) % len(self.keys)
+                if candidate in available:
+                    self.current_key_index = candidate + 1
+                    self.key_usage_count[candidate] += 1
+                    self.key_last_used[candidate] = current_time
+                    return candidate
             
-            selected = least_used[0]
+            selected = available[0]
+            self.current_key_index = selected + 1
             self.key_usage_count[selected] += 1
+            self.key_last_used[selected] = current_time
             return selected
     
     def _mark_key_exhausted(self, key_index):
-        """Mark a key as exhausted with timestamp."""
+        """Mark a key as exhausted with timestamp and update cooldown count."""
         with self._lock:
             self.exhausted_keys[key_index] = time.time()
+            self.key_cooldown_count[key_index] += 1
             self.daily_stats['quota_errors'] += 1
             logging.warning(f"[GeminiManager] Key {key_index + 1} marked as exhausted (cooldown: 1 hour)")
+        
+        try:
+            self._save_key_state_to_db(
+                key_index,
+                last_cooldown_at=datetime.utcnow(),
+                cooldown_count=self.key_cooldown_count[key_index]
+            )
+        except:
+            pass
+    
+    def set_key_disabled(self, key_index, disabled, reason=None):
+        """Manually enable/disable a key."""
+        with self._lock:
+            if disabled:
+                self.manually_disabled_keys.add(key_index)
+                logging.info(f"[GeminiManager] Key {key_index + 1} manually disabled: {reason}")
+            else:
+                self.manually_disabled_keys.discard(key_index)
+                logging.info(f"[GeminiManager] Key {key_index + 1} manually enabled")
+        
+        try:
+            self._save_key_state_to_db(
+                key_index,
+                is_manually_disabled=disabled,
+                disabled_at=datetime.utcnow() if disabled else None,
+                disabled_reason=reason
+            )
+        except:
+            pass
+    
+    def get_key_status(self, key_index):
+        """Get the status of a specific key."""
+        current_time = time.time()
+        
+        with self._lock:
+            if key_index in self.manually_disabled_keys:
+                return 'disabled'
+            elif key_index in self.exhausted_keys:
+                cooldown_remaining = self.KEY_COOLDOWN_SECONDS - (current_time - self.exhausted_keys[key_index])
+                if cooldown_remaining > 0:
+                    return 'cooldown'
+                else:
+                    del self.exhausted_keys[key_index]
+                    return 'active'
+            else:
+                return 'active'
+    
+    def get_all_keys_info(self):
+        """Get detailed info about all keys for dashboard."""
+        current_time = time.time()
+        keys_info = []
+        
+        with self._lock:
+            for i in range(len(self.keys)):
+                status = 'active'
+                cooldown_remaining = 0
+                
+                if i in self.manually_disabled_keys:
+                    status = 'disabled'
+                elif i in self.exhausted_keys:
+                    cooldown_remaining = self.KEY_COOLDOWN_SECONDS - (current_time - self.exhausted_keys[i])
+                    if cooldown_remaining > 0:
+                        status = 'cooldown'
+                    else:
+                        del self.exhausted_keys[i]
+                
+                keys_info.append({
+                    'index': i,
+                    'name': self.key_names.get(i, f"KEY_{i + 1}"),
+                    'display_name': f"Key #{i + 1}",
+                    'status': status,
+                    'usage_count': self.key_usage_count.get(i, 0),
+                    'cooldown_count': self.key_cooldown_count.get(i, 0),
+                    'last_used': self.key_last_used.get(i),
+                    'cooldown_remaining_minutes': max(0, int(cooldown_remaining / 60)) if status == 'cooldown' else 0
+                })
+        
+        return keys_info
+    
+    def get_dashboard_stats(self):
+        """Get comprehensive stats for admin dashboard."""
+        current_time = time.time()
+        
+        with self._lock:
+            active_count = len([
+                i for i in range(len(self.keys))
+                if i not in self.exhausted_keys and i not in self.manually_disabled_keys
+            ])
+            cooldown_count = len([
+                i for i in self.exhausted_keys
+                if current_time - self.exhausted_keys[i] < self.KEY_COOLDOWN_SECONDS
+            ])
+            disabled_count = len(self.manually_disabled_keys)
+            
+            return {
+                'total_keys': len(self.keys),
+                'active_keys': active_count,
+                'cooldown_keys': cooldown_count,
+                'disabled_keys': disabled_count,
+                'total_requests_today': self.daily_stats['total_requests'],
+                'successful_requests_today': self.daily_stats['successful_requests'],
+                'quota_errors_today': self.daily_stats['quota_errors'],
+                'other_errors_today': self.daily_stats['other_errors'],
+                'requests_by_operation': dict(self.daily_stats['requests_by_operation']),
+                'requests_by_key': dict(self.daily_stats['requests_by_key'])
+            }
+    
+    def check_long_video_limit(self, session_id, duration_minutes):
+        """Check if session has exceeded long video transcription limit."""
+        if duration_minutes < self.LONG_VIDEO_THRESHOLD_MINUTES:
+            return True, None
+        
+        with self._lock:
+            current_time = time.time()
+            window_start = current_time - self.RATE_LIMIT_WINDOW_SECONDS
+            
+            if self.session_long_video_count.get(session_id, 0) >= self.MAX_LONG_VIDEO_PER_SESSION:
+                return False, (
+                    f"لقد وصلت إلى الحد الأقصى من عمليات تحويل الفيديو الطويل "
+                    f"({self.MAX_LONG_VIDEO_PER_SESSION} عمليات). "
+                    f"الرجاء الانتظار قليلاً قبل المحاولة مرة أخرى."
+                )
+            
+            return True, None
+    
+    def record_long_video(self, session_id):
+        """Record a long video transcription for rate limiting."""
+        with self._lock:
+            self.session_long_video_count[session_id] = self.session_long_video_count.get(session_id, 0) + 1
     
     def _is_quota_error(self, error_str):
         """Check if error is related to quota/rate limiting."""
@@ -324,24 +605,42 @@ class GeminiAPIManager:
         auth_indicators = ['400', '401', '403', 'invalid', 'unauthorized', 'permission', 'api_key']
         return any(ind in error_str for ind in auth_indicators)
     
-    def _log_request(self, operation, key_index, is_retry, success, error_type=None):
+    def _log_request(self, operation, key_index, is_retry, success, error_type=None, duration_minutes=None):
         """Log API request for monitoring."""
+        current_hour = datetime.utcnow().hour
+        
         with self._lock:
             self.daily_stats['total_requests'] += 1
             self.daily_stats['requests_by_operation'][operation] += 1
             self.daily_stats['requests_by_key'][key_index + 1] += 1
+            self.hourly_stats[current_hour]['total'] += 1
+            self.hourly_stats[current_hour][operation] += 1
             
             if success:
                 self.daily_stats['successful_requests'] += 1
+                self.hourly_stats[current_hour]['success'] += 1
             elif error_type:
                 if 'quota' in error_type:
                     self.daily_stats['quota_errors'] += 1
+                    self.hourly_stats[current_hour]['quota_errors'] += 1
                 else:
                     self.daily_stats['other_errors'] += 1
+                    self.hourly_stats[current_hour]['other_errors'] += 1
         
         retry_str = " (retry)" if is_retry else ""
         status = "SUCCESS" if success else f"FAILED ({error_type})"
-        logging.info(f"[GeminiManager] [{operation}] Key {key_index + 1}{retry_str} - {status}")
+        duration_str = f" [{duration_minutes:.1f} min]" if duration_minutes else ""
+        logging.info(f"[GeminiManager] [{operation}] Key {key_index + 1}{retry_str}{duration_str} - {status}")
+        
+        try:
+            self._log_usage_to_db(key_index, operation, is_retry, success, error_type, duration_minutes)
+        except:
+            pass
+    
+    def get_hourly_stats(self):
+        """Get hourly statistics for the last 24 hours."""
+        with self._lock:
+            return dict(self.hourly_stats)
     
     def get_stats(self):
         """Get current API usage statistics."""
@@ -658,7 +957,7 @@ class GeminiAPIManager:
     
     def check_audio_duration_limit(self, audio_path):
         """
-        Check if audio duration is within allowed limits.
+        Check if audio/video duration is within allowed limits (2 hours max).
         
         Returns:
             tuple: (allowed: bool, duration_minutes: float, error_message: str or None)
@@ -668,9 +967,11 @@ class GeminiAPIManager:
             duration_minutes = len(audio) / 60000
             
             if duration_minutes > self.MAX_AUDIO_DURATION_MINUTES:
+                hours = duration_minutes / 60
+                max_hours = self.MAX_AUDIO_DURATION_MINUTES / 60
                 return False, duration_minutes, (
-                    f"مدة الملف ({duration_minutes:.1f} دقيقة) أكبر من الحد المسموح ({self.MAX_AUDIO_DURATION_MINUTES} دقيقة). "
-                    f"يُنصح بتقسيم الملف إلى أجزاء أقصر."
+                    f"مدة الملف ({hours:.1f} ساعة / {duration_minutes:.0f} دقيقة) أكبر من الحد الأقصى المسموح "
+                    f"({max_hours:.0f} ساعة). يُنصح بتقسيم الملف إلى أجزاء أقصر."
                 )
             
             return True, duration_minutes, None
@@ -3850,6 +4151,148 @@ def get_audio():
     except Exception as e:
         logging.error(f"Audio extraction error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
+# ADMIN DASHBOARD ROUTES
+# =============================================================================
+# Protected admin dashboard for Gemini API key management
+# Access only via: /admin/keys (requires admin login)
+# =============================================================================
+
+ADMIN_DASHBOARD_PATH = '/admin/keys'
+
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Admin login page."""
+    if current_user.is_authenticated:
+        return redirect(url_for('admin_dashboard'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        user = AdminUser.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            login_user(user)
+            logging.info(f"[Admin] User '{username}' logged in successfully")
+            return redirect(url_for('admin_dashboard'))
+        
+        flash('اسم المستخدم أو كلمة المرور غير صحيحة', 'error')
+    
+    return render_template('admin_login.html')
+
+
+@app.route('/admin/logout')
+@login_required
+def admin_logout():
+    """Admin logout."""
+    logout_user()
+    return redirect(url_for('admin_login'))
+
+
+@app.route(ADMIN_DASHBOARD_PATH)
+@login_required
+def admin_dashboard():
+    """Admin dashboard for Gemini API key management."""
+    if not current_user.is_admin:
+        flash('ليس لديك صلاحية الوصول إلى لوحة التحكم', 'error')
+        return redirect(url_for('admin_login'))
+    
+    gemini_manager.init_db_state()
+    
+    stats = gemini_manager.get_dashboard_stats()
+    keys_info = gemini_manager.get_all_keys_info()
+    hourly_stats = gemini_manager.get_hourly_stats()
+    
+    today = date.today()
+    daily_db_stats = DailyStats.query.filter_by(date=today).first()
+    
+    hourly_data = []
+    for hour in range(24):
+        hour_stats = hourly_stats.get(hour, {})
+        hourly_data.append({
+            'hour': hour,
+            'total': hour_stats.get('total', 0),
+            'success': hour_stats.get('success', 0),
+            'quota_errors': hour_stats.get('quota_errors', 0)
+        })
+    
+    show_warning = stats['quota_errors_today'] > 10
+    
+    return render_template('admin_dashboard.html',
+                           stats=stats,
+                           keys_info=keys_info,
+                           hourly_data=hourly_data,
+                           daily_stats=daily_db_stats,
+                           show_warning=show_warning)
+
+
+@app.route('/admin/api/toggle-key', methods=['POST'])
+@login_required
+def admin_toggle_key():
+    """API endpoint to toggle key enabled/disabled state."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    key_index = data.get('key_index')
+    disabled = data.get('disabled', True)
+    reason = data.get('reason', 'تعطيل يدوي من لوحة التحكم')
+    
+    if key_index is None or key_index < 0 or key_index >= len(gemini_manager.keys):
+        return jsonify({'error': 'Invalid key index'}), 400
+    
+    gemini_manager.set_key_disabled(key_index, disabled, reason)
+    
+    return jsonify({
+        'success': True,
+        'key_index': key_index,
+        'disabled': disabled,
+        'status': gemini_manager.get_key_status(key_index)
+    })
+
+
+@app.route('/admin/api/stats')
+@login_required
+def admin_api_stats():
+    """API endpoint to get current stats (for dashboard refresh)."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    return jsonify({
+        'stats': gemini_manager.get_dashboard_stats(),
+        'keys_info': gemini_manager.get_all_keys_info(),
+        'hourly_stats': gemini_manager.get_hourly_stats()
+    })
+
+
+def init_admin_user():
+    """Initialize default admin user if none exists."""
+    try:
+        admin = AdminUser.query.filter_by(is_admin=True).first()
+        if not admin:
+            admin = AdminUser(username='admin', is_admin=True)
+            admin.set_password('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            logging.info("[Admin] Default admin user created (username: admin, password: admin123)")
+            logging.info("[Admin] IMPORTANT: Please change the default password immediately!")
+    except Exception as e:
+        logging.warning(f"[Admin] Could not initialize admin user: {e}")
+
+
+with app.app_context():
+    db.create_all()
+    init_admin_user()
+    gemini_manager.init_db_state()
+    logging.info("=" * 60)
+    logging.info(f"Admin dashboard for Gemini keys is available at: {ADMIN_DASHBOARD_PATH} (requires admin login)")
+    logging.info("Default admin credentials: username=admin, password=admin123")
+    logging.info("=" * 60)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Keys Dashboard - ARKAN AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(51, 65, 85, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+        }
+        .status-active { background: #22c55e; }
+        .status-cooldown { background: #f59e0b; }
+        .status-disabled { background: #ef4444; }
+        .btn-toggle {
+            transition: all 0.3s ease;
+        }
+        .btn-toggle:hover {
+            transform: scale(1.05);
+        }
+        .warning-banner {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+        }
+        .gold-text { color: #d4a853; }
+        .gold-border { border-color: #d4a853; }
+        .gold-bg { background: linear-gradient(135deg, #d4a853 0%, #c4943f 100%); }
+        table th { 
+            position: sticky; 
+            top: 0; 
+            background: rgba(30, 41, 59, 0.95);
+            z-index: 10;
+        }
+        .filter-btn {
+            transition: all 0.2s ease;
+        }
+        .filter-btn.active {
+            background: #d4a853;
+            color: #0f172a;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="flex flex-wrap justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white">لوحة تحكم مفاتيح Gemini</h1>
+                <p class="text-gray-400 mt-1">مراقبة وإدارة مفاتيح API</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="refreshStats()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    تحديث
+                </button>
+                <a href="{{ url_for('admin_logout') }}" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+                    تسجيل الخروج
+                </a>
+            </div>
+        </header>
+
+        {% if show_warning %}
+        <div class="warning-banner rounded-xl p-4 mb-6 flex items-center gap-3">
+            <svg class="w-6 h-6 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span class="text-red-400 font-medium">تحذير: عدد كبير من أخطاء quota اليوم ({{ stats.quota_errors_today }}). قد تحتاج إلى زيادة عدد المفاتيح أو ضبط الحدود.</span>
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="stat-card p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">إجمالي المفاتيح</p>
+                        <p class="text-3xl font-bold text-white mt-1" id="stat-total">{{ stats.total_keys }}</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full gold-bg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">المفاتيح النشطة</p>
+                        <p class="text-3xl font-bold text-green-400 mt-1" id="stat-active">{{ stats.active_keys }}</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">في حالة Cooldown</p>
+                        <p class="text-3xl font-bold text-amber-400 mt-1" id="stat-cooldown">{{ stats.cooldown_keys }}</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">معطلة يدوياً</p>
+                        <p class="text-3xl font-bold text-red-400 mt-1" id="stat-disabled">{{ stats.disabled_keys }}</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+            <div class="stat-card p-6">
+                <p class="text-gray-400 text-sm">طلبات اليوم</p>
+                <p class="text-2xl font-bold text-white mt-1" id="stat-requests">{{ stats.total_requests_today }}</p>
+                <div class="mt-2 flex items-center gap-2">
+                    <span class="text-green-400 text-sm">{{ stats.successful_requests_today }} ناجح</span>
+                    <span class="text-gray-500">|</span>
+                    <span class="text-red-400 text-sm">{{ stats.quota_errors_today }} خطأ quota</span>
+                </div>
+            </div>
+
+            <div class="stat-card p-6 lg:col-span-2">
+                <p class="text-gray-400 text-sm mb-4">الطلبات حسب النوع</p>
+                <div class="grid grid-cols-4 gap-4 text-center">
+                    <div>
+                        <p class="text-xl font-bold text-blue-400">{{ daily_stats.text_requests if daily_stats else 0 }}</p>
+                        <p class="text-gray-500 text-xs">نص</p>
+                    </div>
+                    <div>
+                        <p class="text-xl font-bold text-purple-400">{{ daily_stats.vision_requests if daily_stats else 0 }}</p>
+                        <p class="text-gray-500 text-xs">رؤية</p>
+                    </div>
+                    <div>
+                        <p class="text-xl font-bold text-cyan-400">{{ daily_stats.audio_requests if daily_stats else 0 }}</p>
+                        <p class="text-gray-500 text-xs">صوت</p>
+                    </div>
+                    <div>
+                        <p class="text-xl font-bold text-pink-400">{{ daily_stats.video_requests if daily_stats else 0 }}</p>
+                        <p class="text-gray-500 text-xs">فيديو</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-6 mb-8">
+            <h2 class="text-xl font-bold text-white mb-4">الطلبات لكل ساعة (آخر 24 ساعة)</h2>
+            <div class="h-64">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="glass-card p-6">
+            <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                <h2 class="text-xl font-bold text-white">قائمة المفاتيح</h2>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterKeys('all')" class="filter-btn active px-3 py-1 rounded-lg bg-slate-700 text-white text-sm" data-filter="all">الكل</button>
+                    <button onclick="filterKeys('active')" class="filter-btn px-3 py-1 rounded-lg bg-slate-700 text-white text-sm" data-filter="active">نشط</button>
+                    <button onclick="filterKeys('cooldown')" class="filter-btn px-3 py-1 rounded-lg bg-slate-700 text-white text-sm" data-filter="cooldown">Cooldown</button>
+                    <button onclick="filterKeys('disabled')" class="filter-btn px-3 py-1 rounded-lg bg-slate-700 text-white text-sm" data-filter="disabled">معطل</button>
+                </div>
+                <div class="flex gap-2">
+                    <select id="sortBy" onchange="sortKeys()" class="px-3 py-1 rounded-lg bg-slate-700 text-white text-sm border-0">
+                        <option value="index">ترتيب حسب: الرقم</option>
+                        <option value="usage">الأكثر استخداماً</option>
+                        <option value="cooldown">الأكثر cooldown</option>
+                        <option value="last_used">آخر استخدام</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-gray-400 text-sm border-b border-slate-700">
+                            <th class="text-right py-3 px-4">المفتاح</th>
+                            <th class="text-right py-3 px-4">الحالة</th>
+                            <th class="text-right py-3 px-4">الاستخدام</th>
+                            <th class="text-right py-3 px-4">مرات Cooldown</th>
+                            <th class="text-right py-3 px-4">آخر استخدام</th>
+                            <th class="text-right py-3 px-4">الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keysTableBody">
+                        {% for key in keys_info %}
+                        <tr class="key-row border-b border-slate-700/50 hover:bg-slate-800/50" data-status="{{ key.status }}" data-usage="{{ key.usage_count }}" data-cooldown-count="{{ key.cooldown_count }}" data-index="{{ key.index }}">
+                            <td class="py-3 px-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-white font-medium">{{ key.display_name }}</span>
+                                    <span class="text-gray-500 text-xs">({{ key.name }})</span>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full status-{{ key.status }}"></span>
+                                    <span class="{% if key.status == 'active' %}text-green-400{% elif key.status == 'cooldown' %}text-amber-400{% else %}text-red-400{% endif %}">
+                                        {% if key.status == 'active' %}نشط{% elif key.status == 'cooldown' %}Cooldown ({{ key.cooldown_remaining_minutes }} د){% else %}معطل{% endif %}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4 text-white">{{ key.usage_count }}</td>
+                            <td class="py-3 px-4 text-white">{{ key.cooldown_count }}</td>
+                            <td class="py-3 px-4 text-gray-400">
+                                {% if key.last_used %}
+                                    {{ key.last_used | int }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4">
+                                {% if key.status == 'disabled' %}
+                                <button onclick="toggleKey({{ key.index }}, false)" class="btn-toggle px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">
+                                    تفعيل
+                                </button>
+                                {% else %}
+                                <button onclick="toggleKey({{ key.index }}, true)" class="btn-toggle px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm">
+                                    تعطيل
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer class="mt-8 text-center text-gray-500 text-sm">
+            <p>ARKAN AI - Gemini Keys Management Dashboard</p>
+        </footer>
+    </div>
+
+    <script>
+        const hourlyData = {{ hourly_data | tojson }};
+        
+        const ctx = document.getElementById('hourlyChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: hourlyData.map(h => h.hour + ':00'),
+                datasets: [
+                    {
+                        label: 'ناجح',
+                        data: hourlyData.map(h => h.success),
+                        backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'أخطاء Quota',
+                        data: hourlyData.map(h => h.quota_errors),
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: '#9ca3af' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    y: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
+                }
+            }
+        });
+
+        function toggleKey(keyIndex, disabled) {
+            fetch('/admin/api/toggle-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key_index: keyIndex, disabled: disabled })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + data.error);
+                }
+            })
+            .catch(err => alert('خطأ في الاتصال'));
+        }
+
+        function filterKeys(status) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === status) btn.classList.add('active');
+            });
+
+            document.querySelectorAll('.key-row').forEach(row => {
+                if (status === 'all' || row.dataset.status === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function sortKeys() {
+            const sortBy = document.getElementById('sortBy').value;
+            const tbody = document.getElementById('keysTableBody');
+            const rows = Array.from(tbody.querySelectorAll('.key-row'));
+
+            rows.sort((a, b) => {
+                if (sortBy === 'index') {
+                    return parseInt(a.dataset.index) - parseInt(b.dataset.index);
+                } else if (sortBy === 'usage') {
+                    return parseInt(b.dataset.usage) - parseInt(a.dataset.usage);
+                } else if (sortBy === 'cooldown') {
+                    return parseInt(b.dataset.cooldownCount) - parseInt(a.dataset.cooldownCount);
+                }
+                return 0;
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function refreshStats() {
+            fetch('/admin/api/stats')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('stat-total').textContent = data.stats.total_keys;
+                document.getElementById('stat-active').textContent = data.stats.active_keys;
+                document.getElementById('stat-cooldown').textContent = data.stats.cooldown_keys;
+                document.getElementById('stat-disabled').textContent = data.stats.disabled_keys;
+                document.getElementById('stat-requests').textContent = data.stats.total_requests_today;
+            })
+            .catch(err => console.error('Refresh failed:', err));
+        }
+
+        setInterval(refreshStats, 30000);
+    </script>
+</body>
+</html>
