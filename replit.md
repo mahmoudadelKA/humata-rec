@@ -82,11 +82,14 @@ The platform is built on a Python Flask backend with a responsive frontend using
 
 **Optional (for additional features):**
 - `GEMINI_KEY_2` through `GEMINI_KEY_50` - Additional API keys for load balancing
+- `GEMINI_TEXT_MODEL` - Gemini model for text/audio operations (default: gemini-2.0-flash)
+- `GEMINI_VISION_MODEL` - Gemini model for vision/image operations (default: gemini-2.0-flash)
 - `SUPABASE_URL` - Supabase project URL for authentication
 - `SUPABASE_ANON_KEY` - Supabase anonymous key for authentication
 - `COOKIE_CONTENT` - YouTube cookies for downloading age-restricted content
 
 **Notes:**
 - The app supports up to 50 Gemini API keys for load balancing
+- Uses gemini-2.0-flash by default for better quota management (can be changed via environment variables)
 - Without Supabase credentials, app runs in development mode (authentication disabled)
 - Get Gemini API keys from: https://aistudio.google.com/app/apikey

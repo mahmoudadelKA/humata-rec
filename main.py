@@ -359,8 +359,8 @@ class GeminiAPIManager:
     MAX_AUDIO_DURATION_MINUTES = 120
     MAX_LONG_VIDEO_PER_SESSION = 3
     LONG_VIDEO_THRESHOLD_MINUTES = 60
-    MODEL_LIGHT = 'gemini-2.0-flash'
-    MODEL_HEAVY = 'gemini-2.0-flash'
+    MODEL_LIGHT = os.environ.get('GEMINI_TEXT_MODEL', 'gemini-2.0-flash')
+    MODEL_HEAVY = os.environ.get('GEMINI_VISION_MODEL', 'gemini-2.0-flash')
     
     def __init__(self):
         self.keys = self._load_keys()
@@ -4431,20 +4431,29 @@ def init_admin_user():
 
 
 with app.app_context():
-    from sqlalchemy import inspect
-    inspector = inspect(db.engine)
-    existing_tables = inspector.get_table_names()
-    if not existing_tables:
-        db.create_all()
-        logging.info("[DB] Database tables created successfully")
-    else:
-        logging.info(f"[DB] Database already initialized with {len(existing_tables)} tables")
-    init_admin_user()
-    gemini_manager.init_db_state()
-    logging.info("=" * 60)
-    logging.info(f"Admin dashboard for Gemini keys is available at: {ADMIN_DASHBOARD_PATH} (requires admin login)")
-    logging.info("Default admin credentials: username=admin, password=admin123")
-    logging.info("=" * 60)
+    try:
+        from sqlalchemy import inspect, text
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+        if not existing_tables:
+            try:
+                db.create_all()
+                logging.info("[DB] Database tables created successfully")
+            except Exception as create_error:
+                if "already exists" in str(create_error).lower() or "unique" in str(create_error).lower():
+                    logging.info("[DB] Tables already exist (created by another worker)")
+                else:
+                    raise create_error
+        else:
+            logging.info(f"[DB] Database already initialized with {len(existing_tables)} tables")
+        init_admin_user()
+        gemini_manager.init_db_state()
+        logging.info("=" * 60)
+        logging.info(f"Admin dashboard for Gemini keys is available at: {ADMIN_DASHBOARD_PATH} (requires admin login)")
+        logging.info("Default admin credentials: username=admin, password=admin123")
+        logging.info("=" * 60)
+    except Exception as e:
+        logging.warning(f"[DB] Initialization handled by another worker or already complete: {e}")
 
 
 if __name__ == '__main__':
