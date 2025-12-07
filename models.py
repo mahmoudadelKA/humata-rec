@@ -29,41 +29,43 @@ class AdminUser(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
 
-class GeminiKeyState(db.Model):
-    __tablename__ = 'gemini_key_states'
+class AIProviderState(db.Model):
+    """Track state of AI providers (Groq, HuggingFace)"""
+    __tablename__ = 'ai_provider_states'
     
     id = db.Column(db.Integer, primary_key=True)
-    key_index = db.Column(db.Integer, unique=True, nullable=False)
-    key_name = db.Column(db.String(50), nullable=False)
-    is_manually_disabled = db.Column(db.Boolean, default=False)
-    disabled_at = db.Column(db.DateTime)
-    disabled_reason = db.Column(db.String(200))
+    provider_name = db.Column(db.String(50), unique=True, nullable=False)
+    is_enabled = db.Column(db.Boolean, default=True)
+    is_healthy = db.Column(db.Boolean, default=True)
+    last_health_check = db.Column(db.DateTime)
     total_requests = db.Column(db.Integer, default=0)
     successful_requests = db.Column(db.Integer, default=0)
     failed_requests = db.Column(db.Integer, default=0)
-    cooldown_count = db.Column(db.Integer, default=0)
-    last_used_at = db.Column(db.DateTime)
-    last_cooldown_at = db.Column(db.DateTime)
+    last_error = db.Column(db.String(500))
+    last_error_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-class GeminiUsageLog(db.Model):
-    __tablename__ = 'gemini_usage_logs'
+class AIUsageLog(db.Model):
+    """Log AI API requests for analytics"""
+    __tablename__ = 'ai_usage_logs'
     
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-    key_index = db.Column(db.Integer, nullable=False)
+    provider = db.Column(db.String(50), nullable=False)
     operation_type = db.Column(db.String(50), nullable=False)
-    is_retry = db.Column(db.Boolean, default=False)
     success = db.Column(db.Boolean, nullable=False)
-    error_type = db.Column(db.String(50))
-    content_duration_minutes = db.Column(db.Float)
+    error_type = db.Column(db.String(100))
+    error_message = db.Column(db.String(500))
+    duration_seconds = db.Column(db.Float)
     session_id = db.Column(db.String(100))
+    cached = db.Column(db.Boolean, default=False)
     hour_bucket = db.Column(db.Integer)
 
 
 class DailyStats(db.Model):
+    """Daily aggregated statistics"""
     __tablename__ = 'daily_stats'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -71,16 +73,32 @@ class DailyStats(db.Model):
     total_requests = db.Column(db.Integer, default=0)
     successful_requests = db.Column(db.Integer, default=0)
     failed_requests = db.Column(db.Integer, default=0)
-    quota_errors = db.Column(db.Integer, default=0)
-    text_requests = db.Column(db.Integer, default=0)
+    cached_requests = db.Column(db.Integer, default=0)
+    llm_requests = db.Column(db.Integer, default=0)
+    whisper_requests = db.Column(db.Integer, default=0)
     vision_requests = db.Column(db.Integer, default=0)
-    audio_requests = db.Column(db.Integer, default=0)
-    video_requests = db.Column(db.Integer, default=0)
+    groq_requests = db.Column(db.Integer, default=0)
+    huggingface_requests = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class RequestCache(db.Model):
+    """Persistent cache for AI requests"""
+    __tablename__ = 'request_cache'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    cache_key = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    operation_type = db.Column(db.String(50), nullable=False)
+    result = db.Column(db.Text, nullable=False)
+    file_hash = db.Column(db.String(64))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_accessed = db.Column(db.DateTime, default=datetime.utcnow)
+    access_count = db.Column(db.Integer, default=1)
+
+
 class ActiveSession(db.Model):
+    """Track active user sessions"""
     __tablename__ = 'active_sessions'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -95,4 +113,21 @@ class ActiveSession(db.Model):
     first_seen = db.Column(db.DateTime, default=datetime.utcnow)
     last_seen = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     page_views = db.Column(db.Integer, default=1)
+    ai_requests = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True)
+
+
+class SessionRateLimit(db.Model):
+    """Track rate limits per session"""
+    __tablename__ = 'session_rate_limits'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    request_count = db.Column(db.Integer, default=0)
+    audio_count = db.Column(db.Integer, default=0)
+    long_audio_count = db.Column(db.Integer, default=0)
+    window_start = db.Column(db.DateTime, default=datetime.utcnow)
+    last_request = db.Column(db.DateTime, default=datetime.utcnow)
+    is_blocked = db.Column(db.Boolean, default=False)
+    blocked_until = db.Column(db.DateTime)
+    block_reason = db.Column(db.String(200))
