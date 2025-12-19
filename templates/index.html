@@ -2673,24 +2673,6 @@
                 </div>
             </div>
             
-            <!-- Smart Audio Cutter Tool -->
-            <div class="tool-card" data-color="violet" onclick="openToolFromHub('audiocutter')">
-                <div class="tool-card-icon bg-gradient-to-br from-violet-500 to-indigo-600">
-                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M16 24C14 24 12 22 12 20C12 18 14 16 16 16C18 16 20 18 20 20C20 22 18 24 16 24Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                        <path d="M48 24C46 24 44 22 44 20C44 18 46 16 48 16C50 16 52 18 52 20C52 22 50 24 48 24Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                        <path d="M20 20H44" stroke="#FFD700" stroke-width="2.5"/>
-                        <path d="M16 32L48 28" stroke="#FFD700" stroke-width="2.5"/>
-                        <path d="M20 44H44" stroke="#FFD700" stroke-width="2.5"/>
-                        <path d="M16 44C14 44 12 42 12 40C12 38 14 36 16 36C18 36 20 38 20 40C20 42 18 44 16 44Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                        <path d="M48 44C46 44 44 42 44 40C44 38 46 36 48 36C50 36 52 38 52 40C52 42 50 44 48 44Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
-                    </svg>
-                </div>
-                <div class="tool-card-content">
-                    <h3 class="tool-card-title">قص الصوت الذكي</h3>
-                    <p class="tool-card-desc">رفع صوت أو تحويل فيديو وقص المقاطع</p>
-                </div>
-            </div>
         </div>
         
         <!-- Back to Welcome Button -->
@@ -2910,6 +2892,17 @@
                             <div>
                                 <label class="block text-slate-300 font-medium mb-2">
                                     <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><rect x="8" y="16" width="36" height="32" rx="4" stroke="#818cf8" stroke-width="2.5" fill="none"/><path d="M44 28L56 20V44L44 36" stroke="#818cf8" stroke-width="2.5" fill="none"/></svg></span>
+                                    نوع التحميل:
+                                </label>
+                                <select id="download-type" class="w-full rounded-xl p-4">
+                                    <option value="video" selected>فيديو (MP4)</option>
+                                    <option value="audio">صوت فقط (MP3)</option>
+                                    <option value="both">فيديو + صوت</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 font-medium mb-2">
+                                    <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><rect x="8" y="16" width="36" height="32" rx="4" stroke="#818cf8" stroke-width="2.5" fill="none"/><path d="M44 28L56 20V44L44 36" stroke="#818cf8" stroke-width="2.5" fill="none"/></svg></span>
                                     جودة الفيديو:
                                 </label>
                                 <select id="video-quality" class="w-full rounded-xl p-4">
@@ -2917,16 +2910,6 @@
                                     <option value="720p" selected>720p - جودة متوسطة</option>
                                     <option value="480p">480p - جودة منخفضة</option>
                                     <option value="360p">360p - توفير البيانات</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-slate-300 font-medium mb-2">
-                                    <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><path d="M32 8V40M32 40L20 28M32 40L44 28" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 48H52" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"/></svg></span>
-                                    نوع التحميل:
-                                </label>
-                                <select id="download-type" class="w-full rounded-xl p-4">
-                                    <option value="video" selected>فيديو (MP4)</option>
-                                    <option value="audio">صوت فقط (MP3)</option>
                                 </select>
                             </div>
                         </div>
@@ -4563,205 +4546,6 @@
                 </div>
             </div>
 
-            <!-- Smart Audio Cutter Tool -->
-            <div id="tool-audiocutter" class="tool-content hidden">
-                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
-                    <div class="text-center mb-8">
-                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100 flex items-center justify-center gap-3">
-                            <span class="icon-pharaonic icon-title">
-                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="20" cy="32" r="6" stroke="#a78bfa" stroke-width="2.5" fill="none"/>
-                                    <circle cx="44" cy="32" r="6" stroke="#a78bfa" stroke-width="2.5" fill="none"/>
-                                    <path d="M26 32H38" stroke="#a78bfa" stroke-width="2.5"/>
-                                    <path d="M20 12V52M44 12V52" stroke="#a78bfa" stroke-width="2"/>
-                                </svg>
-                            </span>
-                            <span>قص الصوت الذكي</span>
-                        </h2>
-                        <p class="text-slate-400">رفع ملف صوتي أو فيديو وقص المقاطع الصوتية بسهولة ثم تحميلها</p>
-                    </div>
-
-                    <div class="mb-6 flex gap-4">
-                        <button onclick="setAudioCutterMode('upload')" id="audio-cutter-upload-tab"
-                            class="flex-1 py-3 rounded-lg transition-all font-bold"
-                            style="background: linear-gradient(135deg, #a78bfa, #7c3aed); color: white;">
-                            رفع ملف صوتي
-                        </button>
-                        <button onclick="setAudioCutterMode('url')" id="audio-cutter-url-tab"
-                            class="flex-1 py-3 rounded-lg transition-all font-bold"
-                            style="background: rgba(30, 41, 59, 0.5); color: #94a3b8;">
-                            رابط فيديو
-                        </button>
-                    </div>
-
-                    <div id="audio-cutter-upload-mode">
-                        <div class="file-upload rounded-xl p-6 text-center cursor-pointer mb-4"
-                            onclick="document.getElementById('audio-cutter-file').click()">
-                            <input type="file" id="audio-cutter-file" accept=".mp3,.wav,.m4a,.ogg,.flac,.aac" class="hidden"
-                                onchange="handleAudioCutterFileUpload(event)">
-                            <p class="text-slate-300 font-medium">ارفع ملف صوتي</p>
-                            <p class="text-slate-500 text-sm mt-1">MP3, WAV, M4A, FLAC (حتى 500MB)</p>
-                        </div>
-                    </div>
-
-                    <div id="audio-cutter-url-mode" class="hidden space-y-6">
-                        <div>
-                            <label class="block text-slate-300 font-medium mb-2">رابط الفيديو:</label>
-                            <input type="text" id="audio-cutter-url" placeholder="https://www.youtube.com/watch?v=..."
-                                class="w-full rounded-xl p-4 bg-slate-800 text-white border border-violet-500/20 focus:border-violet-500 focus:outline-none"
-                                onchange="loadAudioCutterVideoInfo()" />
-                        </div>
-
-                        <!-- Video Info Card -->
-                        <div id="audio-cutter-video-info" class="hidden p-4 rounded-xl bg-gradient-to-r from-violet-900/30 to-indigo-900/30 border border-violet-500/30">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                <!-- Thumbnail -->
-                                <div id="audio-cutter-thumbnail-container" class="md:col-span-1">
-                                    <img id="audio-cutter-thumbnail" src="" alt="Video thumbnail" 
-                                        class="w-full rounded-lg object-cover border border-violet-500/30" />
-                                </div>
-                                
-                                <!-- Video Info -->
-                                <div class="md:col-span-2">
-                                    <p class="text-slate-300 mb-2">
-                                        <span class="font-medium text-violet-300">📹 العنوان:</span>
-                                        <span id="audio-cutter-video-title" class="text-slate-200"></span>
-                                    </p>
-                                    <p class="text-slate-300 mb-2">
-                                        <span class="font-medium text-violet-300">⏱️ المدة:</span>
-                                        <span id="audio-cutter-video-duration" class="text-slate-200 font-bold text-lg"></span>
-                                    </p>
-                                    <p class="text-slate-400 text-sm mt-3">
-                                        📝 حدد وقت البداية ومدة المقطع الذي تريد استخراجه
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Time Selection -->
-                            <div class="bg-slate-800/50 rounded-lg p-4 border border-violet-500/20">
-                                <h3 class="text-slate-200 font-bold mb-4">⏬ حدد المقطع المراد استخراجه</h3>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label class="block text-slate-300 font-medium mb-2 text-sm">🎬 وقت البداية (ثانية)</label>
-                                        <input type="number" id="audio-cutter-url-start" min="0" value="0" step="1" 
-                                            class="w-full rounded-lg p-3 bg-slate-700 text-white border border-violet-500/20 focus:border-violet-500 focus:outline-none" />
-                                        <p class="text-slate-500 text-xs mt-1">الثانية التي تبدأ منها</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-slate-300 font-medium mb-2 text-sm">📊 مدة المقطع (ثانية)</label>
-                                        <input type="number" id="audio-cutter-url-duration" min="1" value="30" step="1" 
-                                            class="w-full rounded-lg p-3 bg-slate-700 text-white border border-violet-500/20 focus:border-violet-500 focus:outline-none" />
-                                        <p class="text-slate-500 text-xs mt-1">كم ثانية تريد من الفيديو</p>
-                                    </div>
-                                </div>
-
-                                <!-- Duration Info -->
-                                <div class="bg-slate-900/50 rounded-lg p-3 flex justify-between items-center">
-                                    <span class="text-slate-300">المقطع من:</span>
-                                    <span class="text-violet-400 font-bold">
-                                        <span id="audio-cutter-url-start-display">0</span> إلى 
-                                        <span id="audio-cutter-url-end-display">30</span> ثانية
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Loading message -->
-                            <div id="audio-cutter-url-loading" class="hidden mt-4 text-center">
-                                <div class="loader mx-auto mb-2" style="border-top-color: #a78bfa; width: 24px; height: 24px;"></div>
-                                <p class="text-slate-400 text-sm">جاري جلب معلومات الفيديو...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="audio-cutter-info" class="hidden">
-                        <p class="text-slate-300 mb-4">الملف: <span id="audio-cutter-filename" class="font-bold text-violet-400"></span></p>
-                        
-                        <!-- Audio Player -->
-                        <div class="mb-6 p-4 rounded-xl bg-slate-800/50 border border-violet-500/30">
-                            <audio id="audio-cutter-player" class="w-full mb-3" controls>
-                                <p>متصفحك لا يدعم المشغل الصوتي</p>
-                            </audio>
-                            <div class="text-center text-slate-300 text-sm">
-                                المدة الكلية: <span id="audio-cutter-duration" class="font-bold text-violet-400">0:00</span>
-                            </div>
-                        </div>
-
-                        <!-- Time Selection with Visual Feedback -->
-                        <div class="mb-6 p-4 rounded-xl bg-gradient-to-r from-violet-900/30 to-indigo-900/30 border border-violet-500/30">
-                            <h3 class="text-slate-200 font-bold mb-4">اختر المقطع المراد قصه</h3>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label class="block text-slate-300 font-medium mb-2 text-sm">🎬 من (البداية)</label>
-                                    <div class="flex gap-2">
-                                        <input type="number" id="audio-cutter-start" min="0" value="0" step="0.1" placeholder="0" 
-                                            class="flex-1 rounded-lg p-3 bg-slate-800 text-white border border-violet-500/20 focus:border-violet-500 focus:outline-none" />
-                                        <span class="bg-slate-800 text-slate-300 px-3 py-3 rounded-lg whitespace-nowrap">ثانية</span>
-                                    </div>
-                                    <p class="text-slate-500 text-xs mt-1">الوقت الذي تبدأ منه القطع</p>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-slate-300 font-medium mb-2 text-sm">📍 إلى (النهاية)</label>
-                                    <div class="flex gap-2">
-                                        <input type="number" id="audio-cutter-end" min="0" step="0.1" placeholder="المدة" 
-                                            class="flex-1 rounded-lg p-3 bg-slate-800 text-white border border-violet-500/20 focus:border-violet-500 focus:outline-none" />
-                                        <span class="bg-slate-800 text-slate-300 px-3 py-3 rounded-lg whitespace-nowrap">ثانية</span>
-                                    </div>
-                                    <p class="text-slate-500 text-xs mt-1">الوقت الذي تنتهي فيه القطع</p>
-                                </div>
-                            </div>
-
-                            <!-- Cut Duration Display -->
-                            <div class="bg-slate-900/50 rounded-lg p-3 flex justify-between items-center">
-                                <span class="text-slate-300">مدة المقطع:</span>
-                                <span id="audio-cutter-cut-duration" class="text-violet-400 font-bold text-lg">0:00</span>
-                            </div>
-                        </div>
-
-                        <!-- Quick Time Buttons -->
-                        <div class="mb-6 p-4 rounded-xl bg-slate-800/50 border border-violet-500/20">
-                            <p class="text-slate-300 font-medium mb-3 text-sm">⚡ اختيارات سريعة:</p>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="setAudioCutterQuickTime('first30')" class="py-2 px-3 rounded-lg bg-violet-900/50 hover:bg-violet-800/50 text-violet-300 text-sm transition-all">
-                                    أول 30 ثانية
-                                </button>
-                                <button onclick="setAudioCutterQuickTime('last30')" class="py-2 px-3 rounded-lg bg-violet-900/50 hover:bg-violet-800/50 text-violet-300 text-sm transition-all">
-                                    آخر 30 ثانية
-                                </button>
-                                <button onclick="setAudioCutterQuickTime('middle')" class="py-2 px-3 rounded-lg bg-violet-900/50 hover:bg-violet-800/50 text-violet-300 text-sm transition-all">
-                                    الوسط (30 ثانية)
-                                </button>
-                                <button onclick="setAudioCutterQuickTime('all')" class="py-2 px-3 rounded-lg bg-violet-900/50 hover:bg-violet-800/50 text-violet-300 text-sm transition-all">
-                                    الملف كاملاً
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="audio-cutter-progress" class="hidden mb-4">
-                        <div class="w-full bg-slate-700 rounded-full h-2">
-                            <div id="audio-cutter-progress-bar" class="bg-gradient-to-r from-violet-500 to-indigo-500 h-2 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p id="audio-cutter-progress-text" class="text-center text-slate-400 text-sm mt-2">جاري المعالجة...</p>
-                    </div>
-
-                    <button onclick="processAudioCutter()" id="audio-cutter-btn"
-                        class="w-full bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white py-4 rounded-xl font-bold text-lg transition-all">
-                        قص الملف
-                    </button>
-
-                    <div id="audio-cutter-error" class="hidden mt-6 p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-400">
-                        <span id="audio-cutter-error-text"></span>
-                    </div>
-
-                    <div id="audio-cutter-success" class="hidden mt-6 p-4 rounded-xl bg-green-900/30 border border-green-500/30 text-green-400">
-                        تم قص الملف بنجاح وجارٍ التحميل...
-                    </div>
-                </div>
-            </div>
 
         </main>
     </div>

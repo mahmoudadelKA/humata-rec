@@ -4,13 +4,15 @@
 The Multi-Tool Arabic Platform is a comprehensive web application offering ten powerful tools. Its primary purpose is to provide a suite of utilities for media processing, AI-driven content analysis, and document manipulation, all within a modern, Arabic RTL, glassmorphism-designed interface. The platform aims to serve users with efficient and intelligent tools for tasks like speech-to-text conversion, video cutting, anime and podcast detection, universal media downloading, PDF to Word conversion, video transcription, and AI-powered document formatting. It leverages advanced AI models and various APIs to deliver robust functionality, catering to both general users and those requiring specialized Arabic language support.
 
 ## Recent Changes (December 19, 2025)
-- **Smart Audio Cutter Tool (NEW):**
-  - Upload audio files (MP3, WAV, M4A, FLAC, OGG) and cut segments
-  - Convert video URLs to MP3 using yt-dlp and ffmpeg
-  - Specify start and end times (in seconds) to extract portions
-  - Download cut audio as MP3 file
-  - No AI dependency - uses ffmpeg for processing
-  - Supports large files (up to 500MB)
+- **Removed Smart Audio Cutter Tool:**
+  - Deleted the audio cutter feature from the tools hub
+  - Removed all related routes and frontend components
+  - Streamlined the application to focus on core tools
+- **Enhanced YouTube Video Cutter:**
+  - Added new download option: "فيديو + صوت" (Video + Audio)
+  - Users can now download both the video file and audio file after cutting
+  - Maintains original video quality selection
+  - Better support for multi-format downloads
 
 ## Previous Changes (December 7, 2025)
 - **AI Provider Migration (Gemini → Groq + HuggingFace):**
