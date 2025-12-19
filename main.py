@@ -4826,12 +4826,15 @@ def cut_audio():
             if not url:
                 return jsonify({'error': 'الرجاء إدخال رابط فيديو'}), 400
             try:
-                temp_audio = os.path.join(tempfile.gettempdir(), f"audio_from_url_{uuid.uuid4().hex}.mp3")
+                temp_dir = tempfile.gettempdir()
+                unique_id = uuid.uuid4().hex
                 ydl_opts = {
                     "format": "bestaudio/best",
-                    "outtmpl": temp_audio.rsplit('.', 1)[0],
+                    "outtmpl": os.path.join(temp_dir, f"audio_from_url_{unique_id}"),
                     "quiet": True,
                     "no_warnings": True,
+                    "socket_timeout": 1800,
+                    "retries": 5,
                     "postprocessors": [{
                         "key": "FFmpegExtractAudio",
                         "preferredcodec": "mp3",
@@ -4839,13 +4842,21 @@ def cut_audio():
                     }],
                 }
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
-                temp_audio = temp_audio.rsplit('.', 1)[0] + '.mp3'
+                    info = ydl.extract_info(url, download=True)
+                    temp_audio = os.path.splitext(ydl.prepare_filename(info))[0] + '.mp3'
+                
                 if not os.path.exists(temp_audio):
-                    return jsonify({'error': 'فشل في تحويل الفيديو'}), 500
+                    # Try to find the file with the template pattern
+                    import glob as glob_module
+                    found_files = glob_module.glob(os.path.join(temp_dir, f"audio_from_url_{unique_id}*"))
+                    if found_files:
+                        temp_audio = found_files[0]
+                    else:
+                        logging.error(f"YouTube audio file not found. Expected: {temp_audio}. Found files: {found_files}")
+                        return jsonify({'error': 'فشل في تحويل الفيديو إلى صوت'}), 500
             except Exception as e:
                 logging.error(f"YouTube download error: {e}")
-                return jsonify({'error': f'فشل في تحميل الفيديو: {str(e)}'}), 400
+                return jsonify({'error': f'فشل في تحميل الفيديو: {str(e)[:100]}'}), 400
         
         input_path = None
         if audio_file:

@@ -7394,10 +7394,12 @@
             const isUploadMode = uploadTab.style.background.includes('gradient');
             const btn = document.getElementById('audio-cutter-btn');
             const errorDiv = document.getElementById('audio-cutter-error');
+            const successDiv = document.getElementById('audio-cutter-success');
             const progressDiv = document.getElementById('audio-cutter-progress');
             
             btn.disabled = true;
             errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
             progressDiv.classList.remove('hidden');
             
             try {
@@ -7425,7 +7427,8 @@
                 
                 const response = await fetch('/api/cut-audio', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    timeout: 600000
                 });
                 
                 if (response.ok) {
@@ -7439,11 +7442,20 @@
                     window.URL.revokeObjectURL(downloadUrl);
                     a.remove();
                     
-                    document.getElementById('audio-cutter-success').classList.remove('hidden');
+                    successDiv.classList.remove('hidden');
                     showToast('تم قص الملف بنجاح!');
+                    setTimeout(() => {
+                        successDiv.classList.add('hidden');
+                    }, 5000);
                 } else {
-                    const data = await response.json();
-                    throw new Error(data.error || 'فشل في قص الملف');
+                    let errorMessage = 'فشل في قص الملف';
+                    try {
+                        const data = await response.json();
+                        errorMessage = data.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = `خطأ ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
                 }
             } catch (error) {
                 document.getElementById('audio-cutter-error-text').textContent = error.message;
