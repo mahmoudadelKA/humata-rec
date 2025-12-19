@@ -4604,9 +4604,75 @@
                         </div>
                     </div>
 
-                    <div id="audio-cutter-url-mode" class="hidden">
-                        <input type="text" id="audio-cutter-url" placeholder="https://www.youtube.com/watch?v=..."
-                            class="w-full rounded-xl p-4 mb-4" />
+                    <div id="audio-cutter-url-mode" class="hidden space-y-6">
+                        <div>
+                            <label class="block text-slate-300 font-medium mb-2">رابط الفيديو:</label>
+                            <input type="text" id="audio-cutter-url" placeholder="https://www.youtube.com/watch?v=..."
+                                class="w-full rounded-xl p-4 bg-slate-800 text-white border border-violet-500/20 focus:border-violet-500 focus:outline-none"
+                                onchange="loadAudioCutterVideoInfo()" />
+                        </div>
+
+                        <!-- Video Info Card -->
+                        <div id="audio-cutter-video-info" class="hidden p-4 rounded-xl bg-gradient-to-r from-violet-900/30 to-indigo-900/30 border border-violet-500/30">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <!-- Thumbnail -->
+                                <div id="audio-cutter-thumbnail-container" class="md:col-span-1">
+                                    <img id="audio-cutter-thumbnail" src="" alt="Video thumbnail" 
+                                        class="w-full rounded-lg object-cover border border-violet-500/30" />
+                                </div>
+                                
+                                <!-- Video Info -->
+                                <div class="md:col-span-2">
+                                    <p class="text-slate-300 mb-2">
+                                        <span class="font-medium text-violet-300">📹 العنوان:</span>
+                                        <span id="audio-cutter-video-title" class="text-slate-200"></span>
+                                    </p>
+                                    <p class="text-slate-300 mb-2">
+                                        <span class="font-medium text-violet-300">⏱️ المدة:</span>
+                                        <span id="audio-cutter-video-duration" class="text-slate-200 font-bold text-lg"></span>
+                                    </p>
+                                    <p class="text-slate-400 text-sm mt-3">
+                                        📝 حدد وقت البداية ومدة المقطع الذي تريد استخراجه
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Time Selection -->
+                            <div class="bg-slate-800/50 rounded-lg p-4 border border-violet-500/20">
+                                <h3 class="text-slate-200 font-bold mb-4">⏬ حدد المقطع المراد استخراجه</h3>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-slate-300 font-medium mb-2 text-sm">🎬 وقت البداية (ثانية)</label>
+                                        <input type="number" id="audio-cutter-url-start" min="0" value="0" step="1" 
+                                            class="w-full rounded-lg p-3 bg-slate-700 text-white border border-violet-500/20 focus:border-violet-500 focus:outline-none" />
+                                        <p class="text-slate-500 text-xs mt-1">الثانية التي تبدأ منها</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-slate-300 font-medium mb-2 text-sm">📊 مدة المقطع (ثانية)</label>
+                                        <input type="number" id="audio-cutter-url-duration" min="1" value="30" step="1" 
+                                            class="w-full rounded-lg p-3 bg-slate-700 text-white border border-violet-500/20 focus:border-violet-500 focus:outline-none" />
+                                        <p class="text-slate-500 text-xs mt-1">كم ثانية تريد من الفيديو</p>
+                                    </div>
+                                </div>
+
+                                <!-- Duration Info -->
+                                <div class="bg-slate-900/50 rounded-lg p-3 flex justify-between items-center">
+                                    <span class="text-slate-300">المقطع من:</span>
+                                    <span class="text-violet-400 font-bold">
+                                        <span id="audio-cutter-url-start-display">0</span> إلى 
+                                        <span id="audio-cutter-url-end-display">30</span> ثانية
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Loading message -->
+                            <div id="audio-cutter-url-loading" class="hidden mt-4 text-center">
+                                <div class="loader mx-auto mb-2" style="border-top-color: #a78bfa; width: 24px; height: 24px;"></div>
+                                <p class="text-slate-400 text-sm">جاري جلب معلومات الفيديو...</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="audio-cutter-info" class="hidden">
@@ -7387,7 +7453,65 @@
                 startInput.addEventListener('input', updateAudioCutterCutDuration);
                 endInput.addEventListener('input', updateAudioCutterCutDuration);
             }
+            
+            // Add event listeners for URL mode time inputs
+            const urlStartInput = document.getElementById('audio-cutter-url-start');
+            const urlDurationInput = document.getElementById('audio-cutter-url-duration');
+            if (urlStartInput) {
+                urlStartInput.addEventListener('input', updateAudioCutterUrlTimeDisplay);
+                urlDurationInput.addEventListener('input', updateAudioCutterUrlTimeDisplay);
+            }
         });
+
+        function updateAudioCutterUrlTimeDisplay() {
+            const start = parseFloat(document.getElementById('audio-cutter-url-start').value) || 0;
+            const duration = parseFloat(document.getElementById('audio-cutter-url-duration').value) || 0;
+            const end = start + duration;
+            
+            document.getElementById('audio-cutter-url-start-display').textContent = Math.floor(start);
+            document.getElementById('audio-cutter-url-end-display').textContent = Math.floor(end);
+        }
+
+        function loadAudioCutterVideoInfo() {
+            const url = document.getElementById('audio-cutter-url').value.trim();
+            
+            if (!url) {
+                document.getElementById('audio-cutter-video-info').classList.add('hidden');
+                return;
+            }
+            
+            // للآن سنعرض معلومات محاكاة حتى نجلب معلومات حقيقية من يوتيوب
+            // في المستقبل يمكننا استدعاء endpoint في الخادم لجلب معلومات الفيديو
+            showAudioCutterVideoInfoUI();
+        }
+
+        function showAudioCutterVideoInfoUI() {
+            const videoInfo = document.getElementById('audio-cutter-video-info');
+            videoInfo.classList.remove('hidden');
+            
+            // عرض رسالة تحميل مؤقتة
+            const loadingDiv = document.getElementById('audio-cutter-url-loading');
+            loadingDiv.classList.remove('hidden');
+            
+            // إخفاء معلومات الفيديو المفصلة مؤقتاً
+            document.getElementById('audio-cutter-thumbnail-container').classList.add('hidden');
+            
+            // في التطبيق الحقيقي، سنقوم باستدعاء endpoint في الخادم لجلب معلومات الفيديو
+            // مثل: fetch(`/api/video-info?url=${encodeURIComponent(url)}`)
+            
+            // إظهار معلومات افتراضية للآن
+            setTimeout(() => {
+                loadingDiv.classList.add('hidden');
+                document.getElementById('audio-cutter-thumbnail-container').classList.remove('hidden');
+                document.getElementById('audio-cutter-thumbnail').src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"%3E%3Crect fill="%231e293b" width="320" height="180"/%3E%3Cpath d="M130 60L210 110L130 160Z" fill="%23a78bfa"/%3E%3C/svg%3E';
+                document.getElementById('audio-cutter-video-title').textContent = 'فيديو YouTube';
+                document.getElementById('audio-cutter-video-duration').textContent = '⏱️ جارٍ التحميل...';
+                
+                // تعيين مدة افتراضية
+                document.getElementById('audio-cutter-url-duration').value = 30;
+                updateAudioCutterUrlTimeDisplay();
+            }, 1000);
+        }
         
         async function processAudioCutter() {
             const uploadTab = document.getElementById('audio-cutter-upload-tab');
@@ -7404,16 +7528,22 @@
             
             try {
                 const formData = new FormData();
-                const startTime = parseFloat(document.getElementById('audio-cutter-start').value) || 0;
-                const endTime = parseFloat(document.getElementById('audio-cutter-end').value) || 0;
+                let startTime, endTime;
                 
                 if (isUploadMode) {
+                    startTime = parseFloat(document.getElementById('audio-cutter-start').value) || 0;
+                    endTime = parseFloat(document.getElementById('audio-cutter-end').value) || 0;
                     if (!uploadedAudioCutterFile) {
                         throw new Error('الرجاء اختيار ملف صوتي');
                     }
                     formData.append('audio', uploadedAudioCutterFile);
                     formData.append('type', 'file');
                 } else {
+                    // استخدام القيم من مربعات البداية والمدة
+                    startTime = parseFloat(document.getElementById('audio-cutter-url-start').value) || 0;
+                    const duration = parseFloat(document.getElementById('audio-cutter-url-duration').value) || 30;
+                    endTime = startTime + duration;
+                    
                     const url = document.getElementById('audio-cutter-url').value;
                     if (!url) {
                         throw new Error('الرجاء إدخال رابط فيديو');
