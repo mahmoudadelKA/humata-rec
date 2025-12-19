@@ -4611,14 +4611,66 @@
 
                     <div id="audio-cutter-info" class="hidden">
                         <p class="text-slate-300 mb-4">الملف: <span id="audio-cutter-filename" class="font-bold text-violet-400"></span></p>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-slate-300 font-medium mb-2">البداية (ثانية):</label>
-                                <input type="number" id="audio-cutter-start" min="0" value="0" class="w-full rounded-lg p-2 bg-slate-800 text-white" />
+                        
+                        <!-- Audio Player -->
+                        <div class="mb-6 p-4 rounded-xl bg-slate-800/50 border border-violet-500/30">
+                            <audio id="audio-cutter-player" class="w-full mb-3" controls>
+                                <p>متصفحك لا يدعم المشغل الصوتي</p>
+                            </audio>
+                            <div class="text-center text-slate-300 text-sm">
+                                المدة الكلية: <span id="audio-cutter-duration" class="font-bold text-violet-400">0:00</span>
                             </div>
-                            <div>
-                                <label class="block text-slate-300 font-medium mb-2">النهاية (ثانية):</label>
-                                <input type="number" id="audio-cutter-end" min="0" class="w-full rounded-lg p-2 bg-slate-800 text-white" />
+                        </div>
+
+                        <!-- Time Selection with Visual Feedback -->
+                        <div class="mb-6 p-4 rounded-xl bg-gradient-to-r from-violet-900/30 to-indigo-900/30 border border-violet-500/30">
+                            <h3 class="text-slate-200 font-bold mb-4">اختر المقطع المراد قصه</h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-slate-300 font-medium mb-2 text-sm">🎬 من (البداية)</label>
+                                    <div class="flex gap-2">
+                                        <input type="number" id="audio-cutter-start" min="0" value="0" step="0.1" placeholder="0" 
+                                            class="flex-1 rounded-lg p-3 bg-slate-800 text-white border border-violet-500/20 focus:border-violet-500 focus:outline-none" />
+                                        <span class="bg-slate-800 text-slate-300 px-3 py-3 rounded-lg whitespace-nowrap">ثانية</span>
+                                    </div>
+                                    <p class="text-slate-500 text-xs mt-1">الوقت الذي تبدأ منه القطع</p>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-slate-300 font-medium mb-2 text-sm">📍 إلى (النهاية)</label>
+                                    <div class="flex gap-2">
+                                        <input type="number" id="audio-cutter-end" min="0" step="0.1" placeholder="المدة" 
+                                            class="flex-1 rounded-lg p-3 bg-slate-800 text-white border border-violet-500/20 focus:border-violet-500 focus:outline-none" />
+                                        <span class="bg-slate-800 text-slate-300 px-3 py-3 rounded-lg whitespace-nowrap">ثانية</span>
+                                    </div>
+                                    <p class="text-slate-500 text-xs mt-1">الوقت الذي تنتهي فيه القطع</p>
+                                </div>
+                            </div>
+
+                            <!-- Cut Duration Display -->
+                            <div class="bg-slate-900/50 rounded-lg p-3 flex justify-between items-center">
+                                <span class="text-slate-300">مدة المقطع:</span>
+                                <span id="audio-cutter-cut-duration" class="text-violet-400 font-bold text-lg">0:00</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Time Buttons -->
+                        <div class="mb-6 p-4 rounded-xl bg-slate-800/50 border border-violet-500/20">
+                            <p class="text-slate-300 font-medium mb-3 text-sm">⚡ اختيارات سريعة:</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="setAudioCutterQuickTime('first30')" class="py-2 px-3 rounded-lg bg-violet-900/50 hover:bg-violet-800/50 text-violet-300 text-sm transition-all">
+                                    أول 30 ثانية
+                                </button>
+                                <button onclick="setAudioCutterQuickTime('last30')" class="py-2 px-3 rounded-lg bg-violet-900/50 hover:bg-violet-800/50 text-violet-300 text-sm transition-all">
+                                    آخر 30 ثانية
+                                </button>
+                                <button onclick="setAudioCutterQuickTime('middle')" class="py-2 px-3 rounded-lg bg-violet-900/50 hover:bg-violet-800/50 text-violet-300 text-sm transition-all">
+                                    الوسط (30 ثانية)
+                                </button>
+                                <button onclick="setAudioCutterQuickTime('all')" class="py-2 px-3 rounded-lg bg-violet-900/50 hover:bg-violet-800/50 text-violet-300 text-sm transition-all">
+                                    الملف كاملاً
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -7261,9 +7313,81 @@
             if (file) {
                 uploadedAudioCutterFile = file;
                 document.getElementById('audio-cutter-filename').textContent = file.name;
+                
+                // Create object URL and set it to audio player
+                const audioUrl = URL.createObjectURL(file);
+                const player = document.getElementById('audio-cutter-player');
+                player.src = audioUrl;
+                
+                // Update duration when loaded
+                player.addEventListener('loadedmetadata', function() {
+                    updateAudioCutterDuration();
+                    updateAudioCutterCutDuration();
+                }, { once: true });
+                
                 document.getElementById('audio-cutter-info').classList.remove('hidden');
             }
         }
+        
+        function updateAudioCutterDuration() {
+            const player = document.getElementById('audio-cutter-player');
+            const durationEl = document.getElementById('audio-cutter-duration');
+            const duration = Math.floor(player.duration);
+            durationEl.textContent = formatAudioTime(duration);
+            
+            // Set end time to full duration
+            document.getElementById('audio-cutter-end').placeholder = formatAudioTime(duration);
+            if (!document.getElementById('audio-cutter-end').value) {
+                document.getElementById('audio-cutter-end').value = duration;
+            }
+        }
+        
+        function formatAudioTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function updateAudioCutterCutDuration() {
+            const startTime = parseFloat(document.getElementById('audio-cutter-start').value) || 0;
+            const endTime = parseFloat(document.getElementById('audio-cutter-end').value) || 0;
+            const duration = Math.max(0, endTime - startTime);
+            document.getElementById('audio-cutter-cut-duration').textContent = formatAudioTime(duration);
+        }
+        
+        function setAudioCutterQuickTime(type) {
+            const player = document.getElementById('audio-cutter-player');
+            const totalDuration = player.duration || 0;
+            const startEl = document.getElementById('audio-cutter-start');
+            const endEl = document.getElementById('audio-cutter-end');
+            
+            if (type === 'first30') {
+                startEl.value = 0;
+                endEl.value = Math.min(30, totalDuration);
+            } else if (type === 'last30') {
+                startEl.value = Math.max(0, totalDuration - 30);
+                endEl.value = totalDuration;
+            } else if (type === 'middle') {
+                const middle = totalDuration / 2;
+                startEl.value = Math.max(0, middle - 15);
+                endEl.value = Math.min(totalDuration, middle + 15);
+            } else if (type === 'all') {
+                startEl.value = 0;
+                endEl.value = totalDuration;
+            }
+            
+            updateAudioCutterCutDuration();
+        }
+        
+        // Add event listeners for real-time duration update
+        document.addEventListener('DOMContentLoaded', function() {
+            const startInput = document.getElementById('audio-cutter-start');
+            const endInput = document.getElementById('audio-cutter-end');
+            if (startInput) {
+                startInput.addEventListener('input', updateAudioCutterCutDuration);
+                endInput.addEventListener('input', updateAudioCutterCutDuration);
+            }
+        });
         
         async function processAudioCutter() {
             const uploadTab = document.getElementById('audio-cutter-upload-tab');
