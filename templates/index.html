@@ -2672,6 +2672,25 @@
                     <p class="tool-card-desc">عزل الصوت البشري من الصوت أو الفيديو</p>
                 </div>
             </div>
+            
+            <!-- Smart Audio Cutter Tool -->
+            <div class="tool-card" data-color="violet" onclick="openToolFromHub('audiocutter')">
+                <div class="tool-card-icon bg-gradient-to-br from-violet-500 to-indigo-600">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 24C14 24 12 22 12 20C12 18 14 16 16 16C18 16 20 18 20 20C20 22 18 24 16 24Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <path d="M48 24C46 24 44 22 44 20C44 18 46 16 48 16C50 16 52 18 52 20C52 22 50 24 48 24Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <path d="M20 20H44" stroke="#FFD700" stroke-width="2.5"/>
+                        <path d="M16 32L48 28" stroke="#FFD700" stroke-width="2.5"/>
+                        <path d="M20 44H44" stroke="#FFD700" stroke-width="2.5"/>
+                        <path d="M16 44C14 44 12 42 12 40C12 38 14 36 16 36C18 36 20 38 20 40C20 42 18 44 16 44Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                        <path d="M48 44C46 44 44 42 44 40C44 38 46 36 48 36C50 36 52 38 52 40C52 42 50 44 48 44Z" stroke="#FFD700" stroke-width="2.5" fill="none"/>
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h3 class="tool-card-title">قص الصوت الذكي</h3>
+                    <p class="tool-card-desc">رفع صوت أو تحويل فيديو وقص المقاطع</p>
+                </div>
+            </div>
         </div>
         
         <!-- Back to Welcome Button -->
@@ -4540,6 +4559,88 @@
                             </svg>
                         </span>
                         <span id="remove-music-success-text">تمت إزالة الموسيقى بنجاح وجارٍ التحميل...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Smart Audio Cutter Tool -->
+            <div id="tool-audiocutter" class="tool-content hidden">
+                <div class="glass rounded-2xl p-6 lg:p-8 max-w-3xl mx-auto fade-in">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl lg:text-3xl font-bold mb-2 text-slate-100 flex items-center justify-center gap-3">
+                            <span class="icon-pharaonic icon-title">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="20" cy="32" r="6" stroke="#a78bfa" stroke-width="2.5" fill="none"/>
+                                    <circle cx="44" cy="32" r="6" stroke="#a78bfa" stroke-width="2.5" fill="none"/>
+                                    <path d="M26 32H38" stroke="#a78bfa" stroke-width="2.5"/>
+                                    <path d="M20 12V52M44 12V52" stroke="#a78bfa" stroke-width="2"/>
+                                </svg>
+                            </span>
+                            <span>قص الصوت الذكي</span>
+                        </h2>
+                        <p class="text-slate-400">رفع ملف صوتي أو فيديو وقص المقاطع الصوتية بسهولة ثم تحميلها</p>
+                    </div>
+
+                    <div class="mb-6 flex gap-4">
+                        <button onclick="setAudioCutterMode('upload')" id="audio-cutter-upload-tab"
+                            class="flex-1 py-3 rounded-lg transition-all font-bold"
+                            style="background: linear-gradient(135deg, #a78bfa, #7c3aed); color: white;">
+                            رفع ملف صوتي
+                        </button>
+                        <button onclick="setAudioCutterMode('url')" id="audio-cutter-url-tab"
+                            class="flex-1 py-3 rounded-lg transition-all font-bold"
+                            style="background: rgba(30, 41, 59, 0.5); color: #94a3b8;">
+                            رابط فيديو
+                        </button>
+                    </div>
+
+                    <div id="audio-cutter-upload-mode">
+                        <div class="file-upload rounded-xl p-6 text-center cursor-pointer mb-4"
+                            onclick="document.getElementById('audio-cutter-file').click()">
+                            <input type="file" id="audio-cutter-file" accept=".mp3,.wav,.m4a,.ogg,.flac,.aac" class="hidden"
+                                onchange="handleAudioCutterFileUpload(event)">
+                            <p class="text-slate-300 font-medium">ارفع ملف صوتي</p>
+                            <p class="text-slate-500 text-sm mt-1">MP3, WAV, M4A, FLAC (حتى 500MB)</p>
+                        </div>
+                    </div>
+
+                    <div id="audio-cutter-url-mode" class="hidden">
+                        <input type="text" id="audio-cutter-url" placeholder="https://www.youtube.com/watch?v=..."
+                            class="w-full rounded-xl p-4 mb-4" />
+                    </div>
+
+                    <div id="audio-cutter-info" class="hidden">
+                        <p class="text-slate-300 mb-4">الملف: <span id="audio-cutter-filename" class="font-bold text-violet-400"></span></p>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-slate-300 font-medium mb-2">البداية (ثانية):</label>
+                                <input type="number" id="audio-cutter-start" min="0" value="0" class="w-full rounded-lg p-2 bg-slate-800 text-white" />
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 font-medium mb-2">النهاية (ثانية):</label>
+                                <input type="number" id="audio-cutter-end" min="0" class="w-full rounded-lg p-2 bg-slate-800 text-white" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="audio-cutter-progress" class="hidden mb-4">
+                        <div class="w-full bg-slate-700 rounded-full h-2">
+                            <div id="audio-cutter-progress-bar" class="bg-gradient-to-r from-violet-500 to-indigo-500 h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="audio-cutter-progress-text" class="text-center text-slate-400 text-sm mt-2">جاري المعالجة...</p>
+                    </div>
+
+                    <button onclick="processAudioCutter()" id="audio-cutter-btn"
+                        class="w-full bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white py-4 rounded-xl font-bold text-lg transition-all">
+                        قص الملف
+                    </button>
+
+                    <div id="audio-cutter-error" class="hidden mt-6 p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-400">
+                        <span id="audio-cutter-error-text"></span>
+                    </div>
+
+                    <div id="audio-cutter-success" class="hidden mt-6 p-4 rounded-xl bg-green-900/30 border border-green-500/30 text-green-400">
+                        تم قص الملف بنجاح وجارٍ التحميل...
                     </div>
                 </div>
             </div>
@@ -7126,6 +7227,109 @@
         // Touch handling is managed by CSS touch-action: manipulation on body
         // This prevents double-tap zoom without blocking normal touch interactions
         // No JavaScript touch handlers needed - CSS handles it better
+
+        // =====================================================
+        // Audio Cutter Functions
+        // =====================================================
+        let uploadedAudioCutterFile = null;
+        
+        function setAudioCutterMode(mode) {
+            const uploadTab = document.getElementById('audio-cutter-upload-tab');
+            const urlTab = document.getElementById('audio-cutter-url-tab');
+            const uploadMode = document.getElementById('audio-cutter-upload-mode');
+            const urlMode = document.getElementById('audio-cutter-url-mode');
+            
+            if (mode === 'upload') {
+                uploadTab.style.background = 'linear-gradient(135deg, #a78bfa, #7c3aed)';
+                uploadTab.style.color = 'white';
+                urlTab.style.background = 'rgba(30, 41, 59, 0.5)';
+                urlTab.style.color = '#94a3b8';
+                uploadMode.classList.remove('hidden');
+                urlMode.classList.add('hidden');
+            } else {
+                urlTab.style.background = 'linear-gradient(135deg, #a78bfa, #7c3aed)';
+                urlTab.style.color = 'white';
+                uploadTab.style.background = 'rgba(30, 41, 59, 0.5)';
+                uploadTab.style.color = '#94a3b8';
+                urlMode.classList.remove('hidden');
+                uploadMode.classList.add('hidden');
+            }
+        }
+        
+        function handleAudioCutterFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadedAudioCutterFile = file;
+                document.getElementById('audio-cutter-filename').textContent = file.name;
+                document.getElementById('audio-cutter-info').classList.remove('hidden');
+            }
+        }
+        
+        async function processAudioCutter() {
+            const uploadTab = document.getElementById('audio-cutter-upload-tab');
+            const isUploadMode = uploadTab.style.background.includes('gradient');
+            const btn = document.getElementById('audio-cutter-btn');
+            const errorDiv = document.getElementById('audio-cutter-error');
+            const progressDiv = document.getElementById('audio-cutter-progress');
+            
+            btn.disabled = true;
+            errorDiv.classList.add('hidden');
+            progressDiv.classList.remove('hidden');
+            
+            try {
+                const formData = new FormData();
+                const startTime = parseFloat(document.getElementById('audio-cutter-start').value) || 0;
+                const endTime = parseFloat(document.getElementById('audio-cutter-end').value) || 0;
+                
+                if (isUploadMode) {
+                    if (!uploadedAudioCutterFile) {
+                        throw new Error('الرجاء اختيار ملف صوتي');
+                    }
+                    formData.append('audio', uploadedAudioCutterFile);
+                    formData.append('type', 'file');
+                } else {
+                    const url = document.getElementById('audio-cutter-url').value;
+                    if (!url) {
+                        throw new Error('الرجاء إدخال رابط فيديو');
+                    }
+                    formData.append('url', url);
+                    formData.append('type', 'url');
+                }
+                
+                formData.append('start_time', startTime);
+                formData.append('end_time', endTime);
+                
+                const response = await fetch('/api/cut-audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = 'audio_cut.mp3';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(downloadUrl);
+                    a.remove();
+                    
+                    document.getElementById('audio-cutter-success').classList.remove('hidden');
+                    showToast('تم قص الملف بنجاح!');
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.error || 'فشل في قص الملف');
+                }
+            } catch (error) {
+                document.getElementById('audio-cutter-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+                showToast(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                progressDiv.classList.add('hidden');
+            }
+        }
 
         // =====================================================
         // Supabase Authentication

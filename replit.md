@@ -3,7 +3,16 @@
 ## Overview
 The Multi-Tool Arabic Platform is a comprehensive web application offering ten powerful tools. Its primary purpose is to provide a suite of utilities for media processing, AI-driven content analysis, and document manipulation, all within a modern, Arabic RTL, glassmorphism-designed interface. The platform aims to serve users with efficient and intelligent tools for tasks like speech-to-text conversion, video cutting, anime and podcast detection, universal media downloading, PDF to Word conversion, video transcription, and AI-powered document formatting. It leverages advanced AI models and various APIs to deliver robust functionality, catering to both general users and those requiring specialized Arabic language support.
 
-## Recent Changes (December 7, 2025)
+## Recent Changes (December 19, 2025)
+- **Smart Audio Cutter Tool (NEW):**
+  - Upload audio files (MP3, WAV, M4A, FLAC, OGG) and cut segments
+  - Convert video URLs to MP3 using yt-dlp and ffmpeg
+  - Specify start and end times (in seconds) to extract portions
+  - Download cut audio as MP3 file
+  - No AI dependency - uses ffmpeg for processing
+  - Supports large files (up to 500MB)
+
+## Previous Changes (December 7, 2025)
 - **AI Provider Migration (Gemini → Groq + HuggingFace):**
   - Replaced Google Gemini with Groq API for text/audio/vision operations
   - Added HuggingFace Hub as secondary provider
@@ -55,6 +64,7 @@ The platform is built on a Python Flask backend with a responsive frontend using
 - **Smart PDF to Word Converter:** Converts PDFs to DOCX using `pdf2docx`, offering translation to Arabic or English via `deep_translator`.
 - **Video to Text Transcription:** Transcribes video content (file upload or URL) to text using Groq AI, supporting multiple languages, and optimized for large files and slow connections.
 - **AI Document Formatter:** Formats Word/PDF documents using Groq AI, allowing formatting specification via text description or reference files, and supporting features like heading styling, margins, and line spacing.
+- **Smart Audio Cutter:** Cuts audio files without AI dependency, using ffmpeg for efficient processing. Supports both file uploads and video URL conversion to MP3, with precise time-based trimming.
 
 **System Design Choices:**
 - **AI Integration:** Multi-provider AI engine with Groq (primary) and HuggingFace (secondary), automatic failover, smart cooldown for exhausted keys, admin dashboard for key management, and database persistence for usage analytics.
