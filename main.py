@@ -4829,6 +4829,61 @@ def remove_music():
         return jsonify({'error': f'حدث خطأ: {str(e)}'}), 500
 
 
+@app.route('/api/video-info', methods=['GET'])
+def get_video_info():
+    """Get video information from URL (YouTube, TikTok, Instagram, Facebook, etc.)"""
+    try:
+        url = request.args.get('url', '').strip()
+        
+        if not url:
+            return jsonify({'error': 'الرجاء إدخال رابط فيديو'}), 400
+        
+        logging.info(f"Fetching video info for: {url}")
+        
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': False,
+            'socket_timeout': 30,
+            'skip_download': True,
+            'no_check_certificates': True,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            
+            # Get thumbnail
+            thumbnail = info.get('thumbnail') or info.get('thumbnails', [{}])[-1].get('url', '')
+            
+            # Get duration
+            duration = info.get('duration', 0)
+            
+            # Get title
+            title = info.get('title', 'فيديو بدون عنوان')
+            
+            # Get uploader/channel
+            uploader = info.get('uploader', 'مجهول')
+            
+            return jsonify({
+                'success': True,
+                'title': title,
+                'duration': duration,
+                'thumbnail': thumbnail,
+                'uploader': uploader,
+                'url': url
+            })
+    
+    except Exception as e:
+        logging.error(f"Error fetching video info: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'فشل في جلب معلومات الفيديو. تأكد من الرابط وحاول مرة أخرى.'
+        }), 400
+
+
 @app.route('/api/cut-audio', methods=['POST'])
 def cut_audio():
     """Cut audio file - no AI required, just ffmpeg"""

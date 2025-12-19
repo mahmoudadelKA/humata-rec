@@ -7472,7 +7472,7 @@
             document.getElementById('audio-cutter-url-end-display').textContent = Math.floor(end);
         }
 
-        function loadAudioCutterVideoInfo() {
+        async function loadAudioCutterVideoInfo() {
             const url = document.getElementById('audio-cutter-url').value.trim();
             
             if (!url) {
@@ -7480,37 +7480,55 @@
                 return;
             }
             
-            // للآن سنعرض معلومات محاكاة حتى نجلب معلومات حقيقية من يوتيوب
-            // في المستقبل يمكننا استدعاء endpoint في الخادم لجلب معلومات الفيديو
-            showAudioCutterVideoInfoUI();
+            showAudioCutterVideoInfoUI(url);
         }
 
-        function showAudioCutterVideoInfoUI() {
+        async function showAudioCutterVideoInfoUI(url) {
             const videoInfo = document.getElementById('audio-cutter-video-info');
             videoInfo.classList.remove('hidden');
             
-            // عرض رسالة تحميل مؤقتة
             const loadingDiv = document.getElementById('audio-cutter-url-loading');
+            const thumbnailContainer = document.getElementById('audio-cutter-thumbnail-container');
+            
             loadingDiv.classList.remove('hidden');
+            thumbnailContainer.classList.add('hidden');
             
-            // إخفاء معلومات الفيديو المفصلة مؤقتاً
-            document.getElementById('audio-cutter-thumbnail-container').classList.add('hidden');
-            
-            // في التطبيق الحقيقي، سنقوم باستدعاء endpoint في الخادم لجلب معلومات الفيديو
-            // مثل: fetch(`/api/video-info?url=${encodeURIComponent(url)}`)
-            
-            // إظهار معلومات افتراضية للآن
-            setTimeout(() => {
-                loadingDiv.classList.add('hidden');
-                document.getElementById('audio-cutter-thumbnail-container').classList.remove('hidden');
-                document.getElementById('audio-cutter-thumbnail').src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"%3E%3Crect fill="%231e293b" width="320" height="180"/%3E%3Cpath d="M130 60L210 110L130 160Z" fill="%23a78bfa"/%3E%3C/svg%3E';
-                document.getElementById('audio-cutter-video-title').textContent = 'فيديو YouTube';
-                document.getElementById('audio-cutter-video-duration').textContent = '⏱️ جارٍ التحميل...';
+            try {
+                const response = await fetch(`/api/video-info?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
                 
-                // تعيين مدة افتراضية
+                if (data.success) {
+                    // عرض معلومات الفيديو
+                    loadingDiv.classList.add('hidden');
+                    thumbnailContainer.classList.remove('hidden');
+                    
+                    document.getElementById('audio-cutter-thumbnail').src = data.thumbnail || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"%3E%3Crect fill="%231e293b" width="320" height="180"/%3E%3Cpath d="M130 60L210 110L130 160Z" fill="%23a78bfa"/%3E%3C/svg%3E';
+                    document.getElementById('audio-cutter-video-title').textContent = data.title || 'فيديو بدون عنوان';
+                    
+                    const duration = data.duration;
+                    const mins = Math.floor(duration / 60);
+                    const secs = duration % 60;
+                    document.getElementById('audio-cutter-video-duration').textContent = `⏱️ ${mins}:${secs.toString().padStart(2, '0')}`;
+                    
+                    // تعيين مدة افتراضية (30 ثانية أو أقل من المدة الكلية)
+                    document.getElementById('audio-cutter-url-duration').value = Math.min(30, Math.floor(duration));
+                    document.getElementById('audio-cutter-url-start').max = Math.floor(duration) - 1;
+                    updateAudioCutterUrlTimeDisplay();
+                } else {
+                    throw new Error(data.error || 'فشل في جلب معلومات الفيديو');
+                }
+            } catch (error) {
+                loadingDiv.classList.add('hidden');
+                thumbnailContainer.classList.remove('hidden');
+                
+                document.getElementById('audio-cutter-thumbnail').src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"%3E%3Crect fill="%231e293b" width="320" height="180"/%3E%3Ctext x="160" y="90" text-anchor="middle" fill="%23ef4444" font-size="14"%3Eخطأ في التحميل%3C/text%3E%3C/svg%3E';
+                document.getElementById('audio-cutter-video-title').textContent = 'فشل في جلب المعلومات';
+                document.getElementById('audio-cutter-video-duration').textContent = '⚠️ ' + error.message;
+                
+                // قيمة افتراضية
                 document.getElementById('audio-cutter-url-duration').value = 30;
                 updateAudioCutterUrlTimeDisplay();
-            }, 1000);
+            }
         }
         
         async function processAudioCutter() {
