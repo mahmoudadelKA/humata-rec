@@ -4829,12 +4829,17 @@ def cut_audio():
                 temp_dir = tempfile.gettempdir()
                 unique_id = uuid.uuid4().hex
                 ydl_opts = {
-                    "format": "bestaudio/best",
+                    "format": "bestaudio[ext=m4a]/bestaudio/best",
                     "outtmpl": os.path.join(temp_dir, f"audio_from_url_{unique_id}"),
-                    "quiet": True,
-                    "no_warnings": True,
+                    "quiet": False,
+                    "no_warnings": False,
                     "socket_timeout": 1800,
-                    "retries": 5,
+                    "retries": {"default": 10, "http_429": 10},
+                    "http_headers": {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                        "Accept-Language": "en-US,en;q=0.9",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                    },
                     "postprocessors": [{
                         "key": "FFmpegExtractAudio",
                         "preferredcodec": "mp3",
@@ -4853,10 +4858,12 @@ def cut_audio():
                         temp_audio = found_files[0]
                     else:
                         logging.error(f"YouTube audio file not found. Expected: {temp_audio}. Found files: {found_files}")
-                        return jsonify({'error': 'فشل في تحويل الفيديو إلى صوت'}), 500
+                        return jsonify({'error': 'فشل في تحويل الفيديو إلى صوت. قد يكون الفيديو محميًا أو غير متاح.'}), 500
             except Exception as e:
                 logging.error(f"YouTube download error: {e}")
-                return jsonify({'error': f'فشل في تحميل الفيديو: {str(e)[:100]}'}), 400
+                import traceback
+                logging.error(f"Full traceback: {traceback.format_exc()}")
+                return jsonify({'error': f'فشل في تحميل الفيديو: {str(e)[:80]}'}), 400
         
         input_path = None
         if audio_file:
