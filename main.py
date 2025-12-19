@@ -1286,6 +1286,95 @@ def process_video():
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
 
 
+@app.route('/process-uploaded-video', methods=['POST'])
+def process_uploaded_video():
+    """
+    معالجة وقص الفيديو أو الصوت المرفوع مباشرة
+    """
+    start_time_log = time.time()
+    temp_file = None
+    output_file = None
+    file_size = 0
+
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'الرجاء تحميل ملف'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'لم يتم اختيار ملف'}), 400
+
+        start_time = request.form.get('start_time', '00:00')
+        end_time = request.form.get('end_time', '')
+        download_type = request.form.get('download_type', 'video')
+
+        if not end_time:
+            return jsonify({'error': 'الرجاء تحديد وقت النهاية'}), 400
+
+        if download_type not in ['video', 'audio', 'both']:
+            download_type = 'video'
+
+        # Save uploaded file
+        unique_id = str(uuid.uuid4())[:8]
+        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'mp4'
+        temp_file = os.path.join(UPLOAD_FOLDER, f'uploaded_{unique_id}.{ext}')
+        file.save(temp_file)
+
+        # Validate time format
+        start_seconds = validate_time_format(start_time)
+        end_seconds = validate_time_format(end_time)
+
+        if start_seconds is None or end_seconds is None:
+            safe_remove_file(temp_file)
+            return jsonify({'error': 'صيغة الوقت غير صحيحة. استخدم MM:SS أو HH:MM:SS'}), 400
+
+        if end_seconds <= start_seconds:
+            safe_remove_file(temp_file)
+            return jsonify({'error': 'وقت النهاية يجب أن يكون أكبر من وقت البداية'}), 400
+
+        # Cut the media
+        output_file = cut_media_segment(temp_file, start_seconds, end_seconds, 
+                                       download_type, UPLOAD_FOLDER)
+
+        # Delete original file
+        safe_remove_file(temp_file)
+        temp_file = None
+
+        # Cleanup after response
+        @after_this_request
+        def cleanup(response):
+            if safe_remove_file(output_file):
+                logging.info(f"تم حذف ملف المخرجات: {output_file}")
+            return response
+
+        # Return file
+        if download_type == 'audio' or (download_type == 'both' and file.content_type.startswith('audio')):
+            download_name = f'clip_{start_time.replace(":", "-")}_{end_time.replace(":", "-")}.mp3'
+            mimetype = 'audio/mpeg'
+        else:
+            download_name = f'clip_{start_time.replace(":", "-")}_{end_time.replace(":", "-")}.mp4'
+            mimetype = 'video/mp4'
+
+        file_size = os.path.getsize(output_file) if os.path.exists(output_file) else 0
+        duration_ms = int((time.time() - start_time_log) * 1000)
+        log_activity('video_cutter', 'cut_uploaded', 'success', duration_ms=duration_ms, 
+                    file_size=file_size, details=json.dumps({'type': download_type}))
+
+        return send_file(
+            output_file,
+            as_attachment=True,
+            download_name=download_name,
+            mimetype=mimetype)
+
+    except Exception as e:
+        logging.error(f"خطأ في معالجة الملف المرفوع: {str(e)}")
+        safe_remove_files(temp_file, output_file)
+        duration_ms = int((time.time() - start_time_log) * 1000)
+        log_activity('video_cutter', 'cut_uploaded', 'error', duration_ms=duration_ms, error_message=str(e))
+        log_error('Exception', str(e), traceback.format_exc(), tool_name='video_cutter_upload')
+        return jsonify({'error': f'خطأ: {str(e)}'}), 500
+
+
 @app.route('/search-anime', methods=['POST'])
 def search_anime():
     start_time = time.time()

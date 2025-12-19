@@ -4639,6 +4639,7 @@
         let uploadedPodcastAudioFile = null;
         let uploadedPdfFile = null;
         let uploadedVideoFile = null;
+        let youtubeUploadFile = null;
         let fullTranscript = '';
         let recordingStartTime = null;
         let recordingTimer = null;
@@ -5559,6 +5560,25 @@
             }
         }
 
+        function setYoutubeMode(mode) {
+            const urlMode = document.getElementById('youtube-url-mode');
+            const uploadMode = document.getElementById('youtube-upload-mode');
+            const urlTab = document.getElementById('youtube-tab-url');
+            const uploadTab = document.getElementById('youtube-tab-upload');
+
+            if (mode === 'url') {
+                urlMode.classList.remove('hidden');
+                uploadMode.classList.add('hidden');
+                urlTab.classList.add('active', 'bg-red-900/30', 'text-white');
+                uploadTab.classList.remove('active', 'bg-red-900/30', 'text-white');
+            } else {
+                urlMode.classList.add('hidden');
+                uploadMode.classList.remove('hidden');
+                uploadTab.classList.add('active', 'bg-red-900/30', 'text-white');
+                urlTab.classList.remove('active', 'bg-red-900/30', 'text-white');
+            }
+        }
+
         async function downloadClip() {
             const url = document.getElementById('youtube-url').value.trim();
             const startTime = document.getElementById('start-time').value.trim();
@@ -5605,6 +5625,100 @@
                     if (contentType && contentType.includes('application/json')) {
                         const data = await response.json();
                         throw new Error(data.error || 'خطأ في تحميل المقطع');
+                    } else {
+                        throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+                    }
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                const fileExt = downloadType === 'audio' ? 'mp3' : 'mp4';
+                a.download = `clip_${startTime.replace(':', '-')}_${endTime.replace(':', '-')}.${fileExt}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+
+                showToast('تم تحميل المقطع بنجاح!');
+
+            } catch (error) {
+                document.getElementById('youtube-error-text').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                downloadBtn.disabled = false;
+                downloadBtn.classList.remove('hidden');
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function handleYoutubeUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            youtubeUploadFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('youtube-preview').src = e.target.result;
+                document.getElementById('youtube-preview-container').classList.remove('hidden');
+                document.getElementById('youtube-upload-prompt').classList.add('hidden');
+                document.getElementById('uploaded-filename').textContent = file.name;
+                document.getElementById('uploaded-file-info').classList.remove('hidden');
+                document.getElementById('upload-time-section').classList.remove('hidden');
+            };
+            if (file.type.startsWith('video/')) {
+                reader.readAsDataURL(file);
+            } else {
+                document.getElementById('uploaded-filename').textContent = file.name;
+                document.getElementById('uploaded-file-info').classList.remove('hidden');
+                document.getElementById('upload-time-section').classList.remove('hidden');
+            }
+        }
+
+        async function downloadUploadedClip() {
+            if (!youtubeUploadFile) {
+                showToast('الرجاء تحميل ملف أولاً', 'error');
+                return;
+            }
+
+            const startTime = document.getElementById('upload-start-time').value.trim();
+            const endTime = document.getElementById('upload-end-time').value.trim();
+
+            if (!endTime) {
+                showToast('الرجاء تحديد وقت النهاية', 'error');
+                return;
+            }
+
+            const downloadBtn = document.getElementById('upload-download-btn');
+            const loadingDiv = document.getElementById('youtube-loading');
+            const errorDiv = document.getElementById('youtube-error');
+
+            downloadBtn.disabled = true;
+            downloadBtn.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+            document.getElementById('loading-text').textContent = 'جاري معالجة الملف... قد يستغرق هذا بعض الوقت';
+
+            try {
+                const downloadType = document.getElementById('upload-download-type').value;
+                const formData = new FormData();
+                formData.append('file', youtubeUploadFile);
+                formData.append('start_time', startTime || '00:00');
+                formData.append('end_time', endTime);
+                formData.append('download_type', downloadType);
+
+                const response = await fetch('/process-uploaded-video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const contentType = response.headers.get('content-type');
+
+                if (!response.ok) {
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json();
+                        throw new Error(data.error || 'خطأ في معالجة الملف');
                     } else {
                         throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
                     }
