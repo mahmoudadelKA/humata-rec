@@ -105,3 +105,10 @@ The platform is built on a Python Flask backend with a responsive frontend using
 - Without Supabase credentials, app runs in development mode (authentication disabled)
 - Get Groq API key from: https://console.groq.com/keys
 - Get HuggingFace API key from: https://huggingface.co/settings/tokens
+
+## Replit Environment Setup
+- **Database:** PostgreSQL (Neon-backed) - automatically configured via DATABASE_URL
+- **System Dependencies:** ffmpeg, tesseract (for OCR)
+- **Python Version:** 3.11
+- **Server:** Gunicorn on port 5000 (2 workers, 300s timeout)
+- **Workflow:** Flask Server runs gunicorn for the web application
