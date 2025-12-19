@@ -138,45 +138,75 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
     
     out_template = os.path.join(output_dir, "%(id)s.%(ext)s")
     
-    ydl_opts = {
-        "format": "bestaudio/best",
-        "outtmpl": out_template,
-        "noplaylist": True,
-        "quiet": True,
-        "no_warnings": True,
-        "nocheckcertificate": True,
-        "geo_bypass": True,
-        "geo_bypass_country": "US",
-        "socket_timeout": 1800,
-        "retries": 5,
-        "fragment_retries": 5,
-        "concurrent_fragment_downloads": 4,
-        "buffersize": 1024 * 16,
-        "http_chunk_size": 10485760,
-        "http_headers": {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-            "Accept-Language": "en-US,en;q=0.5",
-        },
-    }
+    # Try multiple format strategies to handle various YouTube restrictions
+    format_strategies = [
+        "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio",
+        "bestaudio/best",
+        "best[ext=m4a]/best[ext=webm]/best",
+        "worst[ext=m4a]/worst",
+    ]
     
-    # Add cookies file if available (critical for bypassing YouTube restrictions)
-    if os.path.exists('cookies.txt'):
-        ydl_opts['cookiefile'] = 'cookies.txt'
-        logger.info("Using cookies.txt for YouTube authentication")
+    for format_str in format_strategies:
+        try:
+            logger.info(f"Attempting YouTube download with format: {format_str}")
+            ydl_opts = {
+                "format": format_str,
+                "outtmpl": out_template,
+                "noplaylist": True,
+                "quiet": False,
+                "no_warnings": False,
+                "nocheckcertificate": True,
+                "geo_bypass": True,
+                "geo_bypass_country": "US",
+                "socket_timeout": 300,
+                "retries": 3,
+                "fragment_retries": 3,
+                "concurrent_fragment_downloads": 4,
+                "buffersize": 1024 * 16,
+                "http_chunk_size": 10485760,
+                "allow_unplayable_formats": True,
+                "skip_unavailable_fragments": True,
+                "http_headers": {
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    ),
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Referer": "https://www.youtube.com/",
+                },
+                "postprocessors": [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                }],
+            }
+            
+            # Add cookies file if available (critical for bypassing YouTube restrictions)
+            if os.path.exists('cookies.txt'):
+                ydl_opts['cookiefile'] = 'cookies.txt'
+                logger.info("Using cookies.txt for YouTube authentication")
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                filename = ydl.prepare_filename(info)
+                # Convert to mp3 if needed
+                base_name = os.path.splitext(filename)[0]
+                mp3_file = base_name + '.mp3'
+                
+                if os.path.exists(mp3_file):
+                    logger.info(f"Downloaded YouTube audio to: {mp3_file}")
+                    return mp3_file
+                elif os.path.exists(filename):
+                    logger.info(f"Downloaded YouTube audio to: {filename}")
+                    return filename
+        except Exception as e:
+            logger.warning(f"Format strategy '{format_str}' failed: {e}")
+            continue
     
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info)
-            logger.info(f"Downloaded YouTube audio to: {filename}")
-            return filename
-    except Exception as e:
-        logger.error(f"Error downloading YouTube audio: {e}")
-        raise
+    # If all strategies fail, raise an error
+    raise Exception("فشل في تحميل الصوت من YouTube بعد عدة محاولات. قد يكون الفيديو محميًا أو غير متاح في منطقتك.")
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
@@ -4826,64 +4856,11 @@ def cut_audio():
             if not url:
                 return jsonify({'error': 'الرجاء إدخال رابط فيديو'}), 400
             try:
-                temp_dir = tempfile.gettempdir()
-                unique_id = uuid.uuid4().hex
-                temp_audio = None
-                
-                # Try multiple format strategies to bypass YouTube restrictions
-                format_strategies = [
-                    "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio",
-                    "worst[ext=m4a]/worst[ext=webm]/worst",
-                    "bestvideo+bestaudio/best",
-                ]
-                
-                for format_str in format_strategies:
-                    try:
-                        logging.info(f"Trying format strategy: {format_str}")
-                        ydl_opts = {
-                            "format": format_str,
-                            "outtmpl": os.path.join(temp_dir, f"audio_from_url_{unique_id}"),
-                            "quiet": False,
-                            "no_warnings": False,
-                            "socket_timeout": 1800,
-                            "retries": 5,
-                            "fragment_retries": 5,
-                            "skip_unavailable_fragments": True,
-                            "allow_unplayable_formats": True,
-                            "noplaylist": True,
-                            "http_headers": {
-                                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                                "Accept-Language": "en-US,en;q=0.9",
-                                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                                "Referer": "https://www.youtube.com/",
-                            },
-                            "postprocessors": [{
-                                "key": "FFmpegExtractAudio",
-                                "preferredcodec": "mp3",
-                                "preferredquality": "192",
-                            }],
-                        }
-                        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                            info = ydl.extract_info(url, download=True)
-                            temp_audio = os.path.splitext(ydl.prepare_filename(info))[0] + '.mp3'
-                        
-                        if os.path.exists(temp_audio):
-                            logging.info(f"Successfully downloaded using format: {format_str}")
-                            break
-                    except Exception as e:
-                        logging.warning(f"Format strategy '{format_str}' failed: {e}")
-                        continue
-                
+                # Use the existing helper function for consistent YouTube handling
+                temp_audio = download_audio_from_youtube(url, tempfile.gettempdir())
                 if not temp_audio or not os.path.exists(temp_audio):
-                    # Try to find any downloaded file
-                    import glob as glob_module
-                    found_files = glob_module.glob(os.path.join(temp_dir, f"audio_from_url_{unique_id}*"))
-                    if found_files:
-                        temp_audio = found_files[0]
-                        logging.info(f"Found file via glob pattern: {temp_audio}")
-                    else:
-                        logging.error(f"YouTube audio file not found after all strategies")
-                        return jsonify({'error': 'فشل في تحويل الفيديو. قد يكون الفيديو محميًا أو غير متاح في منطقتك.'}), 500
+                    logging.error(f"YouTube audio file not found")
+                    return jsonify({'error': 'فشل في تحويل الفيديو. قد يكون الفيديو محميًا أو غير متاح في منطقتك. جرب رابط مختلف.'}), 400
             except Exception as e:
                 logging.error(f"YouTube download error: {e}")
                 import traceback
