@@ -4828,44 +4828,67 @@ def cut_audio():
             try:
                 temp_dir = tempfile.gettempdir()
                 unique_id = uuid.uuid4().hex
-                ydl_opts = {
-                    "format": "bestaudio[ext=m4a]/bestaudio/best",
-                    "outtmpl": os.path.join(temp_dir, f"audio_from_url_{unique_id}"),
-                    "quiet": False,
-                    "no_warnings": False,
-                    "socket_timeout": 1800,
-                    "retries": 10,
-                    "fragment_retries": 10,
-                    "noplaylist": True,
-                    "http_headers": {
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                        "Accept-Language": "en-US,en;q=0.9",
-                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                    },
-                    "postprocessors": [{
-                        "key": "FFmpegExtractAudio",
-                        "preferredcodec": "mp3",
-                        "preferredquality": "192",
-                    }],
-                }
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=True)
-                    temp_audio = os.path.splitext(ydl.prepare_filename(info))[0] + '.mp3'
+                temp_audio = None
                 
-                if not os.path.exists(temp_audio):
-                    # Try to find the file with the template pattern
+                # Try multiple format strategies to bypass YouTube restrictions
+                format_strategies = [
+                    "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio",
+                    "worst[ext=m4a]/worst[ext=webm]/worst",
+                    "bestvideo+bestaudio/best",
+                ]
+                
+                for format_str in format_strategies:
+                    try:
+                        logging.info(f"Trying format strategy: {format_str}")
+                        ydl_opts = {
+                            "format": format_str,
+                            "outtmpl": os.path.join(temp_dir, f"audio_from_url_{unique_id}"),
+                            "quiet": False,
+                            "no_warnings": False,
+                            "socket_timeout": 1800,
+                            "retries": 5,
+                            "fragment_retries": 5,
+                            "skip_unavailable_fragments": True,
+                            "allow_unplayable_formats": True,
+                            "noplaylist": True,
+                            "http_headers": {
+                                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                                "Accept-Language": "en-US,en;q=0.9",
+                                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                                "Referer": "https://www.youtube.com/",
+                            },
+                            "postprocessors": [{
+                                "key": "FFmpegExtractAudio",
+                                "preferredcodec": "mp3",
+                                "preferredquality": "192",
+                            }],
+                        }
+                        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                            info = ydl.extract_info(url, download=True)
+                            temp_audio = os.path.splitext(ydl.prepare_filename(info))[0] + '.mp3'
+                        
+                        if os.path.exists(temp_audio):
+                            logging.info(f"Successfully downloaded using format: {format_str}")
+                            break
+                    except Exception as e:
+                        logging.warning(f"Format strategy '{format_str}' failed: {e}")
+                        continue
+                
+                if not temp_audio or not os.path.exists(temp_audio):
+                    # Try to find any downloaded file
                     import glob as glob_module
                     found_files = glob_module.glob(os.path.join(temp_dir, f"audio_from_url_{unique_id}*"))
                     if found_files:
                         temp_audio = found_files[0]
+                        logging.info(f"Found file via glob pattern: {temp_audio}")
                     else:
-                        logging.error(f"YouTube audio file not found. Expected: {temp_audio}. Found files: {found_files}")
-                        return jsonify({'error': 'فشل في تحويل الفيديو إلى صوت. قد يكون الفيديو محميًا أو غير متاح.'}), 500
+                        logging.error(f"YouTube audio file not found after all strategies")
+                        return jsonify({'error': 'فشل في تحويل الفيديو. قد يكون الفيديو محميًا أو غير متاح في منطقتك.'}), 500
             except Exception as e:
                 logging.error(f"YouTube download error: {e}")
                 import traceback
                 logging.error(f"Full traceback: {traceback.format_exc()}")
-                return jsonify({'error': f'فشل في تحميل الفيديو: {str(e)[:80]}'}), 400
+                return jsonify({'error': f'فشل في تحميل الفيديو: تحقق من الرابط وحاول مرة أخرى'}), 400
         
         input_path = None
         if audio_file:
