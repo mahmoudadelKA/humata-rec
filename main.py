@@ -159,18 +159,24 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
                 "geo_bypass": True,
                 "geo_bypass_country": "US",
                 "socket_timeout": 300,
-                "retries": 3,
-                "fragment_retries": 3,
+                "retries": 10,
+                "fragment_retries": 10,
                 "concurrent_fragment_downloads": 4,
                 "buffersize": 1024 * 16,
                 "http_chunk_size": 10485760,
                 "allow_unplayable_formats": True,
                 "skip_unavailable_fragments": True,
+                "extractor_args": {
+                    "youtube": {
+                        "player_client": ["android", "web"],
+                        "skip": ["dash", "hls"],
+                    }
+                },
                 "http_headers": {
                     "User-Agent": (
                         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                         "AppleWebKit/537.36 (KHTML, like Gecko) "
-                        "Chrome/120.0.0.0 Safari/537.36"
+                        "Chrome/122.0.0.0 Safari/537.36"
                     ),
                     "Accept-Language": "en-US,en;q=0.5",
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -1027,14 +1033,20 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             'quiet': True,
             'no_warnings': True,
             'socket_timeout': 7200,
-            'retries': 5,
+            'retries': 10,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'web'],
+                    'skip': ['dash', 'hls'],
+                }
+            },
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }],
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
             },
         }
     else:
@@ -1053,9 +1065,15 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             'quiet': True,
             'no_warnings': True,
             'socket_timeout': 7200,
-            'retries': 5,
+            'retries': 10,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'web'],
+                    'skip': ['dash', 'hls'],
+                }
+            },
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
             },
         }
 
@@ -3169,9 +3187,15 @@ def transcribe_video():
                 1024,
                 'http_chunk_size':
                 10485760,
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['android', 'web'],
+                        'skip': ['dash', 'hls'],
+                    }
+                },
                 'http_headers': {
                     'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                     'Accept':
                     'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Accept-Language': 'en-US,en;q=0.5',
