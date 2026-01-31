@@ -1,0 +1,10 @@
+attached_assets/
+.git/
+.github/
+__pycache__/
+*.pyc
+*.log
+temp_*
+Dockerfile
+Aptfile
+test_keys.py
