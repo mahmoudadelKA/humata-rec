@@ -2,7 +2,7 @@ services:
   - type: web
     name: multi-tool-arabic-platform
     env: python
-    buildCommand: "apt-get update && apt-get install -y ffmpeg tesseract-ocr tesseract-ocr-ara libsm6 libxext6 && pip install -r requirements.txt"
+    buildCommand: "./build.sh"
     startCommand: "gunicorn --bind 0.0.0.0:$PORT --timeout 1800 --workers 1 --threads 1 main:app"
     envVars:
       - key: PYTHON_VERSION
